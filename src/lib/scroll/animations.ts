@@ -28,14 +28,13 @@ export function initScrollAnimations(): () => void {
       !document.documentElement.classList.contains('no-splash') &&
       !!document.getElementById('splash-screen');
 
-    const revealElements = document.querySelectorAll<HTMLElement>('[data-reveal]');
-    revealElements.forEach((el) => {
-      // If splash is currently active, defer hero elements so they animate during the curtain lift
-      if (isSplashActive && el.closest('#hero')) {
-        gsap.set(el, { y: 40, opacity: 0 });
-        return;
-      }
+    const heroReveals = document.querySelectorAll<HTMLElement>('#hero [data-reveal]');
+    const otherReveals = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]')).filter(
+      (el) => !el.closest('#hero')
+    );
 
+    // Other section elements reveal via ScrollTrigger
+    otherReveals.forEach((el) => {
       gsap.fromTo(
         el,
         {
@@ -56,18 +55,35 @@ export function initScrollAnimations(): () => void {
       );
     });
 
-    if (isSplashActive) {
-      const heroReveals = document.querySelectorAll<HTMLElement>('#hero [data-reveal]');
-      const onHeroReveal = () => {
-        gsap.to(heroReveals, {
-          y: 0,
-          opacity: 1,
-          duration: 1,
-          stagger: 0.1,
-          ease: 'power3.out',
-        });
-      };
-      window.addEventListener('splash:hero-reveal', onHeroReveal, { once: true });
+    if (heroReveals.length > 0) {
+      if (isSplashActive) {
+        // When splash is running, hold hero elements until curtain wipe event
+        gsap.set(heroReveals, { y: 40, opacity: 0 });
+        const onHeroReveal = () => {
+          gsap.to(heroReveals, {
+            y: 0,
+            opacity: 1,
+            duration: 1,
+            stagger: 0.1,
+            ease: 'power3.out',
+          });
+        };
+        window.addEventListener('splash:hero-reveal', onHeroReveal, { once: true });
+      } else {
+        // When splash is skipped (reload, subsequent visit), play hero entrance on page load
+        gsap.fromTo(
+          heroReveals,
+          { y: 35, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.9,
+            stagger: 0.08,
+            ease: 'power3.out',
+            delay: 0.1,
+          }
+        );
+      }
     }
 
     // 3. Staggered Items (Cards, Timeline items, Tech badges)

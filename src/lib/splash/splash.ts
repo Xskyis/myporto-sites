@@ -114,15 +114,20 @@ export function initSplashScreen() {
     );
 
     // Subtle fade of counter & bottom info
-    exitTl.to(
-      ['#splash-bottom', '#splash-progress-track', '#splash-top'],
-      {
-        opacity: 0,
-        duration: 0.22,
-        ease: 'power2.out',
-      },
-      0.05
+    const elementsToFade = ['#splash-bottom', '#splash-progress-track', '#splash-top'].filter(
+      (sel) => document.querySelector(sel) !== null
     );
+    if (elementsToFade.length > 0) {
+      exitTl.to(
+        elementsToFade,
+        {
+          opacity: 0,
+          duration: 0.22,
+          ease: 'power2.out',
+        },
+        0.05
+      );
+    }
 
     // Curtain wipe (clip-path inset from bottom to top ~0.9s, power4.inOut)
     exitTl.to(
