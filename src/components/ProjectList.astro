@@ -1,0 +1,167 @@
+---
+import { getCollection } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+
+const allProjects = await getCollection('projects');
+const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
+---
+
+<section id="projects" class="py-24 md:py-36 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative" aria-label="Projects Section">
+  <!-- Section Header -->
+  <div class="flex items-center justify-between pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]" data-reveal>
+    <div class="flex items-center gap-3">
+      <span class="text-sm font-semibold text-[var(--text-primary)]">02</span>
+      <span>// SELECTED WORKS</span>
+    </div>
+    <span>EDITORIAL ARCHIVE ({sortedProjects.length})</span>
+  </div>
+
+  <!-- Heading Intro -->
+  <div class="py-16 max-w-3xl" data-reveal>
+    <h2 class="fluid-subheading font-medium text-[var(--text-primary)] leading-tight">
+      A curated collection of client platforms, academic architectures, and exploratory experiments.
+    </h2>
+  </div>
+
+  <!-- Editorial Project List -->
+  <div class="divide-y divide-hairline border-y border-hairline relative" id="project-list-container">
+    {sortedProjects.map((project, idx) => (
+      <a
+        href={`/projects/${project.id}`}
+        class="project-row group block py-8 md:py-12 px-6 sm:px-8 md:px-10 rounded-2xl transition-all duration-300 hover:bg-[var(--bg-surface-soft)]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+        data-cover={project.data.cover || '/projects/goforumrah.svg'}
+        data-title={project.data.title}
+        data-reveal
+      >
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 items-baseline">
+          <!-- Number & Featured status -->
+          <div class="md:col-span-2 flex items-center gap-3 text-xs font-mono text-[var(--text-muted)]">
+            <span>0{idx + 1}</span>
+            {project.data.featured && (
+              <span class="text-[10px] tracking-wider uppercase px-2 py-0.5 rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--accent-primary)] font-semibold">
+                Featured
+              </span>
+            )}
+          </div>
+
+          <!-- Project Title & Subtitle -->
+          <div class="md:col-span-6">
+            <h3 class="text-2xl md:text-4xl lg:text-5xl font-display font-medium text-[var(--text-primary)] transition-transform duration-300 group-hover:translate-x-2">
+              {project.data.title}
+            </h3>
+            {project.data.subtitle && (
+              <p class="text-sm font-mono text-[var(--text-muted)] mt-1 transition-transform duration-300 group-hover:translate-x-2">
+                {project.data.subtitle}
+              </p>
+            )}
+          </div>
+
+          <!-- Role & Year -->
+          <div class="md:col-span-3 text-xs font-mono text-[var(--text-muted)] space-y-1">
+            <div class="text-[var(--text-primary)] font-medium">
+              {project.data.role}
+            </div>
+            <div>{project.data.year}</div>
+            <div class="text-[var(--text-muted)] opacity-80 pt-1 line-clamp-1">
+              {project.data.tags.slice(0, 3).join(' · ')}
+            </div>
+          </div>
+
+          <!-- Action Arrow -->
+          <div class="md:col-span-1 flex justify-end">
+            <div class="w-10 h-10 rounded-full border border-hairline flex items-center justify-center text-[var(--text-primary)] group-hover:bg-[var(--accent-primary)] group-hover:text-[var(--accent-contrast)] group-hover:border-transparent transition-all duration-300">
+              <Icon name="lucide:arrow-up-right" class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </div>
+          </div>
+        </div>
+      </a>
+    ))}
+  </div>
+
+  <!-- Floating Cursor Hover Preview for Desktop -->
+  <div
+    id="project-preview-modal"
+    class="pointer-events-none fixed top-0 left-0 z-40 hidden md:block w-80 h-52 rounded-xl overflow-hidden border border-hairline bg-[var(--bg-surface)] shadow-2xl opacity-0 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300 will-change-transform"
+    aria-hidden="true"
+  >
+    <img
+      id="project-preview-img"
+      src=""
+      alt="Project Preview"
+      class="w-full h-full object-cover transition-transform duration-500 scale-105"
+    />
+  </div>
+
+  <!-- Bottom Archive Note -->
+  <div class="pt-8 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-[var(--text-muted)]" data-reveal>
+    <span>CLICK ANY PROJECT FOR ARCHITECTURAL WRITEUP &amp; SOURCE REPOS</span>
+    <a
+      href="https://github.com/Xskyis?tab=repositories"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="hover:text-[var(--text-primary)] hover-underline-anim inline-flex items-center gap-1.5"
+    >
+      <span>Explore all 57 repositories on GitHub</span>
+      <Icon name="lucide:external-link" class="w-3.5 h-3.5" />
+    </a>
+  </div>
+</section>
+
+<script>
+  function setupProjectHover() {
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
+    const previewModal = document.getElementById('project-preview-modal');
+    const previewImg = document.getElementById('project-preview-img') as HTMLImageElement | null;
+    const rows = document.querySelectorAll<HTMLElement>('.project-row');
+
+    if (isTouch || !previewModal || !previewImg) return;
+
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let isHovering = false;
+
+    window.addEventListener('pointermove', (e) => {
+      targetX = e.clientX + 30;
+      targetY = e.clientY + 20;
+    }, { passive: true });
+
+    const updatePosition = () => {
+      if (isHovering) {
+        currentX += (targetX - currentX) * 0.15;
+        currentY += (targetY - currentY) * 0.15;
+        previewModal.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+      }
+      requestAnimationFrame(updatePosition);
+    };
+    requestAnimationFrame(updatePosition);
+
+    rows.forEach((row) => {
+      row.addEventListener('mouseenter', () => {
+        const cover = row.getAttribute('data-cover');
+        if (cover && previewImg) {
+          previewImg.src = cover;
+          previewModal.classList.remove('opacity-0');
+          previewModal.classList.add('opacity-100');
+          isHovering = true;
+        }
+      });
+
+      row.addEventListener('mouseleave', () => {
+        previewModal.classList.add('opacity-0');
+        previewModal.classList.remove('opacity-100');
+        isHovering = false;
+      });
+    });
+  }
+
+  let hoverCleanup: (() => void) | null = null;
+
+  function initHover() {
+    if (hoverCleanup) hoverCleanup();
+    setupProjectHover();
+  }
+
+  document.addEventListener('astro:page-load', initHover);
+</script>

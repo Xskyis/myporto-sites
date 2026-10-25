@@ -1,0 +1,499 @@
+---
+import { Icon } from 'astro-icon/components';
+
+interface Props {
+  currentPath?: string;
+}
+
+const { currentPath = '/' } = Astro.props;
+const isHome = currentPath === '/';
+---
+
+<header
+  id="main-header"
+  class="fixed top-0 left-0 w-full z-50 transition-[border-color,background-color] duration-300 border-b border-b-transparent"
+  style="background-color: color-mix(in srgb, var(--bg-primary) 92%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"
+>
+  <!-- Thin reading progress bar -->
+  <div id="scroll-progress-bar" class="absolute top-0 left-0 w-full h-[2px] bg-[var(--accent-primary)] origin-left scale-x-0" aria-hidden="true"></div>
+
+  <nav class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between" aria-label="Main Navigation">
+    <!-- Logo / Monogram -->
+    <a href={isHome ? '#hero' : '/'} class="nav-scroll-trigger group flex items-center text-lg font-bold tracking-tight text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)] rounded-sm" aria-label="Achmad Nabil Afgareza - Home">
+      <!-- <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-mono font-medium tracking-normal">
+        
+      </span> -->
+      <span class="font-display tracking-normal text-xl md:text-2xl xl:pl-8">
+        𝒷𝒾𝓁<span class="text-[var(--accent-primary)]">.</span>
+      </span>
+    </a>
+
+    <!-- Desktop Navigation Links with Sliding Active Indicator Pill -->
+    <div id="nav-links-track" class="relative hidden md:flex items-center p-1 rounded-full border border-hairline bg-[var(--bg-surface-soft)]/50 text-xs uppercase tracking-wider font-mono text-[var(--text-muted)]">
+      <!-- Sliding active indicator pill -->
+      <div id="nav-active-indicator" class="absolute top-1 bottom-1 rounded-full bg-[var(--bg-surface)] border border-hairline shadow-xs pointer-events-none opacity-0 will-change-transform" aria-hidden="true"></div>
+
+      <a href={isHome ? '#about' : '/#about'} data-section="about" class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]">
+        <span class="text-[var(--accent-primary)] mr-1 opacity-60">01</span> About
+      </a>
+      <a href={isHome ? '#projects' : '/#projects'} data-section="projects" class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]">
+        <span class="text-[var(--accent-primary)] mr-1 opacity-60">02</span> Projects
+      </a>
+      <a href={isHome ? '#tech-stack' : '/#tech-stack'} data-section="tech-stack" class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]">
+        <span class="text-[var(--accent-primary)] mr-1 opacity-60">03</span> Stack
+      </a>
+      <a href={isHome ? '#contact' : '/#contact'} data-section="contact" class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]">
+        <span class="text-[var(--accent-primary)] mr-1 opacity-60">04</span> Contact
+      </a>
+    </div>
+
+    <!-- Controls: Palette Switcher + Theme Toggle + Mobile Menu Button -->
+    <div class="flex items-center gap-3">
+      <!-- Dual Palette Segmented Pill Switcher (Mono / Color) -->
+      <div class="flex items-center rounded-full p-1 border border-hairline bg-[var(--bg-surface-soft)]/50" role="group" aria-label="Visual Palette Theme Switcher">
+        <button
+          type="button"
+          id="btn-palette-mono"
+          class="palette-btn px-3 py-1 rounded-full text-xs font-mono tracking-wider flex items-center gap-1.5 transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+          aria-pressed="true"
+          aria-label="Switch to Monochrome Minimalist Theme"
+        >
+          <span class="w-2.5 h-2.5 rounded-full border border-hairline bg-[var(--text-primary)]" aria-hidden="true"></span>
+          <span class="hidden sm:inline">Mono</span>
+        </button>
+
+        <button
+          type="button"
+          id="btn-palette-color"
+          class="palette-btn px-3 py-1 rounded-full text-xs font-mono tracking-wider flex items-center gap-1.5 transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-primary)] focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+          aria-pressed="false"
+          aria-label="Switch to Poster Color Palette (Marine Blue + Red + Cream)"
+        >
+          <span class="w-2.5 h-2.5 rounded-full bg-[#D82B2F]" aria-hidden="true"></span>
+          <span class="hidden sm:inline">Color</span>
+        </button>
+      </div>
+
+      <!-- Light / Dark Toggle (Active in Monochrome Mode) -->
+      <button
+        type="button"
+        id="btn-tone-toggle"
+        class="w-9 h-9 rounded-full border border-hairline flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-surface-soft)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+        aria-label="Toggle Light / Dark Tone"
+      >
+        <span class="tone-icon-moon flex items-center justify-center pointer-events-none" aria-hidden="true">
+          <Icon name="lucide:moon" class="w-4 h-4 pointer-events-none" />
+        </span>
+        <span class="tone-icon-sun hidden items-center justify-center pointer-events-none" aria-hidden="true">
+          <Icon name="lucide:sun" class="w-4 h-4 pointer-events-none" />
+        </span>
+      </button>
+
+      <!-- Mobile Menu Toggle Button -->
+      <button
+        type="button"
+        id="btn-mobile-menu"
+        class="md:hidden w-9 h-9 rounded-full border border-hairline flex items-center justify-center text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+        aria-expanded="false"
+        aria-controls="mobile-menu-overlay"
+        aria-label="Open Navigation Menu"
+      >
+        <Icon name="lucide:menu" class="w-4 h-4 menu-icon-open" />
+        <Icon name="lucide:x" class="w-4 h-4 menu-icon-close hidden" />
+      </button>
+    </div>
+  </nav>
+</header>
+
+<!-- Fullscreen Mobile Menu Overlay with Solid Opaque Background (Sibling of Header) -->
+<div
+  id="mobile-menu-overlay"
+  class="fixed inset-0 top-20 z-40 hidden flex-col justify-between p-8 border-t-hairline shadow-2xl overflow-y-auto"
+  style="background-color: var(--bg-primary);"
+  aria-hidden="true"
+>
+  <div class="flex flex-col gap-6 pt-8">
+    <a href={isHome ? '#about' : '/#about'} data-section="about" class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors flex items-center justify-between border-b-hairline pb-4">
+      <span>About</span>
+      <span class="text-xs font-mono text-[var(--text-muted)]">01</span>
+    </a>
+    <a href={isHome ? '#projects' : '/#projects'} data-section="projects" class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors flex items-center justify-between border-b-hairline pb-4">
+      <span>Projects</span>
+      <span class="text-xs font-mono text-[var(--text-muted)]">02</span>
+    </a>
+    <a href={isHome ? '#tech-stack' : '/#tech-stack'} data-section="tech-stack" class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors flex items-center justify-between border-b-hairline pb-4">
+      <span>Tech Stack</span>
+      <span class="text-xs font-mono text-[var(--text-muted)]">03</span>
+    </a>
+    <a href={isHome ? '#contact' : '/#contact'} data-section="contact" class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors flex items-center justify-between border-b-hairline pb-4">
+      <span>Contact</span>
+      <span class="text-xs font-mono text-[var(--text-muted)]">04</span>
+    </a>
+  </div>
+
+  <div class="pt-8 text-xs font-mono text-[var(--text-muted)] flex flex-col gap-2">
+    <p>Achmad Nabil Afgareza · Frontend Developer</p>
+    <p>Malang, East Java, Indonesia</p>
+  </div>
+</div>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollTrigger } from 'gsap/ScrollTrigger';
+  import { scrollToTarget } from '../lib/scroll/lenis';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let navAbortController: AbortController | null = null;
+  let navScrollTriggers: ScrollTrigger[] = [];
+
+  function setupNavbar() {
+    // 0. Clean up previous listeners and triggers to prevent duplicate callbacks
+    if (navAbortController) {
+      navAbortController.abort();
+    }
+    navAbortController = new AbortController();
+    const { signal } = navAbortController;
+
+    navScrollTriggers.forEach((st) => st.kill());
+    navScrollTriggers = [];
+
+    const html = document.documentElement;
+    const btnMono = document.getElementById('btn-palette-mono');
+    const btnColor = document.getElementById('btn-palette-color');
+    const btnTone = document.getElementById('btn-tone-toggle');
+    const btnMobile = document.getElementById('btn-mobile-menu');
+    const mobileMenu = document.getElementById('mobile-menu-overlay');
+    const openIcon = btnMobile?.querySelector('.menu-icon-open');
+    const closeIcon = btnMobile?.querySelector('.menu-icon-close');
+    const desktopLinks = document.querySelectorAll<HTMLAnchorElement>('.nav-link');
+    const mobileLinks = document.querySelectorAll<HTMLAnchorElement>('.mobile-nav-link');
+    const header = document.getElementById('main-header');
+    const activeIndicator = document.getElementById('nav-active-indicator');
+    const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // 0.1 Dynamic Navbar Border on Scroll (Remove border when on top)
+    const updateHeaderScrollBorder = () => {
+      const isScrolled = window.scrollY > 15;
+      const isMenuOpen = mobileMenu ? !mobileMenu.classList.contains('hidden') : false;
+      if (header) {
+        if (isScrolled || isMenuOpen) {
+          header.classList.add('border-b-hairline');
+          header.classList.remove('border-b-transparent');
+        } else {
+          header.classList.remove('border-b-hairline');
+          header.classList.add('border-b-transparent');
+        }
+      }
+    };
+
+    window.addEventListener('scroll', updateHeaderScrollBorder, { passive: true, signal });
+    updateHeaderScrollBorder();
+
+    // 1. Sliding Indicator Positioning
+    const moveIndicatorTo = (targetLink: HTMLElement | null, animate = true) => {
+      if (!activeIndicator) return;
+      if (!targetLink) {
+        gsap.to(activeIndicator, { opacity: 0, duration: 0.2 });
+        return;
+      }
+
+      desktopLinks.forEach((link) => {
+        link.classList.remove('text-[var(--text-primary)]', 'font-medium');
+      });
+      targetLink.classList.add('text-[var(--text-primary)]', 'font-medium');
+
+      const track = document.getElementById('nav-links-track');
+      if (!track) return;
+      const trackRect = track.getBoundingClientRect();
+      const linkRect = targetLink.getBoundingClientRect();
+      const left = linkRect.left - trackRect.left;
+      const width = linkRect.width;
+
+      if (!animate || isReduced) {
+        gsap.set(activeIndicator, { left, width, opacity: 1 });
+      } else {
+        gsap.to(activeIndicator, {
+          left,
+          width,
+          opacity: 1,
+          duration: 0.35,
+          ease: 'power2.out',
+        });
+      }
+    };
+
+    // 2. Click Navigation & Smooth Scroll with Feedback
+    const handleNavClick = (e: MouseEvent, targetLink: HTMLAnchorElement, isMobileLink = false) => {
+      const href = targetLink.getAttribute('href');
+      if (!href) return;
+
+      const hashIndex = href.indexOf('#');
+      if (hashIndex === -1) return;
+
+      const hash = href.slice(hashIndex);
+      const targetElement = document.querySelector<HTMLElement>(hash);
+
+      if (targetElement) {
+        e.preventDefault();
+
+        if (!isReduced) {
+          gsap.fromTo(targetLink, { scale: 0.92 }, { scale: 1, duration: 0.25, ease: 'back.out(2)' });
+        }
+
+        if (isMobileLink) {
+          if (mobileMenu && btnMobile) {
+            gsap.to(mobileMenu, {
+              opacity: 0,
+              duration: 0.2,
+              onComplete: () => {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+                btnMobile.setAttribute('aria-expanded', 'false');
+                openIcon?.classList.remove('hidden');
+                closeIcon?.classList.add('hidden');
+                document.body.style.overflow = '';
+                scrollToTarget(hash, { duration: 1.4 });
+              },
+            });
+          }
+        } else {
+          moveIndicatorTo(targetLink, true);
+          scrollToTarget(hash, { duration: 1.4 });
+        }
+      }
+    };
+
+    desktopLinks.forEach((link) => {
+      link.addEventListener('click', (e) => handleNavClick(e, link, false), { signal });
+    });
+
+    mobileLinks.forEach((link) => {
+      link.addEventListener('click', (e) => handleNavClick(e, link, true), { signal });
+    });
+
+    const extraScrollTriggers = document.querySelectorAll<HTMLAnchorElement>('.nav-scroll-trigger');
+    extraScrollTriggers.forEach((trigger) => {
+      trigger.addEventListener('click', (e) => {
+        const href = trigger.getAttribute('href');
+        if (href && href.startsWith('#')) {
+          e.preventDefault();
+          scrollToTarget(href);
+        }
+      }, { signal });
+    });
+
+    // 3. ScrollTrigger-driven Active Section Tracking
+    const sections = ['about', 'projects', 'tech-stack', 'contact'];
+    sections.forEach((id) => {
+      const sectionEl = document.getElementById(id);
+      if (sectionEl) {
+        const st = ScrollTrigger.create({
+          trigger: sectionEl,
+          start: 'top 45%',
+          end: 'bottom 45%',
+          onEnter: () => {
+            const activeLink = document.querySelector<HTMLAnchorElement>(`.nav-link[data-section="${id}"]`);
+            moveIndicatorTo(activeLink, true);
+          },
+          onEnterBack: () => {
+            const activeLink = document.querySelector<HTMLAnchorElement>(`.nav-link[data-section="${id}"]`);
+            moveIndicatorTo(activeLink, true);
+          },
+        });
+        navScrollTriggers.push(st);
+      }
+    });
+
+    const heroEl = document.getElementById('hero');
+    if (heroEl) {
+      const st = ScrollTrigger.create({
+        trigger: heroEl,
+        start: 'top top',
+        end: 'bottom 50%',
+        onEnter: () => moveIndicatorTo(null, true),
+        onEnterBack: () => moveIndicatorTo(null, true),
+      });
+      navScrollTriggers.push(st);
+    }
+
+    // 4. Initial URL Hash handler
+    if (window.location.hash && document.querySelector(window.location.hash)) {
+      setTimeout(() => {
+        scrollToTarget(window.location.hash, { duration: isReduced ? 0.01 : 1.2 });
+      }, 150);
+    }
+
+    // 5. Theme Palette & Tone Controls
+    const updateButtonsUI = () => {
+      const currentPalette = html.getAttribute('data-palette') || 'mono';
+      const isMono = currentPalette === 'mono';
+
+      if (btnMono && btnColor) {
+        btnMono.setAttribute('aria-pressed', isMono ? 'true' : 'false');
+        btnColor.setAttribute('aria-pressed', !isMono ? 'true' : 'false');
+
+        if (isMono) {
+          btnMono.classList.add('bg-[var(--bg-primary)]', 'text-[var(--text-primary)]', 'shadow-xs');
+          btnMono.classList.remove('text-[var(--text-muted)]');
+          btnColor.classList.remove('bg-[var(--bg-primary)]', 'text-[var(--text-primary)]', 'shadow-xs');
+          btnColor.classList.add('text-[var(--text-muted)]');
+        } else {
+          btnColor.classList.add('bg-[var(--bg-surface)]', 'text-[var(--text-primary)]', 'shadow-xs');
+          btnColor.classList.remove('text-[var(--text-muted)]');
+          btnMono.classList.remove('bg-[var(--bg-primary)]', 'text-[var(--text-primary)]', 'shadow-xs');
+          btnMono.classList.add('text-[var(--text-muted)]');
+        }
+      }
+
+      if (btnTone) {
+        btnTone.style.display = isMono ? 'inline-flex' : 'none';
+      }
+    };
+
+    const updateToneUI = () => {
+      const isDark = html.classList.contains('dark');
+      if (btnTone) {
+        btnTone.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+        btnTone.setAttribute('aria-label', isDark ? 'Switch to Light Tone' : 'Switch to Dark Tone');
+        const sun = btnTone.querySelector('.tone-icon-sun');
+        const moon = btnTone.querySelector('.tone-icon-moon');
+        if (isDark) {
+          sun?.classList.remove('hidden');
+          sun?.classList.add('flex');
+          moon?.classList.add('hidden');
+          moon?.classList.remove('flex');
+        } else {
+          moon?.classList.remove('hidden');
+          moon?.classList.add('flex');
+          sun?.classList.add('hidden');
+          sun?.classList.remove('flex');
+        }
+      }
+    };
+
+    updateButtonsUI();
+    updateToneUI();
+
+    const switchPalette = (newPalette: 'mono' | 'color', event?: MouseEvent) => {
+      const current = html.getAttribute('data-palette') || 'mono';
+      if (current === newPalette) return;
+
+      const apply = () => {
+        html.setAttribute('data-palette', newPalette);
+        localStorage.setItem('theme-palette', newPalette);
+        updateButtonsUI();
+        updateToneUI();
+        window.dispatchEvent(new CustomEvent('palette-change', { detail: { palette: newPalette } }));
+      };
+
+      // @ts-ignore
+      if (!document.startViewTransition || isReduced) {
+        apply();
+        return;
+      }
+
+      const x = event?.clientX ?? window.innerWidth / 2;
+      const y = event?.clientY ?? 40;
+      const endRadius = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+      );
+
+      try {
+        // @ts-ignore
+        const transition = document.startViewTransition(apply);
+        transition.ready.then(() => {
+          try {
+            document.documentElement.animate(
+              {
+                clipPath: [
+                  `circle(0px at ${x}px ${y}px)`,
+                  `circle(${endRadius}px at ${x}px ${y}px)`,
+                ],
+              },
+              {
+                duration: 500,
+                easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                pseudoElement: '::view-transition-new(root)',
+              }
+            );
+          } catch {}
+        }).catch(() => {});
+      } catch {
+        apply();
+      }
+    };
+
+    btnMono?.addEventListener('click', (e) => switchPalette('mono', e), { signal });
+    btnColor?.addEventListener('click', (e) => switchPalette('color', e), { signal });
+
+    // Single source of truth for dark/light toggle
+    btnTone?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const currentPalette = html.getAttribute('data-palette') || 'mono';
+      if (currentPalette !== 'mono') {
+        html.setAttribute('data-palette', 'mono');
+        localStorage.setItem('theme-palette', 'mono');
+        updateButtonsUI();
+      }
+
+      const isDark = html.classList.toggle('dark');
+      localStorage.setItem('theme-tone', isDark ? 'dark' : 'light');
+      updateToneUI();
+      window.dispatchEvent(new CustomEvent('palette-change', { detail: { tone: isDark ? 'dark' : 'light' } }));
+    }, { signal });
+
+    // 6. Mobile Menu Overlay Toggle
+    const toggleMobileMenu = (forceClose = false) => {
+      if (!mobileMenu || !btnMobile) return;
+      const isCurrentlyOpen = !mobileMenu.classList.contains('hidden');
+      const shouldOpen = forceClose ? false : !isCurrentlyOpen;
+
+      if (shouldOpen) {
+        mobileMenu.classList.remove('hidden');
+        mobileMenu.classList.add('flex');
+        gsap.fromTo(mobileMenu, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.22, ease: 'power2.out' });
+        btnMobile.setAttribute('aria-expanded', 'true');
+        mobileMenu.setAttribute('aria-hidden', 'false');
+        openIcon?.classList.add('hidden');
+        closeIcon?.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        header?.classList.add('border-b-hairline');
+        header?.classList.remove('border-b-transparent');
+      } else {
+        gsap.to(mobileMenu, {
+          opacity: 0,
+          y: -6,
+          duration: 0.18,
+          ease: 'power2.in',
+          onComplete: () => {
+            mobileMenu.classList.add('hidden');
+            mobileMenu.classList.remove('flex');
+            btnMobile.setAttribute('aria-expanded', 'false');
+            mobileMenu.setAttribute('aria-hidden', 'true');
+            openIcon?.classList.remove('hidden');
+            closeIcon?.classList.add('hidden');
+            document.body.style.overflow = '';
+            updateHeaderScrollBorder();
+          },
+        });
+      }
+    };
+
+    btnMobile?.addEventListener('click', () => toggleMobileMenu(), { signal });
+  }
+
+  // Register on astro:page-load and clean up on before-swap
+  document.addEventListener('astro:page-load', setupNavbar);
+  document.addEventListener('astro:before-swap', () => {
+    if (navAbortController) {
+      navAbortController.abort();
+      navAbortController = null;
+    }
+    navScrollTriggers.forEach((st) => st.kill());
+    navScrollTriggers = [];
+  });
+</script>

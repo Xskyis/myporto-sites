@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://nabil-portfolio.dev/sitemap-index.xml

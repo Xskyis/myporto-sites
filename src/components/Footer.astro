@@ -1,0 +1,145 @@
+---
+import { PROFILE } from '../data/profile';
+import { SOCIALS } from '../data/socials';
+import BallPit from './BallPit.astro';
+import { Icon } from 'astro-icon/components';
+---
+
+<footer id="contact" class="relative w-full overflow-hidden border-t-hairline z-10 min-h-[85vh] flex flex-col justify-between" aria-label="Footer and Contact">
+  <!-- Interactive 3D Ball Pit Background with Soft Blur Overlay (Full Width) -->
+  <BallPit />
+
+  <!-- Main Contact Content (Foreground) -->
+  <div class="relative z-20 w-full max-w-7xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 pt-24 md:pt-36 pb-16 flex flex-col justify-between flex-1">
+    <!-- Section Header -->
+    <div class="flex items-center justify-between pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]" data-reveal>
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-semibold text-[var(--text-primary)]">04</span>
+        <span>// DISPATCH &amp; CONTACT</span>
+      </div>
+      <span>OPEN TO WORK  </span>
+    </div>
+
+    <!-- Giant Callout Headline -->
+    <div class="py-16 md:py-24 max-w-4xl" data-reveal>
+      <h2 class="fluid-heading font-medium text-[var(--text-primary)] leading-[0.95]">
+        Let's engineer something memorable together.
+      </h2>
+
+      <p class="text-lg md:text-xl font-light text-[var(--text-muted)] mt-8 max-w-2xl leading-relaxed">
+        Whether you have an ambitious digital product in need of precision frontend craftsmanship, or an open engineering role, my inbox is always open.
+      </p>
+
+      <!-- CTAs: Email, Copy Email, View CV & Download Link with Generous Tactile Padding -->
+      <div class="mt-12 flex flex-wrap items-center gap-4">
+        <!-- Main Email Button -->
+        <a
+          href="mailto:nabilafgareza12@gmail.com"
+          class="magnetic-btn inline-flex items-center gap-3 px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full bg-[var(--bg-surface)] border border-hairline text-[var(--text-primary)] hover:border-[var(--text-primary)] font-medium text-sm tracking-wide shadow-xs hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+        >
+          <Icon name="lucide:mail" class="w-4 h-4 text-[var(--text-muted)]" />
+          <span>nabilafgareza12@gmail.com</span>
+        </a>
+
+        <!-- Copy Email Button -->
+        <button
+          type="button"
+          id="copy-email-btn"
+          class="magnetic-btn inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--text-primary)] text-xs font-mono tracking-wider transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+          aria-label="Copy email address to clipboard"
+        >
+          <Icon name="lucide:copy" class="w-3.5 h-3.5 text-[var(--text-muted)]" id="copy-icon" />
+          <span id="copy-text">Copy email</span>
+        </button>
+
+        <!-- Primary "View CV" Button -->
+        <a
+          href="/cv/Achmad-Nabil-Afgareza-CV.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="magnetic-btn inline-flex items-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full bg-[var(--accent-primary)] text-[var(--accent-contrast)] font-medium text-sm tracking-wide shadow-lg hover:opacity-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)] group"
+        >
+          <Icon name="lucide:file-text" class="w-4 h-4" />
+          <span>View CV</span>
+          <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+        </a>
+
+        <!-- Secondary "Download" Button -->
+        <a
+          href="/cv/Achmad-Nabil-Afgareza-CV.pdf"
+          download="Achmad-Nabil-Afgareza-CV.pdf"
+          class="magnetic-btn inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--text-primary)] text-xs font-mono tracking-wider shadow-xs hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+          title="Download curriculum vitae PDF directly"
+        >
+          <Icon name="lucide:download" class="w-3.5 h-3.5 text-[var(--text-muted)]" />
+          <span>Download PDF</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Bottom Links & Colophon (Protected with Clean Card) -->
+    <div class="mt-12 p-6 sm:p-8 rounded-2xl bg-[var(--bg-surface)] border border-hairline flex flex-col gap-6 shadow-xs" data-reveal>
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-xs font-mono text-[var(--text-muted)]">
+        <div class="flex flex-wrap items-center gap-6">
+          {SOCIALS.map((soc) => (
+            <a
+              href={soc.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="hover:text-[var(--text-primary)] hover-underline-anim flex items-center gap-1.5 transition-colors"
+            >
+              <span>{soc.name}</span>
+              <Icon name="lucide:arrow-up-right" class="w-3 h-3 opacity-60" />
+            </a>
+          ))}
+        </div>
+
+        <!-- Back to top button -->
+        <a
+          href="#hero"
+          id="back-to-top-btn"
+          class="nav-scroll-trigger magnetic-btn flex items-center gap-2 hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] py-2"
+          aria-label="Back to top of page"
+        >
+          <span>BACK TO TOP</span>
+          <Icon name="lucide:arrow-up" class="w-3.5 h-3.5" />
+        </a>
+      </div>
+
+      <!-- Colophon / Copyright -->
+      <div class="pt-4 border-t-hairline text-[11px] font-mono text-[var(--text-muted)]/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <p>
+          &copy; {new Date().getFullYear()} {PROFILE.name}. Built with Astro.
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function setupFooter() {
+    // Copy email handler
+    const copyBtn = document.getElementById('copy-email-btn');
+    const copyText = document.getElementById('copy-text');
+
+    if (copyBtn && copyText) {
+      copyBtn.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText('nabilafgareza12@gmail.com');
+          copyText.textContent = 'Copied to clipboard!';
+          copyBtn.classList.add('border-emerald-500', 'text-emerald-500');
+
+          setTimeout(() => {
+            copyText.textContent = 'Copy email';
+            copyBtn.classList.remove('border-emerald-500', 'text-emerald-500');
+          }, 2500);
+        } catch (err) {
+          console.warn('Clipboard write failed:', err);
+        }
+      });
+    }
+  }
+
+  setupFooter();
+  document.addEventListener('astro:page-load', setupFooter);
+</script>

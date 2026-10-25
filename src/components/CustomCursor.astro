@@ -1,0 +1,140 @@
+---
+// Custom Cursor Component (Desktop Only) - Pinpoint Centered Accuracy
+---
+
+<!-- Outer trailing ring (smooth lerp lag) -->
+<div
+  id="cursor-ring"
+  class="pointer-events-none fixed top-0 left-0 z-[9998] w-8 h-8 rounded-full border border-hairline opacity-0 transition-opacity duration-300 hidden md:block will-change-transform"
+  style="border-color: var(--cursor-color);"
+  aria-hidden="true"
+></div>
+
+<!-- Inner solid dot (instant, 100% pinpoint accuracy at mouse center) -->
+<div
+  id="cursor-dot"
+  class="pointer-events-none fixed top-0 left-0 z-[9999] w-2 h-2 rounded-full opacity-0 transition-opacity duration-200 hidden md:block will-change-transform"
+  style="background-color: var(--cursor-color);"
+  aria-hidden="true"
+></div>
+
+<script>
+  function setupCursor() {
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
+    const ring = document.getElementById('cursor-ring');
+    const dot = document.getElementById('cursor-dot');
+
+    if (isTouch || !ring || !dot) return null;
+
+    let mouseX = -100;
+    let mouseY = -100;
+    let ringX = -100;
+    let ringY = -100;
+    let isHovering = false;
+    let isVisible = false;
+    let animFrameId: number | null = null;
+
+    const onPointerMove = (e: PointerEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+
+      // Pinpoint accuracy: dot tracks exact clientX/Y immediately, centered with translate(-50%, -50%)
+      dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%)`;
+
+      if (!isVisible) {
+        ringX = mouseX;
+        ringY = mouseY;
+        ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%)`;
+        dot.classList.remove('opacity-0');
+        ring.classList.remove('opacity-0');
+        dot.classList.add('opacity-100');
+        ring.classList.add('opacity-100');
+        isVisible = true;
+      }
+    };
+
+    const onMouseLeave = () => {
+      dot.classList.add('opacity-0');
+      ring.classList.add('opacity-0');
+      dot.classList.remove('opacity-100');
+      ring.classList.remove('opacity-100');
+      isVisible = false;
+    };
+
+    const onMouseEnter = () => {
+      dot.classList.remove('opacity-0');
+      ring.classList.remove('opacity-0');
+      dot.classList.add('opacity-100');
+      ring.classList.add('opacity-100');
+      isVisible = true;
+    };
+
+    const updateRing = () => {
+      // Smooth lerp for trailing ring
+      ringX += (mouseX - ringX) * 0.22;
+      ringY += (mouseY - ringY) * 0.22;
+
+      const scale = isHovering ? 1.6 : 1;
+      ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%) scale(${scale})`;
+
+      animFrameId = requestAnimationFrame(updateRing);
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    document.addEventListener('mouseleave', onMouseLeave);
+    document.addEventListener('mouseenter', onMouseEnter);
+
+    animFrameId = requestAnimationFrame(updateRing);
+
+    // Interactive element hover detection
+    const handleMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const interactive = target.closest('a, button, [role="button"], input, textarea, select, .project-card, .magnetic-btn');
+      if (interactive) {
+        isHovering = true;
+        ring.style.backgroundColor = 'rgba(128, 128, 128, 0.12)';
+        dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%) scale(0.6)`;
+      }
+    };
+
+    const handleMouseOut = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const interactive = target.closest('a, button, [role="button"], input, textarea, select, .project-card, .magnetic-btn');
+      if (interactive) {
+        isHovering = false;
+        ring.style.backgroundColor = 'transparent';
+        dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%) scale(1)`;
+      }
+    };
+
+    document.addEventListener('mouseover', handleMouseOver);
+    document.addEventListener('mouseout', handleMouseOut);
+
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('mouseleave', onMouseLeave);
+      document.removeEventListener('mouseenter', onMouseEnter);
+      document.removeEventListener('mouseover', handleMouseOver);
+      document.removeEventListener('mouseout', handleMouseOut);
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+    };
+  }
+
+  let cleanup: (() => void) | null = null;
+
+  function init() {
+    if (cleanup) cleanup();
+    cleanup = setupCursor();
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+  document.addEventListener('astro:before-swap', () => {
+    if (cleanup) {
+      cleanup();
+      cleanup = null;
+    }
+  });
+</script>

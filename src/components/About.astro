@@ -1,0 +1,263 @@
+---
+import { PROFILE } from '../data/profile';
+import { TIMELINE } from '../data/timeline';
+import { CERTIFICATIONS } from '../data/certifications';
+import { SOCIALS } from '../data/socials';
+import { Icon } from 'astro-icon/components';
+---
+
+<section id="about" class="py-24 md:py-36 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto  z-10 relative" aria-label="About Section">
+  <!-- Section Header -->
+  <div class="flex items-center justify-between pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]" data-reveal>
+    <div class="flex items-center gap-3">
+      <span class="text-sm font-semibold text-[var(--text-primary)]">01</span>
+      <span>// ABOUT &amp; TRAJECTORY</span>
+    </div>
+    <span>BIOGRAPHY · TIMELINE · HONORS</span>
+  </div>
+
+  <!-- Top Grid: Bio & Animated Counters -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-16 pb-20 items-start">
+    <div class="lg:col-span-4" data-reveal>
+      <h2 class="fluid-subheading font-medium text-[var(--text-primary)] sticky top-28 leading-tight">
+        Driven by curiosity, refined by hands-on execution.
+      </h2>
+    </div>
+
+    <div class="lg:col-span-8 flex flex-col gap-10">
+      <!-- Bio paragraphs -->
+      <div class="space-y-6 text-base md:text-xl font-light text-[var(--text-muted)] leading-relaxed" data-reveal>
+        {PROFILE.bio.map((paragraph) => (
+          <p class="last:text-[var(--text-primary)] last:font-normal">{paragraph}</p>
+        ))}
+      </div>
+
+      <!-- Animated Stat Counters -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t-hairline" data-stagger-container>
+        {PROFILE.stats.map((stat) => (
+          <div class="p-6 rounded-xl border border-hairline bg-[var(--bg-surface)] flex flex-col justify-between" data-stagger-item>
+            <div>
+              <div class="text-4xl md:text-5xl font-display font-bold text-[var(--text-primary)] tracking-tight">
+                <span data-counter-target={stat.value}>0</span>
+                <span>{stat.suffix}</span>
+              </div>
+              <div class="text-xs font-mono uppercase tracking-wider text-[var(--text-primary)] font-medium mt-2">
+                {stat.label}
+              </div>
+            </div>
+            <p class="text-xs text-[var(--text-muted)] mt-4 leading-normal">
+              {stat.description}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- Honors & Awards Callout Banner -->
+  <div class="my-12 p-8 rounded-2xl border border-hairline bg-[var(--bg-surface-soft)]/60 flex flex-col md:flex-row md:items-center justify-between gap-6" data-reveal>
+    <div class="flex items-start gap-4">
+      <div class="w-12 h-12 rounded-full border border-hairline bg-[var(--bg-surface)] flex items-center justify-center shrink-0 text-[var(--accent-primary)]">
+        <Icon name="lucide:trophy" class="w-6 h-6" />
+      </div>
+      <div>
+        <div class="text-xs font-mono uppercase tracking-widest text-[var(--accent-primary)] font-semibold">
+          Honors &amp; Awards
+        </div>
+        <h3 class="text-xl md:text-2xl font-bold font-display text-[var(--text-primary)] mt-1">
+          {PROFILE.awards[0].title} — {PROFILE.awards[0].issuer}
+        </h3>
+        <p class="text-sm text-[var(--text-muted)] mt-1">
+          {PROFILE.awards[0].category} · {PROFILE.awards[0].date}. {PROFILE.awards[0].description}
+        </p>
+      </div>
+    </div>
+    <div class="shrink-0 font-mono text-xs text-[var(--text-muted)]">
+      MALANG, EAST JAVA
+    </div>
+  </div>
+
+  <!-- Timeline Section -->
+  <div class="pt-16 pb-20" id="timeline-container">
+    <div class="pb-10" data-reveal>
+      <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Journey</span>
+      <h3 class="text-2xl md:text-3xl font-display font-medium text-[var(--text-primary)] mt-1">
+        Experience &amp; Education
+      </h3>
+    </div>
+
+    <!-- Timeline items with scroll-driven line -->
+    <div class="relative pl-6 sm:pl-8 md:pl-12 pr-4 sm:pr-8 md:pr-12 lg:pr-16 space-y-12 pb-16 md:pb-24 border-l border-hairline">
+      <!-- Animated vertical progress line overlay -->
+      <div id="timeline-progress-line" class="absolute left-[-1px] top-0 w-[2px] h-full bg-[var(--accent-primary)] origin-top scale-y-0" aria-hidden="true"></div>
+
+      {TIMELINE.map((item) => (
+        <div class="relative group" data-reveal>
+          <!-- Node Dot -->
+          <div class="absolute -left-[31px] sm:-left-[39px] md:-left-[55px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-[var(--bg-primary)] bg-[var(--text-muted)] group-hover:bg-[var(--accent-primary)] transition-colors duration-300"></div>
+
+          <div class="flex flex-col md:flex-row md:items-baseline justify-between gap-2">
+            <div>
+              <span class="text-xs font-mono uppercase tracking-wider text-[var(--text-muted)]">
+                {item.organization} · {item.location}
+              </span>
+              <h4 class="text-xl md:text-2xl font-display font-semibold text-[var(--text-primary)] mt-0.5">
+                {item.role}
+              </h4>
+            </div>
+            <div class="text-xs font-mono font-medium text-[var(--text-muted)] shrink-0">
+              {item.period}
+            </div>
+          </div>
+
+          <p class="text-sm md:text-base text-[var(--text-muted)] font-light leading-relaxed mt-3 max-w-3xl">
+            {item.description}
+          </p>
+
+          <!-- Skills tags -->
+          <div class="flex flex-wrap gap-2 mt-4">
+            {item.skills.map((skill) => (
+              <span class="text-xs font-mono px-2.5 py-1 rounded-md border border-hairline bg-[var(--bg-surface)] text-[var(--text-muted)]">
+                {skill}
+              </span>
+            ))}
+
+            {item.certificatePlaceholder && (
+              <a
+                href={item.certificateUrl}
+                class="text-xs font-mono px-2.5 py-1 rounded-md border border-hairline border-dashed bg-[var(--bg-surface-soft)] text-[var(--accent-primary)] hover:underline inline-flex items-center gap-1.5"
+                title="Internship Certificate Placeholder"
+              >
+                <Icon name="lucide:file-text" class="w-3 h-3" />
+                <span>Internship Certificate</span>
+              </a>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Certifications & Languages Grid -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-16 border-t-hairline">
+    <!-- Certifications (Expandable Accordion) -->
+    <div class="lg:col-span-8" data-reveal>
+      <div class="flex items-center justify-between pb-6">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Verified Credentials</span>
+          <h3 class="text-2xl font-display font-medium text-[var(--text-primary)] mt-1">
+            Certificate
+          </h3>
+        </div>
+        <button
+          type="button"
+          id="toggle-all-certs"
+          class="text-xs font-mono text-[var(--accent-primary)] hover:underline focus:outline-none"
+        >
+          View all {CERTIFICATIONS.length} items
+        </button>
+      </div>
+
+      <div class="divide-y divide-hairline border-y border-hairline">
+        {CERTIFICATIONS.map((cert, idx) => (
+          <div class={`py-5 px-4 sm:px-6 md:px-8 cert-item ${idx >= 2 ? 'hidden opacity-0 cert-extra' : ''} rounded-xl hover:bg-[var(--bg-surface-soft)]/50 transition-all duration-300`}>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-start gap-3">
+                <span class="text-xs font-mono text-[var(--text-muted)] pt-0.5">0{idx + 1}</span>
+                <div>
+                  <h4 class="text-base font-semibold text-[var(--text-primary)]">
+                    {cert.title}
+                  </h4>
+                  <p class="text-xs text-[var(--text-muted)]">
+                    {cert.issuer} · Issued {cert.issueDate} {cert.expiryDate ? `(Valid until ${cert.expiryDate})` : ''}
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href={cert.credentialUrl && !cert.credentialUrl.includes('TODO') ? cert.credentialUrl : (cert.credentialUrl || 'https://www.linkedin.com/in/nabilfgrza/details/certifications/')}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-hairline bg-[var(--bg-surface)] hover:bg-[var(--accent-primary)] hover:text-[var(--accent-contrast)] hover:border-[var(--accent-primary)] text-xs font-mono text-[var(--text-primary)] transition-all duration-200 group/cert-btn focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] shadow-xs"
+                aria-label={`View certificate for ${cert.title}`}
+              >
+                <span>Credential</span>
+                <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5 opacity-60 group-hover/cert-btn:opacity-100 group-hover/cert-btn:translate-x-0.5 group-hover/cert-btn:-translate-y-0.5 transition-transform duration-200" />
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Languages & Direct Links -->
+    <div class="lg:col-span-4 flex flex-col justify-between gap-8" data-reveal>
+      <div>
+        <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Communication</span>
+        <h3 class="text-2xl font-display font-medium text-[var(--text-primary)] mt-1 mb-6">
+          Languages
+        </h3>
+
+        <div class="space-y-4">
+          {PROFILE.languages.map((lang) => (
+            <div class="p-4 rounded-xl border border-hairline bg-[var(--bg-surface)]">
+              <div class="flex justify-between items-center text-sm font-semibold text-[var(--text-primary)]">
+                <span>{lang.name}</span>
+                <span class="text-xs font-mono font-normal text-[var(--text-muted)]">{lang.nativeName}</span>
+              </div>
+              <p class="text-xs text-[var(--text-muted)] mt-1">{lang.proficiency}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <!-- Socials Quick Access -->
+      <div class="p-6 rounded-xl border border-hairline bg-[var(--bg-surface-soft)]">
+        <span class="text-xs font-mono uppercase tracking-wider text-[var(--text-muted)]">Direct Channels</span>
+        <div class="flex flex-col gap-3 mt-4 text-sm font-mono">
+          {SOCIALS.map((soc) => (
+            <a
+              href={soc.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center justify-between text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors group"
+            >
+              <span class="flex items-center gap-2">
+                <Icon name={soc.icon} class="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)] transition-colors" />
+                <span>{soc.name}</span>
+              </span>
+              <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function setupCertsToggle() {
+    const btn = document.getElementById('toggle-all-certs');
+    const extraCerts = document.querySelectorAll('.cert-extra');
+    if (!btn || extraCerts.length === 0) return;
+
+    let expanded = false;
+
+    btn.addEventListener('click', () => {
+      expanded = !expanded;
+      extraCerts.forEach((el) => {
+        if (expanded) {
+          el.classList.remove('hidden');
+          setTimeout(() => el.classList.remove('opacity-0'), 10);
+        } else {
+          el.classList.add('opacity-0');
+          setTimeout(() => el.classList.add('hidden'), 200);
+        }
+      });
+      btn.textContent = expanded ? 'Collapse list' : 'View all 9 items';
+    });
+  }
+
+  setupCertsToggle();
+  document.addEventListener('astro:page-load', setupCertsToggle);
+</script>

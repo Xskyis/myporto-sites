@@ -1,0 +1,105 @@
+---
+// BallPit.astro - 3D Interactive Physics Ball Pit for Footer
+---
+
+<div id="ball-pit-wrapper" class="absolute inset-0 w-full h-full overflow-hidden pointer-events-auto z-0" aria-hidden="true">
+  <!-- Interactive WebGL Canvas -->
+  <canvas
+    id="ball-pit-canvas"
+    class="w-full h-full block relative z-0 opacity-0 transition-opacity duration-700 select-none"
+    style="touch-action: pan-y;"
+    aria-label="Interactive 3D Ball Pit background"
+  ></canvas>
+
+  <!-- Soft blur & theme-adaptive veil overlay for crystal-clear text readability -->
+  <div
+    class="pointer-events-none absolute inset-0 z-[1]"
+    style="background: linear-gradient(180deg, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary) 88%, transparent) 45%, color-mix(in srgb, var(--bg-primary) 60%, transparent) 100%); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);"
+    aria-hidden="true"
+  ></div>
+
+  <!-- Fallback for prefers-reduced-motion or unsupported WebGL -->
+  <div id="ball-pit-fallback" class="hidden absolute inset-0 z-0 flex items-end justify-center p-6 gap-3 flex-wrap overflow-hidden opacity-30" aria-hidden="true">
+    <div class="w-16 h-16 rounded-full bg-[var(--accent-primary)] opacity-80"></div>
+    <div class="w-12 h-12 rounded-full border border-hairline bg-[var(--bg-surface)]"></div>
+    <div class="w-20 h-20 rounded-full border border-hairline bg-[var(--text-muted)] opacity-40"></div>
+    <div class="w-14 h-14 rounded-full bg-[var(--accent-primary)] opacity-70"></div>
+    <div class="w-16 h-16 rounded-full border border-hairline bg-[var(--bg-surface)]"></div>
+    <div class="w-10 h-10 rounded-full bg-[var(--text-muted)] opacity-50"></div>
+    <div class="w-18 h-18 rounded-full border border-hairline bg-[var(--accent-primary)]"></div>
+    <div class="w-14 h-14 rounded-full bg-[var(--bg-surface)]"></div>
+  </div>
+</div>
+
+<script>
+  let teardownPit: (() => void) | null = null;
+  let observer: IntersectionObserver | null = null;
+
+  async function setupBallPit() {
+    const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const canvas = document.getElementById('ball-pit-canvas') as HTMLCanvasElement | null;
+    const fallback = document.getElementById('ball-pit-fallback');
+
+    if (isReduced) {
+      if (canvas) canvas.style.display = 'none';
+      if (fallback) fallback.classList.remove('hidden');
+      return;
+    }
+
+    if (!canvas) return;
+
+    // Use IntersectionObserver for lazy initialization & pause when out of view
+    observer = new IntersectionObserver(
+      async (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting) {
+          if (!teardownPit) {
+            try {
+              const { initBallPit, setBallPitVisible } = await import('../lib/three/ballpit');
+              teardownPit = await initBallPit(canvas);
+              setBallPitVisible(true);
+              canvas.classList.remove('opacity-0');
+              canvas.classList.add('opacity-100');
+            } catch (err) {
+              console.warn('Ball pit init error, showing fallback:', err);
+              if (canvas) canvas.style.display = 'none';
+              if (fallback) fallback.classList.remove('hidden');
+            }
+          } else {
+            const { setBallPitVisible } = await import('../lib/three/ballpit');
+            setBallPitVisible(true);
+          }
+        } else {
+          if (teardownPit) {
+            const { setBallPitVisible } = await import('../lib/three/ballpit');
+            setBallPitVisible(false);
+          }
+        }
+      },
+      { rootMargin: '100px 0px' }
+    );
+
+    const wrapper = document.getElementById('ball-pit-wrapper');
+    if (wrapper) {
+      observer.observe(wrapper);
+    }
+  }
+
+  setupBallPit();
+  document.addEventListener('astro:page-load', () => {
+    if (!observer && !teardownPit) {
+      setupBallPit();
+    }
+  });
+
+  document.addEventListener('astro:before-swap', () => {
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+    if (teardownPit) {
+      teardownPit();
+      teardownPit = null;
+    }
+  });
+</script>

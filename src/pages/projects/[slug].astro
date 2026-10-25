@@ -1,0 +1,143 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Footer from '../../components/Footer.astro';
+import { Icon } from 'astro-icon/components';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({
+    params: { slug: project.id },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+
+// Next project navigation
+const allProjects = await getCollection('projects');
+const sorted = allProjects.sort((a, b) => a.data.order - b.data.order);
+const currentIndex = sorted.findIndex((p) => p.id === project.id);
+const nextProject = sorted[(currentIndex + 1) % sorted.length];
+---
+
+<BaseLayout
+  title={`${project.data.title} — Achmad Nabil Afgareza`}
+  description={project.data.description}
+  image={project.data.cover}
+  currentPath={`/projects/${project.id}`}
+>
+  <article class="pt-32 md:pt-40 pb-20 px-6 max-w-5xl mx-auto z-10 relative">
+    <!-- Back to Overview Navigation -->
+    <div class="mb-12">
+      <a
+        href="/#projects"
+        class="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors group"
+      >
+        <Icon name="lucide:arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+        <span>Back to Selected Works</span>
+      </a>
+    </div>
+
+    <!-- Project Header -->
+    <header class="pb-12 border-b-hairline">
+      <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-[var(--text-muted)] mb-4">
+        <span>0{project.data.order} // CASE STUDY</span>
+        <span>{project.data.year}</span>
+      </div>
+
+      <h1 class="fluid-heading font-medium text-[var(--text-primary)] leading-tight">
+        {project.data.title}
+      </h1>
+
+      {project.data.subtitle && (
+        <p class="text-xl md:text-2xl font-light text-[var(--text-muted)] mt-4">
+          {project.data.subtitle}
+        </p>
+      )}
+
+      <!-- Meta Grid -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 pt-10 mt-10 border-t-hairline text-xs font-mono">
+        <div>
+          <span class="text-[var(--text-muted)] uppercase tracking-wider block mb-1">Role</span>
+          <span class="text-[var(--text-primary)] font-semibold">{project.data.role}</span>
+        </div>
+
+        <div>
+          <span class="text-[var(--text-muted)] uppercase tracking-wider block mb-1">Timeline</span>
+          <span class="text-[var(--text-primary)] font-semibold">{project.data.year}</span>
+        </div>
+
+        <div class="col-span-2">
+          <span class="text-[var(--text-muted)] uppercase tracking-wider block mb-1">Core Technologies</span>
+          <span class="text-[var(--text-primary)] font-medium">{project.data.tags.join(', ')}</span>
+        </div>
+      </div>
+
+      <!-- Action Links (Repo & Live Demo) -->
+      <div class="flex flex-wrap items-center gap-4 mt-8">
+        {project.data.liveUrl && (
+          <a
+            href={project.data.liveUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="magnetic-btn px-6 py-3 rounded-full bg-[var(--accent-primary)] text-[var(--accent-contrast)] text-xs font-mono tracking-wider flex items-center gap-2 shadow-md hover:opacity-90 transition-all"
+          >
+            <Icon name="lucide:external-link" class="w-3.5 h-3.5" />
+            <span>Launch Live Platform</span>
+          </a>
+        )}
+
+        {project.data.repoUrl && (
+          <a
+            href={project.data.repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="magnetic-btn px-6 py-3 rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] text-xs font-mono tracking-wider hover:border-[var(--text-primary)] flex items-center gap-2 transition-all"
+          >
+            <Icon name="simple-icons:github" class="w-3.5 h-3.5" />
+            <span>View Source Code</span>
+          </a>
+        )}
+      </div>
+    </header>
+
+    <!-- Project Featured Cover Media -->
+    {project.data.cover && (
+      <div class="my-12 rounded-2xl overflow-hidden border border-hairline bg-[var(--bg-surface-soft)] shadow-xl">
+        <img
+          src={project.data.cover}
+          alt={`${project.data.title} cover presentation`}
+          class="w-full h-auto object-cover max-h-[600px]"
+        />
+      </div>
+    )}
+
+    <!-- Markdown Content Prose -->
+    <div class="prose prose-invert max-w-none text-[var(--text-muted)] leading-relaxed space-y-6 pt-6 font-light text-base md:text-lg">
+      <Content />
+    </div>
+
+    <!-- Next Project Teaser -->
+    <div class="mt-20 pt-16 border-t-hairline flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div class="text-xs font-mono text-[var(--text-muted)]">
+        <span>NEXT IN ARCHIVE</span>
+      </div>
+
+      <a
+        href={`/projects/${nextProject.id}`}
+        class="group text-left sm:text-right flex items-center gap-4 hover:opacity-90 transition-opacity"
+      >
+        <div>
+          <span class="text-xs font-mono text-[var(--text-muted)] block">0{nextProject.data.order} // NEXT WORK</span>
+          <span class="text-2xl md:text-3xl font-display font-medium text-[var(--text-primary)] group-hover:underline">
+            {nextProject.data.title} &rarr;
+          </span>
+        </div>
+      </a>
+    </div>
+  </article>
+
+  <Footer />
+</BaseLayout>

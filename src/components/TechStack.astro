@@ -1,0 +1,128 @@
+---
+import { TECH_STACK, TECH_CATEGORIES } from '../data/techstack';
+import { Icon } from 'astro-icon/components';
+
+const prioritizedTech = TECH_STACK.filter((t) => t.isPrioritized);
+const groupedTech = TECH_CATEGORIES.map((cat) => ({
+  category: cat,
+  items: TECH_STACK.filter((t) => t.category === cat),
+}));
+---
+
+<section id="tech-stack" class="py-24 md:py-36 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative" aria-label="Tech Stack Section">
+  <!-- Section Header -->
+  <div class="flex items-center justify-between pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]" data-reveal>
+    <div class="flex items-center gap-3">
+      <span class="text-sm font-semibold text-[var(--text-primary)]">03</span>
+      <span>// TECHNICAL CAPABILITIES</span>
+    </div>
+    <span>STANDARDS &amp; PROFICIENCIES</span>
+  </div>
+
+  <!-- Heading Intro -->
+  <div class="py-16 max-w-3xl" data-reveal>
+    <h2 class="fluid-subheading font-medium text-[var(--text-primary)] leading-tight">
+      Engineered for performance, semantic clarity, and fluid client interactions.
+    </h2>
+    <p class="text-sm md:text-base font-light text-[var(--text-muted)] mt-4 max-w-xl">
+      Classified qualitatively rather than by arbitrary percentages. Prioritizing modern React, Next.js, and TypeScript ecosystems.
+    </p>
+  </div>
+
+  <!-- Spotlight Prioritized Top Skills Grid -->
+  <div class="mb-20" data-reveal>
+    <div class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] mb-6">
+      Core Focus / Top LinkedIn Endorsements
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-stagger-container>
+      {prioritizedTech.map((item) => (
+        <div class="p-8 rounded-2xl border border-hairline bg-[var(--bg-surface)] hover:border-[var(--text-primary)] transition-all duration-300 group flex flex-col justify-between" data-stagger-item>
+          <div class="flex items-start justify-between">
+            <div class="w-12 h-12 rounded-xl border border-hairline bg-[var(--bg-surface-soft)] flex items-center justify-center text-[var(--text-primary)] group-hover:scale-110 transition-transform duration-300">
+              <Icon name={item.icon} class="w-6 h-6 text-current" />
+            </div>
+
+            <span class="text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-full border border-hairline bg-[var(--bg-surface-soft)] text-[var(--text-primary)] font-medium">
+              {item.level}
+            </span>
+          </div>
+
+          <div class="mt-8">
+            <h3 class="text-2xl font-display font-semibold text-[var(--text-primary)]">
+              {item.name}
+            </h3>
+            <p class="text-xs text-[var(--text-muted)] mt-2 font-mono leading-relaxed">
+              {item.notes}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  <!-- Categorized Skills Grid -->
+  <div class="space-y-16" data-reveal>
+    {groupedTech.map((group) => (
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start border-t-hairline pt-10">
+        <div class="md:col-span-3">
+          <h3 class="text-xl font-display font-medium text-[var(--text-primary)]">
+            {group.category}
+          </h3>
+          <span class="text-xs font-mono text-[var(--text-muted)]">
+            {group.items.length} Technologies
+          </span>
+        </div>
+
+        <div class="md:col-span-9 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {group.items.map((item) => (
+            <div class="p-4 rounded-xl border border-hairline bg-[var(--bg-surface)]/70 hover:bg-[var(--bg-surface)] hover:border-[var(--text-primary)] transition-all duration-200 flex items-center gap-3 group">
+              <div class="w-8 h-8 rounded-lg border border-hairline bg-[var(--bg-surface-soft)] flex items-center justify-center text-[var(--text-primary)] shrink-0">
+                <Icon name={item.icon} class="w-4 h-4 text-current" />
+              </div>
+
+              <div class="overflow-hidden">
+                <h4 class="text-sm font-semibold text-[var(--text-primary)] truncate">
+                  {item.name}
+                </h4>
+                <span class="text-[10px] font-mono text-[var(--text-muted)] block">
+                  {item.level}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <!-- Marquee Velocity Ribbon -->
+  <div class="mt-24 -mx-6 overflow-hidden border-y-hairline py-4 bg-[var(--bg-surface-soft)]/40" aria-hidden="true">
+    <div class="flex whitespace-nowrap animate-marquee">
+      {[...Array(2)].map(() => (
+        <div class="flex items-center gap-8 px-4 text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">
+          <span>NEXT.JS</span>
+          <span>·</span>
+          <span>REACT</span>
+          <span>·</span>
+          <span>TYPESCRIPT</span>
+          <span>·</span>
+          <span>TAILWIND CSS</span>
+          <span>·</span>
+          <span>ASTRO</span>
+          <span>·</span>
+          <span>FLUTTER</span>
+          <span>·</span>
+          <span>LARAVEL</span>
+          <span>·</span>
+          <span>THREE.JS</span>
+          <span>·</span>
+          <span>GSAP</span>
+          <span>·</span>
+          <span>AI ANNOTATION</span>
+          <span>·</span>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

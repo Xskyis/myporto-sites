@@ -1,0 +1,69 @@
+---
+import { PROFILE } from '../data/profile';
+import { Icon } from 'astro-icon/components';
+---
+
+<section id="hero" class="relative min-h-[92vh] flex flex-col justify-between pt-28 pb-12 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto z-10" aria-label="Hero Section">
+  <div class="flex items-center justify-between gap-4 pt-2 text-xs font-mono text-[var(--text-muted)]" data-reveal>
+    <span class="tracking-wider uppercase text-[var(--text-primary)] font-medium">
+      {PROFILE.name}
+    </span>
+    <span class="flex items-center gap-1.5 opacity-80">
+      <Icon name="lucide:map-pin" class="w-3.5 h-3.5" />
+      {PROFILE.location}
+    </span>
+  </div>
+
+  <!-- Pure Typographic Center Hero (Decluttered & Clean) -->
+  <div class="my-auto py-12 md:py-20 w-full">
+    <!-- Fluid Hero Headline: nabilfgrza. -->
+    <div class="w-full">
+      <h1 class="font-display font-medium text-[var(--text-primary)] leading-[0.96] pb-2 sm:pb-3 select-none text-[clamp(3.8rem,13vw,12rem)] tracking-[-0.045em] break-words" data-reveal>
+        nabilfgrza<span class="text-[var(--accent-primary)] inline-block">.</span>
+      </h1>
+    </div>
+
+    <!-- Clean, Focused Subtitle -->
+    <div class="overflow-hidden mt-6 md:mt-8 max-w-2xl" data-reveal>
+      <p class="text-base sm:text-lg md:text-xl font-light text-[var(--text-muted)] leading-relaxed">
+        Frontend Web Developer &amp; Informatics Engineering Student.
+      </p>
+    </div>
+
+    <!-- CTAs -->
+    <div class="flex flex-wrap items-center gap-4 md:gap-5 mt-10 md:mt-12" data-reveal>
+      <a
+        href="#projects"
+        class="nav-scroll-trigger magnetic-btn group relative inline-flex items-center gap-3 px-8 py-4 rounded-full bg-[var(--accent-primary)] text-[var(--accent-contrast)] font-medium text-sm tracking-wide transition-all duration-300 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+      >
+        <span>View Selected Works</span>
+        <Icon name="lucide:arrow-down-right" class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
+      </a>
+
+      <a
+        href="#contact"
+        class="nav-scroll-trigger magnetic-btn inline-flex items-center gap-2 px-7 py-4 rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] font-medium text-sm tracking-wide hover:border-[var(--text-primary)] transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+      >
+        <span>Get in touch</span>
+        <Icon name="lucide:arrow-right" class="w-4 h-4 text-[var(--text-muted)]" />
+      </a>
+    </div>
+  </div>
+
+  <!-- Bottom Bar: Section Number + Scroll Indicator -->
+  <div class="flex items-end justify-center pt-6 text-xs font-mono text-[var(--text-muted)]" data-reveal>
+    <div class="flex items-center gap-3">
+      <!-- <span class="text-sm font-semibold text-[var(--text-primary)]">00</span>
+      <span>// INTRODUCTION</span> -->
+    </div>
+
+    <a href="#about" class="nav-scroll-trigger hidden sm:flex items-center gap-2 hover:text-[var(--text-primary)] transition-colors">
+      <span>SCROLL TO EXPLORE</span>
+      <Icon name="lucide:arrow-down" class="w-3.5 h-3.5 animate-bounce" />
+    </a>
+
+    <!-- <div>
+      <span>EST. 2024 · EAST JAVA</span>
+    </div> -->
+  </div>
+</section>

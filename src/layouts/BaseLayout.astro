@@ -1,0 +1,163 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import Navbar from '../components/Navbar.astro';
+import Footer from '../components/Footer.astro';
+import CustomCursor from '../components/CustomCursor.astro';
+import { PROFILE } from '../data/profile';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  currentPath?: string;
+}
+
+const {
+  title = `${PROFILE.name} — ${PROFILE.role}`,
+  description = `${PROFILE.name} is a ${PROFILE.headline} based in ${PROFILE.location}. Explore featured projects, engineering skills, and verified milestones.`,
+  image = '/og-image.png',
+  currentPath = '/',
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://nabil-portfolio.dev');
+
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: PROFILE.name,
+  alternateName: PROFILE.nickname,
+  jobTitle: PROFILE.role,
+  description: description,
+  url: canonicalURL.toString(),
+  sameAs: [
+    'https://github.com/Xskyis',
+    'https://www.linkedin.com/in/nabilfgrza/',
+  ],
+  knowsAbout: [
+    'Frontend Development',
+    'Next.js',
+    'React',
+    'TypeScript',
+    'Tailwind CSS',
+    'Three.js',
+  ],
+};
+---
+
+<!doctype html>
+<html lang="en" data-palette="mono">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Primary SEO -->
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="author" content={PROFILE.name} />
+    <meta name="theme-color" content="#0A0A0A" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(image, canonicalURL)} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={new URL(image, canonicalURL)} />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
+
+    <!-- Astro View Transitions -->
+    <ClientRouter />
+
+    <!-- Zero-flash inline theme loader -->
+    <script is:inline>
+      (function() {
+        try {
+          const savedPalette = localStorage.getItem('theme-palette') || 'mono';
+          document.documentElement.setAttribute('data-palette', savedPalette);
+
+          if (savedPalette === 'mono') {
+            const savedTone = localStorage.getItem('theme-tone');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTone === 'dark' || (!savedTone && prefersDark)) {
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+            }
+          }
+        } catch (e) {
+          console.warn('Theme init exception:', e);
+        }
+      })();
+    </script>
+  </head>
+
+  <body class="relative min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased selection:bg-[var(--accent-primary)] selection:text-[var(--accent-contrast)]">
+    <!-- Skip to main content for accessibility -->
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 z-[99999] px-4 py-2 bg-[var(--accent-primary)] text-[var(--accent-contrast)] rounded font-mono text-xs shadow-lg"
+    >
+      Skip to main content
+    </a>
+
+    <!-- Subtle Grain Texture Overlay -->
+    <div class="grain-overlay" aria-hidden="true"></div>
+
+    <!-- Custom Cursor (Desktop Only) -->
+    <CustomCursor />
+
+    <!-- Navbar -->
+    <Navbar currentPath={currentPath} />
+
+    <!-- Main Content Container -->
+    <main id="main-content" class="relative z-10 focus:outline-none" tabindex="-1">
+      <slot />
+    </main>
+
+    <!-- Global Client Init (Lenis + GSAP Animations) -->
+    <script>
+      import { initLenis, resetScrollOnNavigation } from '../lib/scroll/lenis';
+      import { initScrollAnimations } from '../lib/scroll/animations';
+
+      let cleanupAnimations: (() => void) | null = null;
+
+      function setupPage() {
+        initLenis();
+
+        if (cleanupAnimations) {
+          cleanupAnimations();
+        }
+        cleanupAnimations = initScrollAnimations();
+      }
+
+      // Astro lifecycle hooks for flawless View Transitions and Scroll State
+      document.addEventListener('astro:after-swap', () => {
+        resetScrollOnNavigation();
+      });
+
+      document.addEventListener('astro:page-load', () => {
+        setupPage();
+        resetScrollOnNavigation();
+      });
+
+      document.addEventListener('astro:before-swap', () => {
+        if (cleanupAnimations) {
+          cleanupAnimations();
+          cleanupAnimations = null;
+        }
+      });
+    </script>
+  </body>
+</html>
