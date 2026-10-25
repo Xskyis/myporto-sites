@@ -203,3 +203,17 @@ html[data-palette="color"] .fluid-subheading {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Splash Screen & Header Initial States */
+html:not(.no-splash) #main-header {
+  opacity: 0;
+  pointer-events: none;
+}
+
+html.no-splash #splash-screen {
+  display: none !important;
+}
+
+#splash-screen {
+  clip-path: inset(0% 0% 0% 0%);
+}

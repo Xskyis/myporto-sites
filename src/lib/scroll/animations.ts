@@ -24,8 +24,18 @@ export function initScrollAnimations(): () => void {
     }
 
     // 2. Heading Mask & Stagger Reveals
+    const isSplashActive =
+      !document.documentElement.classList.contains('no-splash') &&
+      !!document.getElementById('splash-screen');
+
     const revealElements = document.querySelectorAll<HTMLElement>('[data-reveal]');
     revealElements.forEach((el) => {
+      // If splash is currently active, defer hero elements so they animate during the curtain lift
+      if (isSplashActive && el.closest('#hero')) {
+        gsap.set(el, { y: 40, opacity: 0 });
+        return;
+      }
+
       gsap.fromTo(
         el,
         {
@@ -45,6 +55,20 @@ export function initScrollAnimations(): () => void {
         }
       );
     });
+
+    if (isSplashActive) {
+      const heroReveals = document.querySelectorAll<HTMLElement>('#hero [data-reveal]');
+      const onHeroReveal = () => {
+        gsap.to(heroReveals, {
+          y: 0,
+          opacity: 1,
+          duration: 1,
+          stagger: 0.1,
+          ease: 'power3.out',
+        });
+      };
+      window.addEventListener('splash:hero-reveal', onHeroReveal, { once: true });
+    }
 
     // 3. Staggered Items (Cards, Timeline items, Tech badges)
     const staggerContainers = document.querySelectorAll<HTMLElement>('[data-stagger-container]');

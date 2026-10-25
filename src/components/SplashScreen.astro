@@ -1,0 +1,84 @@
+---
+// SplashScreen.astro - Editorial Intro Loader
+---
+
+<div
+  id="splash-screen"
+  class="fixed inset-0 z-[100000] flex flex-col justify-between p-6 sm:p-10 md:p-14 select-none pointer-events-auto overflow-hidden will-change-[clip-path,opacity]"
+  style="background-color: var(--bg-primary); color: var(--text-primary); clip-path: inset(0% 0% 0% 0%);"
+  aria-label="Site Introduction Loader"
+  role="dialog"
+  aria-modal="true"
+>
+  <!-- Subtle Grain Texture Layer -->
+  <div class="grain-overlay pointer-events-none opacity-40" aria-hidden="true"></div>
+
+  <!-- Top Bar: Minimal System Status -->
+  <div id="splash-top" class="relative z-10 flex items-center justify-between text-xs font-mono text-[var(--text-muted)]">
+    <span class="tracking-widest uppercase opacity-75">Portfolio 2026</span>
+    <span class="tracking-widest uppercase opacity-75 flex items-center gap-2">
+      <span class="w-1.5 h-1.5 rounded-full bg-[var(--status-dot)] animate-pulse"></span>
+      Initializing
+    </span>
+  </div>
+
+  <!-- Center: Editorial Display Wordmark "nabilfgrza." -->
+  <div class="relative z-10 my-auto flex items-center justify-center text-center w-full px-4">
+    <div id="splash-wordmark" class="overflow-hidden flex items-baseline justify-center select-none will-change-transform">
+      <h1 class="font-display font-medium text-[var(--text-primary)] leading-[0.96] tracking-[-0.045em] text-[clamp(3.5rem,12vw,9.5rem)] flex items-baseline">
+        <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform translate-y-[125%]">n</span></span>
+        <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform translate-y-[125%]">a</span></span>
+        <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform translate-y-[125%]">b</span></span>
+        <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform translate-y-[125%]">i</span></span>
+        <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform translate-y-[125%]">l</span></span>
+        <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform translate-y-[125%]">f</span></span>
+        <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform translate-y-[125%]">g</span></span>
+        <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform translate-y-[125%]">r</span></span>
+        <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform translate-y-[125%]">z</span></span>
+        <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform translate-y-[125%]">a</span></span>
+        <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform translate-y-[125%] text-[var(--accent-primary)]">.</span></span>
+      </h1>
+    </div>
+  </div>
+
+  <!-- Bottom Bar: Counter + Meta Info -->
+  <div id="splash-bottom" class="relative z-10 flex items-end justify-between text-xs font-mono tracking-wider text-[var(--text-muted)] w-full">
+    <!-- Bottom Left: Mono Counter (000 -> 100) -->
+    <div class="flex items-baseline gap-1.5 sm:gap-2">
+      <span id="splash-counter" class="text-2xl sm:text-3xl font-mono font-medium tabular-nums text-[var(--text-primary)]">000</span>
+      <span class="text-xs uppercase opacity-60 font-mono">%</span>
+    </div>
+
+    <!-- Bottom Right: Editorial Meta Info -->
+    <div class="text-right">
+      <p class="uppercase tracking-wider text-[10px] sm:text-xs text-[var(--text-muted)] font-mono">
+        Frontend Developer — Malang, ID
+      </p>
+    </div>
+  </div>
+
+  <!-- Bottom Edge: 1px Progress Line -->
+  <div
+    id="splash-progress-track"
+    class="absolute bottom-0 left-0 w-full h-[1px] bg-[var(--border-subtle)]"
+    aria-hidden="true"
+  >
+    <div
+      id="splash-progress-bar"
+      class="h-full bg-[var(--text-primary)] origin-left will-change-transform"
+      style="transform: scaleX(0);"
+    ></div>
+  </div>
+</div>
+
+<script>
+  import { initSplashScreen } from '../lib/splash/splash';
+
+  // Run on first load
+  initSplashScreen();
+
+  // Support Astro View Transitions
+  document.addEventListener('astro:page-load', () => {
+    initSplashScreen();
+  });
+</script>

@@ -40,6 +40,14 @@ export function initLenis(): Lenis | null {
     ScrollTrigger.refresh();
   });
 
+  const isSplashActive =
+    !document.documentElement.classList.contains('no-splash') &&
+    !!document.getElementById('splash-screen');
+
+  if (isSplashActive) {
+    lenis.stop();
+  }
+
   return lenis;
 }
 

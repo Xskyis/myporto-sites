@@ -3,6 +3,7 @@ import { ClientRouter } from 'astro:transitions';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
 import CustomCursor from '../components/CustomCursor.astro';
+import SplashScreen from '../components/SplashScreen.astro';
 import { PROFILE } from '../data/profile';
 import '../styles/global.css';
 
@@ -80,7 +81,7 @@ const personSchema = {
     <!-- Astro View Transitions -->
     <ClientRouter />
 
-    <!-- Zero-flash inline theme loader -->
+    <!-- Zero-flash inline theme and splash state loader -->
     <script is:inline>
       (function() {
         try {
@@ -96,11 +97,40 @@ const personSchema = {
               document.documentElement.classList.remove('dark');
             }
           }
+
+          // Pre-paint splash condition:
+          // Show only on homepage ('/' or ''), once per session, unless overridden with ?splash=1
+          const pathname = window.location.pathname;
+          const isHome = pathname === '/' || pathname === '' || pathname === '/index.html';
+          const params = new URLSearchParams(window.location.search);
+          const forceSplash = params.get('splash') === '1';
+          let splashShown = false;
+          try {
+            splashShown = sessionStorage.getItem('splash_shown') === 'true';
+          } catch (e) {}
+
+          if (!isHome || (splashShown && !forceSplash)) {
+            document.documentElement.classList.add('no-splash');
+          }
         } catch (e) {
-          console.warn('Theme init exception:', e);
+          document.documentElement.classList.add('no-splash');
+          console.warn('Theme/Splash init exception:', e);
         }
       })();
     </script>
+
+    <!-- Fallback for JavaScript-disabled environments -->
+    <noscript>
+      <style>
+        #splash-screen {
+          display: none !important;
+        }
+        html:not(.no-splash) #main-header {
+          opacity: 1 !important;
+          pointer-events: auto !important;
+        }
+      </style>
+    </noscript>
   </head>
 
   <body class="relative min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased selection:bg-[var(--accent-primary)] selection:text-[var(--accent-contrast)]">
@@ -111,6 +141,9 @@ const personSchema = {
     >
       Skip to main content
     </a>
+
+    <!-- Editorial Intro Loader (Pure HTML/CSS on First Paint) -->
+    <SplashScreen />
 
     <!-- Subtle Grain Texture Overlay -->
     <div class="grain-overlay" aria-hidden="true"></div>
