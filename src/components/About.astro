@@ -152,6 +152,7 @@ import { Icon } from 'astro-icon/components';
         <button
           type="button"
           id="toggle-all-certs"
+          data-total={CERTIFICATIONS.length}
           class="text-xs font-mono text-[var(--accent-primary)] hover:underline focus:outline-none"
         >
           View all {CERTIFICATIONS.length} items
@@ -236,11 +237,20 @@ import { Icon } from 'astro-icon/components';
 </section>
 
 <script>
+  let certsAbortController: AbortController | null = null;
+
   function setupCertsToggle() {
+    if (certsAbortController) {
+      certsAbortController.abort();
+    }
+    certsAbortController = new AbortController();
+    const { signal } = certsAbortController;
+
     const btn = document.getElementById('toggle-all-certs');
     const extraCerts = document.querySelectorAll('.cert-extra');
     if (!btn || extraCerts.length === 0) return;
 
+    const total = btn.getAttribute('data-total') || (extraCerts.length + 2);
     let expanded = false;
 
     btn.addEventListener('click', () => {
@@ -254,10 +264,15 @@ import { Icon } from 'astro-icon/components';
           setTimeout(() => el.classList.add('hidden'), 200);
         }
       });
-      btn.textContent = expanded ? 'Collapse list' : 'View all 9 items';
-    });
+      btn.textContent = expanded ? 'Collapse list' : `View all ${total} items`;
+    }, { signal });
   }
 
-  setupCertsToggle();
   document.addEventListener('astro:page-load', setupCertsToggle);
+  document.addEventListener('astro:before-swap', () => {
+    if (certsAbortController) {
+      certsAbortController.abort();
+      certsAbortController = null;
+    }
+  });
 </script>
