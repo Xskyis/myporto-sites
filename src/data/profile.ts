@@ -64,7 +64,7 @@ export const PROFILE: ProfileData = {
     {
       value: 1,
       suffix: 'st',
-      label: 'Place National Award',
+      label: 'Place Award',
       description: 'HMTI Intercomp PKM GFT Category',
     },
   ],
