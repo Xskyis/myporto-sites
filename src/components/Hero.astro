@@ -3,19 +3,19 @@ import { PROFILE } from '../data/profile';
 import { Icon } from 'astro-icon/components';
 ---
 
-<section id="hero" class="relative min-h-[92vh] flex flex-col justify-between pt-28 pb-12 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto z-10" aria-label="Hero Section">
+<section id="hero" class="relative min-h-[90vh] sm:min-h-[92vh] flex flex-col justify-between pt-24 sm:pt-28 pb-8 sm:pb-12 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto z-10" aria-label="Hero Section">
   <div class="flex items-center justify-between gap-4 pt-2 text-xs font-mono text-[var(--text-muted)]" data-reveal>
     <span class="tracking-wider uppercase text-[var(--text-primary)] font-medium">
       {PROFILE.name}
     </span>
-    <span class="flex items-center gap-1.5 opacity-80">
+    <span class="hidden sm:flex items-center gap-1.5 opacity-80">
       <Icon name="lucide:map-pin" class="w-3.5 h-3.5" />
       {PROFILE.location}
     </span>
   </div>
 
   <!-- Pure Typographic Center Hero (Decluttered & Clean) -->
-  <div class="my-auto py-12 md:py-20 w-full">
+  <div class="my-auto py-8 sm:py-12 md:py-20 w-full">
     <!-- Fluid Hero Headline: nabilfgrza. -->
     <div class="w-full">
       <h1 class="font-display font-medium text-[var(--text-primary)] leading-[0.96] pb-2 sm:pb-3 select-none text-[clamp(3.8rem,13vw,12rem)] tracking-[-0.045em] break-words" data-reveal>
@@ -57,7 +57,7 @@ import { Icon } from 'astro-icon/components';
       <span>// INTRODUCTION</span> -->
     </div>
 
-    <a href="#about" class="nav-scroll-trigger hidden sm:flex items-center gap-2 hover:text-[var(--text-primary)] transition-colors">
+    <a href="#about" class="nav-scroll-trigger flex items-center gap-2 hover:text-[var(--text-primary)] transition-colors">
       <span>SCROLL TO EXPLORE</span>
       <Icon name="lucide:arrow-down" class="w-3.5 h-3.5 animate-bounce" />
     </a>
