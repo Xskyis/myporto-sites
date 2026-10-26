@@ -11,12 +11,12 @@ const groupedTech = TECH_CATEGORIES.map((cat) => ({
 
 <section
   id="tech-stack"
-  class="py-24 md:py-36 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative"
+  class="pt-16 md:pt-20 pb-0 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative"
   aria-label="Tech Stack Section"
 >
   <!-- Section Header -->
   <div
-    class="flex items-center justify-between pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]"
+    class="flex items-center justify-between pb-6 sm:pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]"
     data-reveal
   >
     <div class="flex items-center gap-3">
@@ -26,7 +26,7 @@ const groupedTech = TECH_CATEGORIES.map((cat) => ({
   </div>
 
   <!-- Heading Intro -->
-  <div class="py-16 max-w-3xl" data-reveal>
+  <div class="pt-8 sm:pt-10 md:pt-12 pb-8 sm:pb-10 md:pb-12 max-w-3xl" data-reveal>
     <h2
       class="fluid-subheading font-medium text-[var(--text-primary)] leading-tight"
     >
@@ -84,7 +84,7 @@ const groupedTech = TECH_CATEGORIES.map((cat) => ({
   </div> -->
 
   <!-- Categorized Skills Grid -->
-  <div class="space-y-16" data-reveal>
+  <div class="space-y-8 md:space-y-10" data-reveal>
     {
       groupedTech.map((group) => (
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start border-t-hairline pt-10">
@@ -122,7 +122,7 @@ const groupedTech = TECH_CATEGORIES.map((cat) => ({
 
   <!-- Full-Width Marquee Velocity Ribbon -->
   <div
-    class="relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] mt-24 md:mt-32 overflow-hidden border-y-hairline border-x-0 border-l-0 border-r-0 bg-[var(--bg-surface)]/60 py-6 sm:py-8 select-none backdrop-blur-xs"
+    class="relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] mt-10 md:mt-14 overflow-hidden border-y-hairline border-x-0 border-l-0 border-r-0 bg-[var(--bg-surface)]/60 py-6 sm:py-8 select-none backdrop-blur-xs"
     style="border-left: none !important; border-right: none !important;"
     aria-hidden="true"
   >

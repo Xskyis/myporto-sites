@@ -6,9 +6,9 @@ const allProjects = await getCollection('projects');
 const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
 ---
 
-<section id="projects" class="py-24 md:py-36 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative" aria-label="Projects Section">
+<section id="projects" class="py-16 md:py-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative" aria-label="Projects Section">
   <!-- Section Header -->
-  <div class="flex items-center justify-between pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]" data-reveal>
+  <div class="flex items-center justify-between pb-6 sm:pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]" data-reveal>
     <div class="flex items-center gap-3">
       <span class="text-sm font-semibold text-[var(--text-primary)]">02</span>
     </div>
@@ -16,7 +16,7 @@ const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
   </div>
 
   <!-- Heading Intro -->
-  <div class="py-16 max-w-3xl" data-reveal>
+  <div class="pt-8 sm:pt-10 md:pt-12 pb-8 sm:pb-10 md:pb-12 max-w-3xl" data-reveal>
     <h2 class="fluid-subheading font-medium text-[var(--text-primary)] leading-tight">
       A curated collection of client platforms, academic architectures, and exploratory experiments.
     </h2>
