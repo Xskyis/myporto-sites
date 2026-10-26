@@ -26,7 +26,6 @@ export const TECH_STACK: TechItem[] = [
     level: 'Daily use',
     icon: 'simple-icons:nextdotjs',
     isPrioritized: true,
-    notes: 'Primary fullstack/frontend framework for production studio apps',
   },
   {
     name: 'JavaScript (ES6+)',
@@ -34,7 +33,7 @@ export const TECH_STACK: TechItem[] = [
     level: 'Daily use',
     icon: 'simple-icons:javascript',
     isPrioritized: true,
-    notes: 'Core language for DOM, APIs, algorithms, and interactive logic',
+    // notes: 'Core language for DOM, APIs, algorithms, and interactive logic',
   },
   {
     name: 'React',
@@ -42,7 +41,7 @@ export const TECH_STACK: TechItem[] = [
     level: 'Daily use',
     icon: 'simple-icons:react',
     isPrioritized: true,
-    notes: 'Component-driven user interfaces, hooks, state management',
+    // notes: 'Component-driven user interfaces, hooks, state management',
   },
   {
     name: 'Tailwind CSS',
@@ -50,7 +49,7 @@ export const TECH_STACK: TechItem[] = [
     level: 'Daily use',
     icon: 'simple-icons:tailwindcss',
     isPrioritized: true,
-    notes: 'Modern utility-first styling, design token architectures',
+    // notes: 'Modern utility-first styling, design token architectures',
   },
   {
     name: 'TypeScript',
@@ -58,21 +57,21 @@ export const TECH_STACK: TechItem[] = [
     level: 'Comfortable',
     icon: 'simple-icons:typescript',
     isPrioritized: true,
-    notes: 'Strict typing, robust interfaces, and predictable codebases',
+    // notes: 'Strict typing, robust interfaces, and predictable codebases',
   },
   {
     name: 'Astro',
     category: 'Frontend',
     level: 'Comfortable',
     icon: 'simple-icons:astro',
-    notes: 'Content-focused, zero-JS by default, ultra-fast static generation',
+    // notes: 'Content-focused, zero-JS by default, ultra-fast static generation',
   },
   {
     name: 'HTML5 & CSS3',
     category: 'Frontend',
     level: 'Daily use',
     icon: 'simple-icons:html5',
-    notes: 'Semantic accessibility, modern CSS grid, subgrid, fluid clamp',
+    // notes: 'Semantic accessibility, modern CSS grid, subgrid, fluid clamp',
   },
 
   // Backend
@@ -130,7 +129,7 @@ export const TECH_STACK: TechItem[] = [
     level: 'Daily use',
     icon: 'simple-icons:github',
     isPrioritized: true,
-    notes: 'Branch workflows, pull requests, issue tracking, continuous integration',
+    // notes: 'Branch workflows, pull requests, issue tracking, continuous integration',
   },
   {
     name: 'Google Cloud / Vertex AI',
