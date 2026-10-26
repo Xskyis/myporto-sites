@@ -96,7 +96,7 @@ const groupedTech = TECH_CATEGORIES.map((cat) => ({
   </div>
 
   <!-- Full-Width Marquee Velocity Ribbon -->
-  <div class="relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] mt-24 md:mt-32 overflow-hidden border-y border-hairline bg-[var(--bg-surface)]/60 py-6 sm:py-8 select-none backdrop-blur-xs" aria-hidden="true">
+  <div class="relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] mt-24 md:mt-32 overflow-hidden border-y-hairline border-x-0 border-l-0 border-r-0 bg-[var(--bg-surface)]/60 py-6 sm:py-8 select-none backdrop-blur-xs" style="border-left: none !important; border-right: none !important;" aria-hidden="true">
     <div class="flex whitespace-nowrap animate-marquee hover:[animation-play-state:paused] will-change-transform">
       {[...Array(2)].map(() => (
         <div class="flex items-center gap-8 sm:gap-12 md:gap-16 px-4 sm:px-6 md:px-8 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-medium tracking-tight text-[var(--text-primary)]">

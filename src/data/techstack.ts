@@ -108,7 +108,7 @@ export const TECH_STACK: TechItem[] = [
   {
     name: 'Flutter & Dart',
     category: 'Mobile',
-    level: 'Comfortable',
+    level: 'Learning',
     icon: 'simple-icons:flutter',
     notes: 'Cross-platform mobile UI development & on-device ML integrations',
   },
@@ -119,6 +119,13 @@ export const TECH_STACK: TechItem[] = [
     category: 'Database',
     level: 'Comfortable',
     icon: 'simple-icons:mysql',
+    notes: 'Relational data modeling, indexing, foreign keys, queries',
+  },
+  {
+    name: 'PostgreSQL',
+    category: 'Database',
+    level: 'Learning',
+    icon: 'simple-icons:postgresql',
     notes: 'Relational data modeling, indexing, foreign keys, queries',
   },
 

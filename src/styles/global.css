@@ -122,7 +122,6 @@ html[data-palette="color"] .fluid-subheading {
 
 /* Hairline borders */
 .border-hairline {
-  border-width: 1px;
   border-color: var(--border-subtle);
 }
 
@@ -134,6 +133,15 @@ html[data-palette="color"] .fluid-subheading {
 .border-t-hairline {
   border-top-width: 1px;
   border-top-color: var(--border-subtle);
+}
+
+.border-y-hairline {
+  border-top-width: 1px;
+  border-bottom-width: 1px;
+  border-left-width: 0 !important;
+  border-right-width: 0 !important;
+  border-top-color: var(--border-subtle);
+  border-bottom-color: var(--border-subtle);
 }
 
 /* Subtle Film Grain Overlay */
