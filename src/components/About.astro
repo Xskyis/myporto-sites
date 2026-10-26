@@ -11,9 +11,8 @@ import { Icon } from 'astro-icon/components';
   <div class="flex items-center justify-between pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]" data-reveal>
     <div class="flex items-center gap-3">
       <span class="text-sm font-semibold text-[var(--text-primary)]">01</span>
-      <span>// ABOUT &amp; TRAJECTORY</span>
     </div>
-    <span>BIOGRAPHY · TIMELINE · HONORS</span>
+    <span>ABOUT &amp; TRAJECTORY</span>
   </div>
 
   <!-- Top Grid: Bio & Animated Counters -->
@@ -142,26 +141,19 @@ import { Icon } from 'astro-icon/components';
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-16 border-t-hairline">
     <!-- Certifications (Expandable Accordion) -->
     <div class="lg:col-span-8" data-reveal>
-      <div class="flex items-center justify-between pb-6">
-        <div>
-          <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Verified Credentials</span>
-          <h3 class="text-2xl font-display font-medium text-[var(--text-primary)] mt-1">
-            Certificate
-          </h3>
-        </div>
-        <button
-          type="button"
-          id="toggle-all-certs"
-          data-total={CERTIFICATIONS.length}
-          class="text-xs font-mono text-[var(--accent-primary)] hover:underline focus:outline-none"
-        >
-          View all {CERTIFICATIONS.length} items
-        </button>
+      <div class="pb-6">
+        <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Verified Credentials</span>
+        <h3 class="text-2xl font-display font-medium text-[var(--text-primary)] mt-1">
+          Certificate
+        </h3>
       </div>
 
-      <div class="divide-y divide-hairline border-y border-hairline">
+      <div id="certs-list" class="divide-y divide-hairline border-y border-hairline">
         {CERTIFICATIONS.map((cert, idx) => (
-          <div class={`py-5 px-4 sm:px-6 md:px-8 cert-item ${idx >= 2 ? 'hidden opacity-0 cert-extra' : ''} rounded-xl hover:bg-[var(--bg-surface-soft)]/50 transition-all duration-300`}>
+          <div
+            data-cert-index={idx}
+            class={`py-5 px-4 sm:px-6 md:px-8 cert-item ${idx >= 2 ? 'hidden opacity-0' : ''} rounded-xl hover:bg-[var(--bg-surface-soft)]/50 transition-all duration-300`}
+          >
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div class="flex items-start gap-3">
                 <span class="text-xs font-mono text-[var(--text-muted)] pt-0.5">0{idx + 1}</span>
@@ -188,6 +180,21 @@ import { Icon } from 'astro-icon/components';
             </div>
           </div>
         ))}
+      </div>
+
+      <!-- Load More Button at the bottom -->
+      <div class="pt-6 flex justify-center">
+        <button
+          type="button"
+          id="load-more-certs"
+          data-total={CERTIFICATIONS.length}
+          data-initial="2"
+          data-step="2"
+          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-hairline bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-soft)] text-xs font-mono font-medium text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] shadow-xs"
+        >
+          <span id="load-more-certs-text">Load More</span>
+          <Icon name="lucide:chevron-down" id="load-more-certs-icon" class="w-3.5 h-3.5 transition-transform duration-300" />
+        </button>
       </div>
     </div>
 
@@ -239,36 +246,82 @@ import { Icon } from 'astro-icon/components';
 <script>
   let certsAbortController: AbortController | null = null;
 
-  function setupCertsToggle() {
+  function setupCertsLoadMore() {
     if (certsAbortController) {
       certsAbortController.abort();
     }
     certsAbortController = new AbortController();
     const { signal } = certsAbortController;
 
-    const btn = document.getElementById('toggle-all-certs');
-    const extraCerts = document.querySelectorAll('.cert-extra');
-    if (!btn || extraCerts.length === 0) return;
+    const btn = document.getElementById('load-more-certs');
+    const btnText = document.getElementById('load-more-certs-text');
+    const btnIcon = document.getElementById('load-more-certs-icon');
+    const certItems = document.querySelectorAll<HTMLElement>('#certs-list .cert-item');
 
-    const total = btn.getAttribute('data-total') || (extraCerts.length + 2);
-    let expanded = false;
+    if (!btn || !btnText || certItems.length === 0) return;
+
+    const total = certItems.length;
+    const initialVisible = 2;
+    const step = 2;
+    let currentVisible = initialVisible;
+
+    // Ensure initial visual state
+    certItems.forEach((el, idx) => {
+      if (idx < currentVisible) {
+        el.classList.remove('hidden', 'opacity-0');
+      } else {
+        el.classList.add('hidden', 'opacity-0');
+      }
+    });
 
     btn.addEventListener('click', () => {
-      expanded = !expanded;
-      extraCerts.forEach((el) => {
-        if (expanded) {
-          el.classList.remove('hidden');
-          setTimeout(() => el.classList.remove('opacity-0'), 10);
-        } else {
-          el.classList.add('opacity-0');
-          setTimeout(() => el.classList.add('hidden'), 200);
+      if (currentVisible >= total) {
+        // Collapse back to initial 2 items
+        currentVisible = initialVisible;
+        certItems.forEach((el, idx) => {
+          if (idx >= initialVisible) {
+            el.classList.add('opacity-0');
+            setTimeout(() => {
+              if (currentVisible <= idx) {
+                el.classList.add('hidden');
+              }
+            }, 250);
+          }
+        });
+        btnText.textContent = 'Load More';
+        if (btnIcon) {
+          btnIcon.classList.remove('rotate-180');
         }
-      });
-      btn.textContent = expanded ? 'Collapse list' : `View all ${total} items`;
+      } else {
+        // Load next 2 items
+        const nextVisible = Math.min(currentVisible + step, total);
+        for (let i = currentVisible; i < nextVisible; i++) {
+          const el = certItems[i];
+          if (el) {
+            el.classList.remove('hidden');
+            setTimeout(() => {
+              el.classList.remove('opacity-0');
+            }, (i - currentVisible) * 60 + 20);
+          }
+        }
+        currentVisible = nextVisible;
+
+        if (currentVisible >= total) {
+          btnText.textContent = 'Collapse list';
+          if (btnIcon) {
+            btnIcon.classList.add('rotate-180');
+          }
+        } else {
+          btnText.textContent = 'Load More';
+          if (btnIcon) {
+            btnIcon.classList.remove('rotate-180');
+          }
+        }
+      }
     }, { signal });
   }
 
-  document.addEventListener('astro:page-load', setupCertsToggle);
+  document.addEventListener('astro:page-load', setupCertsLoadMore);
   document.addEventListener('astro:before-swap', () => {
     if (certsAbortController) {
       certsAbortController.abort();
