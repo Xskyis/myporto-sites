@@ -1,11 +1,11 @@
 ---
-import { ClientRouter } from 'astro:transitions';
-import Navbar from '../components/Navbar.astro';
-import Footer from '../components/Footer.astro';
-import CustomCursor from '../components/CustomCursor.astro';
-import SplashScreen from '../components/SplashScreen.astro';
-import { PROFILE } from '../data/profile';
-import '../styles/global.css';
+import { ClientRouter } from "astro:transitions";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+import CustomCursor from "../components/CustomCursor.astro";
+import SplashScreen from "../components/SplashScreen.astro";
+import { PROFILE } from "../data/profile";
+import "../styles/global.css";
 
 interface Props {
   title?: string;
@@ -17,31 +17,34 @@ interface Props {
 const {
   title = `${PROFILE.name} — ${PROFILE.role}`,
   description = `${PROFILE.name} is a ${PROFILE.headline} based in ${PROFILE.location}. Explore featured projects, engineering skills, and verified milestones.`,
-  image = '/og-image.png',
-  currentPath = '/',
+  image = "/og-image.png",
+  currentPath = "/",
 } = Astro.props;
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://nabil-portfolio.dev');
+const canonicalURL = new URL(
+  Astro.url.pathname,
+  Astro.site || "https://nabil-portfolio.dev",
+);
 
 const personSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
+  "@context": "https://schema.org",
+  "@type": "Person",
   name: PROFILE.name,
   alternateName: PROFILE.nickname,
   jobTitle: PROFILE.role,
   description: description,
   url: canonicalURL.toString(),
   sameAs: [
-    'https://github.com/Xskyis',
-    'https://www.linkedin.com/in/nabilfgrza/',
+    "https://github.com/Xskyis",
+    "https://www.linkedin.com/in/nabilfgrza/",
   ],
   knowsAbout: [
-    'Frontend Development',
-    'Next.js',
-    'React',
-    'TypeScript',
-    'Tailwind CSS',
-    'Three.js',
+    "Frontend Development",
+    "Next.js",
+    "React",
+    "TypeScript",
+    "Tailwind CSS",
+    "Three.js",
   ],
 };
 ---
@@ -76,45 +79,51 @@ const personSchema = {
     <meta property="twitter:image" content={new URL(image, canonicalURL)} />
 
     <!-- JSON-LD Structured Data -->
-    <script type="application/ld+json" set:html={JSON.stringify(personSchema)} />
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(personSchema)}
+    />
 
     <!-- Astro View Transitions -->
     <ClientRouter />
 
     <!-- Zero-flash inline theme and splash state loader -->
     <script is:inline>
-      (function() {
+      (function () {
         try {
-          const savedPalette = localStorage.getItem('theme-palette') || 'mono';
-          document.documentElement.setAttribute('data-palette', savedPalette);
+          const savedPalette = localStorage.getItem("theme-palette") || "mono";
+          document.documentElement.setAttribute("data-palette", savedPalette);
 
-          if (savedPalette === 'mono') {
-            const savedTone = localStorage.getItem('theme-tone');
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (savedTone === 'dark' || (!savedTone && prefersDark)) {
-              document.documentElement.classList.add('dark');
+          if (savedPalette === "mono") {
+            const savedTone = localStorage.getItem("theme-tone");
+            const prefersDark = window.matchMedia(
+              "(prefers-color-scheme: dark)",
+            ).matches;
+            if (savedTone === "dark" || (!savedTone && prefersDark)) {
+              document.documentElement.classList.add("dark");
             } else {
-              document.documentElement.classList.remove('dark');
+              document.documentElement.classList.remove("dark");
             }
           }
 
           // Pre-paint splash condition:
           // Show only on homepage ('/' or ''), once per session, unless overridden with ?splash=1
           const pathname = window.location.pathname;
-          const isHome = pathname === '/' || pathname === '' || pathname === '/index.html';
+          const isHome =
+            pathname === "/" || pathname === "" || pathname === "/index.html";
           const params = new URLSearchParams(window.location.search);
-          const forceSplash = params.get('splash') === '1';
+          const forceSplash = params.get("splash") === "1";
           let splashShown = false;
           try {
-            splashShown = sessionStorage.getItem('splash_shown') === 'true';
+            splashShown = sessionStorage.getItem("splash_shown") === "true";
           } catch (e) {}
 
           if (!isHome || (splashShown && !forceSplash)) {
-            document.documentElement.classList.add('no-splash');
+            document.documentElement.classList.add("no-splash");
           }
         } catch (e) {
-          document.documentElement.classList.add('no-splash');
-          console.warn('Theme/Splash init exception:', e);
+          document.documentElement.classList.add("no-splash");
+          console.warn("Theme/Splash init exception:", e);
         }
       })();
     </script>
@@ -133,7 +142,9 @@ const personSchema = {
     </noscript>
   </head>
 
-  <body class="relative min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased selection:bg-[var(--accent-primary)] selection:text-[var(--accent-contrast)]">
+  <body
+    class="relative min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] antialiased selection:bg-[var(--accent-primary)] selection:text-[var(--accent-contrast)]"
+  >
     <!-- Skip to main content for accessibility -->
     <a
       href="#main-content"
@@ -155,14 +166,18 @@ const personSchema = {
     <Navbar currentPath={currentPath} />
 
     <!-- Main Content Container -->
-    <main id="main-content" class="relative z-10 focus:outline-none" tabindex="-1">
+    <main
+      id="main-content"
+      class="relative z-10 focus:outline-none"
+      tabindex="-1"
+    >
       <slot />
     </main>
 
     <!-- Global Client Init (Lenis + GSAP Animations) -->
     <script>
-      import { initLenis, resetScrollOnNavigation } from '../lib/scroll/lenis';
-      import { initScrollAnimations } from '../lib/scroll/animations';
+      import { initLenis, resetScrollOnNavigation } from "../lib/scroll/lenis";
+      import { initScrollAnimations } from "../lib/scroll/animations";
 
       let cleanupAnimations: (() => void) | null = null;
 
@@ -176,21 +191,22 @@ const personSchema = {
       }
 
       // Astro lifecycle hooks for flawless View Transitions and Scroll State
-      document.addEventListener('astro:after-swap', () => {
+      document.addEventListener("astro:after-swap", () => {
         resetScrollOnNavigation();
       });
 
-      document.addEventListener('astro:page-load', () => {
+      document.addEventListener("astro:page-load", () => {
         setupPage();
         resetScrollOnNavigation();
       });
 
-      document.addEventListener('astro:before-swap', () => {
+      document.addEventListener("astro:before-swap", () => {
         if (cleanupAnimations) {
           cleanupAnimations();
           cleanupAnimations = null;
         }
       });
     </script>
+
   </body>
 </html>

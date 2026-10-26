@@ -27,7 +27,7 @@ const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
     {sortedProjects.map((project, idx) => (
       <a
         href={`/projects/${project.id}`}
-        class="project-row group block py-8 md:py-12 px-6 sm:px-8 md:px-10 rounded-2xl transition-all duration-300 hover:bg-[var(--bg-surface-soft)]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+        class="project-row group block py-8 md:py-12 px-6 sm:px-8 md:px-10 transition-all duration-300 hover:bg-[var(--bg-surface-soft)]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
         data-cover={project.data.cover || '/projects/goforumrah.svg'}
         data-title={project.data.title}
         data-reveal

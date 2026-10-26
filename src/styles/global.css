@@ -144,6 +144,10 @@ html[data-palette="color"] .fluid-subheading {
   border-bottom-color: var(--border-subtle);
 }
 
+.divide-hairline > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--border-subtle);
+}
+
 /* Subtle Film Grain Overlay */
 .grain-overlay {
   position: fixed;
