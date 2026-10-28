@@ -1,9 +1,14 @@
 import * as THREE from 'three';
 import { gsap } from 'gsap';
 import * as RAPIER_MODULE from '@dimforge/rapier3d-compat';
+import type { Collider, RigidBody, World } from '@dimforge/rapier3d-compat';
 import type { PaletteMode, MonoTone } from '../../data/palette';
 
-const RAPIER = ((RAPIER_MODULE as any).default || RAPIER_MODULE) as typeof import('@dimforge/rapier3d-compat');
+// The compat build ships both a default and namespace export depending on the bundler
+// interop path; normalise to the namespace shape at runtime. Types come from the
+// explicit `import type` above since a value binding can't be used as a type namespace.
+const RAPIER = ((RAPIER_MODULE as { default?: unknown }).default ||
+  RAPIER_MODULE) as typeof import('@dimforge/rapier3d-compat');
 
 function getCurrentPaletteState(): { palette: PaletteMode; tone: MonoTone } {
   if (typeof document === 'undefined') {
@@ -17,7 +22,7 @@ function getCurrentPaletteState(): { palette: PaletteMode; tone: MonoTone } {
 
 // Ball Pit State
 let rapierInitialized = false;
-let physicsWorld: any = null;
+let physicsWorld: World | null = null;
 let threeRenderer: THREE.WebGLRenderer | null = null;
 let threeScene: THREE.Scene | null = null;
 let threeCamera: THREE.OrthographicCamera | null = null;
@@ -29,7 +34,7 @@ let isTabActive = true;
 let instancedMesh: THREE.InstancedMesh | null = null;
 let sphereGeometry: THREE.SphereGeometry | null = null;
 let sphereMaterial: THREE.MeshStandardMaterial | null = null;
-let rigidBodies: RAPIER.RigidBody[] = [];
+let rigidBodies: RigidBody[] = [];
 let ballRadii: number[] = [];
 let ballColors: THREE.Color[] = [];
 let totalBalls = 90;
@@ -46,12 +51,11 @@ const mouse = {
 // Container Dimensions in World Units
 let frustumW = 20;
 let frustumH = 10;
-let floorCollider: RAPIER.Collider | null = null;
-let leftWallCollider: RAPIER.Collider | null = null;
-let rightWallCollider: RAPIER.Collider | null = null;
-let backWallCollider: RAPIER.Collider | null = null;
-let frontWallCollider: RAPIER.Collider | null = null;
-let ceilingCollider: RAPIER.Collider | null = null;
+// Only the boundaries that move on resize need handles; back/front/ceiling are sized
+// generously at creation and never repositioned.
+let floorCollider: Collider | null = null;
+let leftWallCollider: Collider | null = null;
+let rightWallCollider: Collider | null = null;
 
 export function setBallPitVisible(visible: boolean) {
   isVisible = visible;
@@ -217,17 +221,20 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
       .setRestitution(0.25)
   );
 
-  backWallCollider = physicsWorld.createCollider(
+  // Back wall
+  physicsWorld.createCollider(
     RAPIER.ColliderDesc.cuboid(frustumW * 2, frustumH * 2, wallThickness)
       .setTranslation(0, 0, -depth / 2 - wallThickness)
   );
 
-  frontWallCollider = physicsWorld.createCollider(
+  // Front wall
+  physicsWorld.createCollider(
     RAPIER.ColliderDesc.cuboid(frustumW * 2, frustumH * 2, wallThickness)
       .setTranslation(0, 0, depth / 2 + wallThickness)
   );
 
-  ceilingCollider = physicsWorld.createCollider(
+  // Ceiling (keeps tossed balls from flying out of the pit)
+  physicsWorld.createCollider(
     RAPIER.ColliderDesc.cuboid(frustumW * 2, wallThickness, depth * 2)
       .setTranslation(0, frustumH / 2 + 7, 0)
       .setRestitution(0.2)
@@ -522,6 +529,10 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
       physicsWorld.free();
       physicsWorld = null;
     }
+    // Collider handles are owned by the freed world; drop them so a later resize can't touch them
+    floorCollider = null;
+    leftWallCollider = null;
+    rightWallCollider = null;
 
     instancedMesh = null;
     sphereGeometry = null;

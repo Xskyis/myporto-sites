@@ -181,6 +181,7 @@ const isHome = currentPath === "/";
   class="fixed inset-0 top-20 z-40 hidden flex-col justify-between p-8 border-t-hairline shadow-2xl overflow-y-auto"
   style="background-color: var(--bg-primary);"
   aria-hidden="true"
+  data-lenis-prevent
 >
   <div class="flex flex-col gap-6 pt-8">
     <a
@@ -228,7 +229,7 @@ const isHome = currentPath === "/";
 <script>
   import { gsap } from "gsap";
   import { ScrollTrigger } from "gsap/ScrollTrigger";
-  import { scrollToTarget } from "../lib/scroll/lenis";
+  import { scrollToTarget, getLenis } from "../lib/scroll/lenis";
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -361,6 +362,7 @@ const isHome = currentPath === "/";
                 openIcon?.classList.remove("hidden");
                 closeIcon?.classList.add("hidden");
                 document.body.style.overflow = "";
+                getLenis()?.start();
                 scrollToTarget(hash, { duration: 1.4 });
               },
             });
@@ -439,14 +441,7 @@ const isHome = currentPath === "/";
       navScrollTriggers.push(st);
     }
 
-    // 4. Initial URL Hash handler
-    if (window.location.hash && document.querySelector(window.location.hash)) {
-      setTimeout(() => {
-        scrollToTarget(window.location.hash, {
-          duration: isReduced ? 0.01 : 1.2,
-        });
-      }, 150);
-    }
+    // 4. URL hash on load/navigation is handled centrally by installNavigationScroll() in lenis.ts
 
     // 5. Theme Palette & Tone Controls
     const updateButtonsUI = () => {
@@ -629,6 +624,8 @@ const isHome = currentPath === "/";
         openIcon?.classList.add("hidden");
         closeIcon?.classList.remove("hidden");
         document.body.style.overflow = "hidden";
+        // Lenis drives window.scrollTo directly, so `overflow: hidden` alone won't stop it
+        getLenis()?.stop();
         header?.classList.add("border-b-hairline");
         header?.classList.remove("border-b-transparent");
       } else {
@@ -645,6 +642,7 @@ const isHome = currentPath === "/";
             openIcon?.classList.remove("hidden");
             closeIcon?.classList.add("hidden");
             document.body.style.overflow = "";
+            getLenis()?.start();
             updateHeaderScrollBorder();
           },
         });

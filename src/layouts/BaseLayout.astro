@@ -87,8 +87,11 @@ const personSchema = {
     <!-- Astro View Transitions -->
     <ClientRouter />
 
-    <!-- Zero-flash inline theme and splash state loader -->
-    <script is:inline>
+    <!-- Zero-flash inline theme and splash state loader.
+         data-astro-rerun: the ClientRouter replaces <html> attributes on every swap and
+         does not re-execute inline scripts by default, which dropped `dark` / `js-anim`
+         after client-side navigation. -->
+    <script is:inline data-astro-rerun>
       (function () {
         try {
           const savedPalette = localStorage.getItem("theme-palette") || "mono";
@@ -120,6 +123,12 @@ const personSchema = {
 
           if (!isHome || (splashShown && !forceSplash)) {
             document.documentElement.classList.add("no-splash");
+          }
+
+          // Pre-paint flag for the scroll-reveal system: [data-reveal] elements start
+          // hidden only when JS runs and the user allows motion (see global.css).
+          if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            document.documentElement.classList.add("js-anim");
           }
         } catch (e) {
           document.documentElement.classList.add("no-splash");
@@ -176,10 +185,14 @@ const personSchema = {
 
     <!-- Global Client Init (Lenis + GSAP Animations) -->
     <script>
-      import { initLenis, resetScrollOnNavigation } from "../lib/scroll/lenis";
+      import { initLenis, installNavigationScroll } from "../lib/scroll/lenis";
       import { initScrollAnimations } from "../lib/scroll/animations";
 
       let cleanupAnimations: (() => void) | null = null;
+
+      // Single owner of scroll position across View Transitions (hash offset, Lenis sync,
+      // back/forward restoration). Must be registered before the first astro:page-load.
+      installNavigationScroll();
 
       function setupPage() {
         initLenis();
@@ -190,15 +203,7 @@ const personSchema = {
         cleanupAnimations = initScrollAnimations();
       }
 
-      // Astro lifecycle hooks for flawless View Transitions and Scroll State
-      document.addEventListener("astro:after-swap", () => {
-        resetScrollOnNavigation();
-      });
-
-      document.addEventListener("astro:page-load", () => {
-        setupPage();
-        resetScrollOnNavigation();
-      });
+      document.addEventListener("astro:page-load", setupPage);
 
       document.addEventListener("astro:before-swap", () => {
         if (cleanupAnimations) {

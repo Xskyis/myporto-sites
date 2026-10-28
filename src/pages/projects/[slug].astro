@@ -30,7 +30,7 @@ const nextProject = sorted[(currentIndex + 1) % sorted.length];
 >
   <article class="pt-32 md:pt-40 pb-20 px-6 max-w-5xl mx-auto z-10 relative">
     <!-- Back to Overview Navigation -->
-    <div class="mb-12">
+    <div class="mb-12" data-reveal="fade">
       <a
         href="/#projects"
         class="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors group"
@@ -42,23 +42,23 @@ const nextProject = sorted[(currentIndex + 1) % sorted.length];
 
     <!-- Project Header -->
     <header class="pb-12 border-b-hairline">
-      <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-[var(--text-muted)] mb-4">
+      <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-[var(--text-muted)] mb-4" data-reveal>
         <span>0{project.data.order} // CASE STUDY</span>
         <span>{project.data.year}</span>
       </div>
 
-      <h1 class="fluid-heading font-medium text-[var(--text-primary)] leading-tight">
+      <h1 class="fluid-heading font-medium text-[var(--text-primary)] leading-tight" data-reveal="words">
         {project.data.title}
       </h1>
 
       {project.data.subtitle && (
-        <p class="text-xl md:text-2xl font-light text-[var(--text-muted)] mt-4">
+        <p class="text-xl md:text-2xl font-light text-[var(--text-muted)] mt-4" data-reveal>
           {project.data.subtitle}
         </p>
       )}
 
       <!-- Meta Grid -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 pt-10 mt-10 border-t-hairline text-xs font-mono">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 pt-10 mt-10 border-t-hairline text-xs font-mono" data-reveal>
         <div>
           <span class="text-[var(--text-muted)] uppercase tracking-wider block mb-1">Role</span>
           <span class="text-[var(--text-primary)] font-semibold">{project.data.role}</span>
@@ -76,7 +76,7 @@ const nextProject = sorted[(currentIndex + 1) % sorted.length];
       </div>
 
       <!-- Action Links (Repo & Live Demo) -->
-      <div class="flex flex-wrap items-center gap-4 mt-8">
+      <div class="flex flex-wrap items-center gap-4 mt-8" data-reveal>
         {project.data.liveUrl && (
           <a
             href={project.data.liveUrl}
@@ -103,24 +103,25 @@ const nextProject = sorted[(currentIndex + 1) % sorted.length];
       </div>
     </header>
 
-    <!-- Project Featured Cover Media -->
+    <!-- Project Featured Cover Media: curtain reveal + slow parallax drift inside the frame -->
     {project.data.cover && (
-      <div class="my-12 rounded-2xl overflow-hidden border border-hairline bg-[var(--bg-surface-soft)] shadow-xl">
+      <div class="my-12 rounded-2xl overflow-hidden border border-hairline bg-[var(--bg-surface-soft)] shadow-xl" data-reveal="clip">
         <img
           src={project.data.cover}
           alt={`${project.data.title} cover presentation`}
-          class="w-full h-auto object-cover max-h-[600px]"
+          class="w-full h-auto object-cover max-h-[600px] will-change-transform"
+          data-parallax="0.08"
         />
       </div>
     )}
 
     <!-- Markdown Content Prose -->
-    <div class="prose prose-invert max-w-none text-[var(--text-muted)] leading-relaxed space-y-6 pt-6 font-light text-base md:text-lg">
+    <div class="case-study-prose pt-6" data-reveal="fade">
       <Content />
     </div>
 
     <!-- Next Project Teaser -->
-    <div class="mt-20 pt-16 border-t-hairline flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+    <div class="mt-20 pt-16 border-t-hairline flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6" data-reveal>
       <div class="text-xs font-mono text-[var(--text-muted)]">
         <span>NEXT IN ARCHIVE</span>
       </div>
