@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "layout": "uint16 interleaved [x, y, z, tone]; decode v = lo + q / 65535 * (hi - lo)",
+  "count": 69961,
+  "mobileCount": 30000,
+  "aspect": 0.831353919239905,
+  "centroid": [0.078784, 0.026147],
+  "bounds": {
+    "x": [
+      -0.3753931342187778,
+      0.3952211487268384
+    ],
+    "y": [
+      -0.489582609330914,
+      0.4786051184479566
+    ],
+    "z": [
+      -0.12,
+      0.12
+    ],
+    "tone": [
+      0,
+      1
+    ]
+  },
+  "zRange": 0.12,
+  "source": "scripts/make-portrait-points.mjs"
+}

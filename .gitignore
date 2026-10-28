@@ -23,4 +23,8 @@ Thumbs.db
 
 .agents/
 
+# Offline tooling / generator scripts and intermediate outputs
+scripts/
+src/assets/
+
 

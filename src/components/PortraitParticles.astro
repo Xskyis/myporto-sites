@@ -1,0 +1,315 @@
+---
+/**
+ * PortraitParticles – interactive dot-cloud portrait for the Hero.
+ *
+ * Markup is intentionally tiny: a reserved box (aspect-ratio from the point data, so there is
+ * no layout shift), a static dotted placeholder that doubles as the no-WebGL / reduced-motion
+ * fallback, and a decorative canvas. All behaviour lives in the client script below and in
+ * src/lib/three/portrait.ts (loaded lazily, after first paint).
+ */
+import meta from '../data/portrait-points.meta.json';
+import { PROFILE } from '../data/profile';
+
+interface Props {
+  class?: string;
+}
+const { class: className = '' } = Astro.props;
+---
+
+<div
+  id="portrait-particles"
+  class:list={['portrait', className]}
+  style={`--portrait-aspect: ${meta.aspect};`}
+  data-state="idle"
+>
+  <!-- Static dotted portrait: placeholder while WebGL boots, and the full fallback otherwise -->
+  <div
+    class="portrait__static"
+    role="img"
+    aria-label={`Portrait of ${PROFILE.name}`}
+  ></div>
+
+  <!-- Decorative WebGL layer -->
+  <canvas class="portrait__canvas" aria-hidden="true"></canvas>
+</div>
+
+<style>
+  .portrait {
+    position: relative;
+    aspect-ratio: var(--portrait-aspect);
+    height: 100%;
+    max-width: 100%;
+    pointer-events: none; /* never blocks text, CTAs or vertical scroll */
+    user-select: none;
+  }
+
+  .portrait__static,
+  .portrait__canvas {
+    position: absolute;
+    display: block;
+  }
+
+  /* Dots as an alpha mask so their colour is simply the palette's text colour.
+     Second mask layer = soft fade on the left edge where the headline overlaps. */
+  .portrait__static {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--text-primary);
+    -webkit-mask-image: url('/portrait-dots.webp'), linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.55) 16%, #000 40%);
+    mask-image: url('/portrait-dots.webp'), linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.55) 16%, #000 40%);
+    -webkit-mask-size: contain, 100% 100%;
+    mask-size: contain, 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center bottom;
+    mask-position: center bottom;
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    opacity: 0;
+    transition: opacity 0.6s ease, background-color 0.4s ease;
+  }
+
+  /* 200% overscan (mirrored in portrait.ts OVERSCAN = 2.0).
+     Linear gradient fades the left edge softly where the headline sits.
+     All 4 boundary sides (top, bottom, left, right) falloff is handled mathematically
+     in the vertex shader via NDC edgeFade, ensuring 0% clipping. */
+  .portrait__canvas {
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.55) 10%, #000 22%);
+    mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.55) 10%, #000 22%);
+  }
+
+  /* States: idle (nothing yet) → placeholder (static visible) → live (canvas) | fallback (static) */
+  .portrait[data-state='placeholder'] .portrait__static,
+  .portrait[data-state='fallback'] .portrait__static {
+    opacity: 1;
+  }
+
+  .portrait[data-state='live'] .portrait__canvas {
+    opacity: 1;
+  }
+
+  @media (max-width: 1023.98px) {
+    .portrait {
+      transform: translateX(-10%);
+    }
+
+    /* Small screens: fade the bottom where the headline overlaps the shoulders */
+    .portrait__static {
+      -webkit-mask-image: url('/portrait-dots.webp'), linear-gradient(to bottom, #000 0%, #000 55%, rgba(0, 0, 0, 0.35) 100%);
+      mask-image: url('/portrait-dots.webp'), linear-gradient(to bottom, #000 0%, #000 55%, rgba(0, 0, 0, 0.35) 100%);
+    }
+    .portrait__canvas {
+      inset: -50%;
+      width: 200%;
+      height: 200%;
+      -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 60%, rgba(0, 0, 0, 0.35) 86%, transparent 100%);
+      mask-image: linear-gradient(to bottom, #000 0%, #000 60%, rgba(0, 0, 0, 0.35) 86%, transparent 100%);
+    }
+  }
+</style>
+
+<script>
+  import type { PortraitHandle } from '../lib/three/portrait';
+  import { detectWebGL } from '../lib/three/webgl-tier';
+
+  type Controller = {
+    handle: PortraitHandle | null;
+    teardown: () => void;
+  };
+
+  let controller: Controller | null = null;
+
+  function setup(): Controller | null {
+    const root = document.getElementById('portrait-particles');
+    const hero = document.getElementById('hero');
+    if (!root || !hero) return null;
+    const canvas = root.querySelector<HTMLCanvasElement>('.portrait__canvas');
+    if (!canvas) return null;
+
+    const abort = new AbortController();
+    const { signal } = abort;
+    const state: Controller = { handle: null, teardown: () => abort.abort() };
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
+    const isNarrow = window.matchMedia('(max-width: 1023.98px)').matches;
+    const lowEnd = (navigator.hardwareConcurrency ?? 8) <= 4;
+    const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+
+    const isSplashActive = () =>
+      !document.documentElement.classList.contains('no-splash') && !!document.getElementById('splash-screen');
+
+    // ?portrait=0 forces the static fallback, ?portrait=1 forces WebGL even on software GL (testing)
+    const portraitParam = new URLSearchParams(window.location.search).get('portrait');
+    const forcedOff = portraitParam === '0';
+    const forcedOn = portraitParam === '1';
+
+    // Hard fallbacks: static dots only
+    if (prefersReduced || saveData || forcedOff) {
+      root.dataset.state = 'fallback';
+      return state;
+    }
+
+    // Show the placeholder only if WebGL takes a while (avoids a static → scattered pop on fast loads)
+    let placeholderShown = false;
+    const placeholderTimer = window.setTimeout(() => {
+      if (root.dataset.state === 'idle' && !isSplashActive()) {
+        root.dataset.state = 'placeholder';
+        placeholderShown = true;
+      }
+    }, 700);
+    signal.addEventListener('abort', () => window.clearTimeout(placeholderTimer));
+
+    const boot = async () => {
+      if (signal.aborted) return;
+
+      // Probe before downloading three.js: no GPU → static portrait, nothing else fetched
+      const tier = detectWebGL({ allowSoftware: forcedOn });
+      if (tier === 'none' || (tier === 'software' && !forcedOn)) {
+        root.dataset.state = 'fallback';
+        return;
+      }
+
+      let mod: typeof import('../lib/three/portrait');
+      try {
+        mod = await import('../lib/three/portrait');
+      } catch {
+        root.dataset.state = 'fallback';
+        return;
+      }
+      if (signal.aborted) return;
+
+      let handle: PortraitHandle;
+      try {
+        handle = await mod.initPortrait(canvas, {
+          reduced: isTouch || isNarrow || lowEnd,
+          tilt: !isTouch,
+          onReady: () => {
+            if (signal.aborted) return;
+            window.clearTimeout(placeholderTimer);
+            root.dataset.state = 'live';
+          },
+        });
+      } catch (err) {
+        console.warn('[portrait] WebGL init failed, using static fallback:', err);
+        root.dataset.state = 'fallback';
+        return;
+      }
+      if (signal.aborted) {
+        handle.dispose();
+        return;
+      }
+      state.handle = handle;
+
+      // --- intro -----------------------------------------------------------
+      const hasRevealed = () =>
+        (window as any).__heroRevealed === true ||
+        document.documentElement.classList.contains('no-splash') ||
+        !document.getElementById('splash-screen');
+
+      if (isSplashActive() && !hasRevealed()) {
+        handle.setActive(true); // render behind the curtain
+        window.addEventListener('splash:hero-reveal', () => handle.assemble(), { once: true, signal });
+      } else if (placeholderShown) {
+        handle.showAssembled(); // crossfade static → identical live state
+        handle.setActive(true);
+      } else {
+        handle.setActive(true);
+        handle.assemble();
+      }
+
+      // --- visibility: only the on-screen WebGL context may run its loop ------
+      let heroInView = true;
+      const io = new IntersectionObserver(
+        ([entry]) => {
+          heroInView = entry.isIntersecting;
+          handle.setActive(heroInView && !document.hidden);
+        },
+        { threshold: 0.02 }
+      );
+      io.observe(hero);
+      signal.addEventListener('abort', () => io.disconnect());
+      document.addEventListener('visibilitychange', () => handle.setActive(heroInView && !document.hidden), { signal });
+
+      // --- pointer → repulsion + tilt ----------------------------------------
+      // The canvas is pointer-events:none; listen on the whole hero so the cloud reacts
+      // even when the cursor is over text, and keep touch purely passive (never blocks scroll).
+      const toCanvas = (clientX: number, clientY: number) => {
+        const r = canvas.getBoundingClientRect();
+        return { x: clientX - r.left, y: clientY - r.top };
+      };
+      if (!isTouch) {
+        hero.addEventListener(
+          'pointermove',
+          (e) => {
+            const p = toCanvas(e.clientX, e.clientY);
+            handle.setPointer(p.x, p.y, 1);
+          },
+          { passive: true, signal }
+        );
+        hero.addEventListener('pointerleave', () => handle.setPointer(null, null), { signal });
+      } else {
+        let rippleTimer = 0;
+        hero.addEventListener(
+          'touchmove',
+          (e) => {
+            const t = e.touches[0];
+            if (!t) return;
+            const p = toCanvas(t.clientX, t.clientY);
+            handle.setPointer(p.x, p.y, 0.55);
+            window.clearTimeout(rippleTimer);
+            rippleTimer = window.setTimeout(() => handle.setPointer(null, null), 180);
+          },
+          { passive: true, signal }
+        );
+        hero.addEventListener('touchend', () => handle.setPointer(null, null), { passive: true, signal });
+      }
+
+      // --- scroll → scatter (Hero progress 0..1) ------------------------------
+      const { gsap } = await import('gsap');
+      const { ScrollTrigger } = await import('gsap/ScrollTrigger');
+      gsap.registerPlugin(ScrollTrigger);
+      const st = ScrollTrigger.create({
+        trigger: hero,
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true,
+        onUpdate: (self) => handle.setScatter(self.progress),
+      });
+      signal.addEventListener('abort', () => st.kill());
+
+      // --- palette -----------------------------------------------------------
+      window.addEventListener('palette-change', () => handle.syncPalette(true), { signal });
+      const mo = new MutationObserver(() => handle.syncPalette(true));
+      mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-palette', 'class'] });
+      signal.addEventListener('abort', () => mo.disconnect());
+    };
+
+    // Boot immediately so Three.js & points are loaded and ready before or during hero reveal
+    void boot();
+
+    return state;
+  }
+
+  function init() {
+    controller?.teardown();
+    controller?.handle?.dispose();
+    controller = setup();
+  }
+
+  document.addEventListener('astro:page-load', init);
+  document.addEventListener('astro:before-swap', () => {
+    controller?.teardown();
+    controller?.handle?.dispose();
+    controller = null;
+  });
+  window.addEventListener('pagehide', () => {
+    controller?.handle?.setActive(false);
+  });
+</script>

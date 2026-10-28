@@ -142,6 +142,7 @@ export function initSplashScreen() {
 
     // Hero intro animations play during curtain reveal
     exitTl.add(() => {
+      (window as any).__heroRevealed = true;
       window.dispatchEvent(new CustomEvent('splash:hero-reveal'));
     }, 0.38);
 
@@ -254,6 +255,7 @@ function handleReducedMotion(splashEl: HTMLElement) {
       document.documentElement.classList.add('no-splash');
       splashEl.style.display = 'none';
 
+      (window as any).__heroRevealed = true;
       window.dispatchEvent(new CustomEvent('splash:hero-reveal'));
       const header = document.getElementById('main-header');
       if (header) {

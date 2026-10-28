@@ -1,29 +1,24 @@
 ---
 import { PROFILE } from "../data/profile";
 import { Icon } from "astro-icon/components";
+import PortraitParticles from "./PortraitParticles.astro";
 ---
 
 <section
   id="hero"
-  class="relative min-h-[100svh] flex flex-col justify-between pt-20 sm:pt-22 md:pt-24 pb-6 sm:pb-6 md:pb-8 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto z-10"
+  class="hero relative min-h-[100svh] flex flex-col justify-between pt-20 sm:pt-22 md:pt-24 pb-6 sm:pb-6 md:pb-8 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto z-10 w-full overflow-x-clip"
   aria-label="Hero Section"
 >
-  <!-- <div class="flex items-center justify-between gap-4 pt-2 text-xs font-mono text-[var(--text-muted)]" data-reveal>
-    <span class="tracking-wider uppercase text-[var(--text-primary)] font-medium">
-      {PROFILE.name}
-    </span>
-    <span class="hidden sm:flex items-center gap-1.5 opacity-80">
-      <Icon name="lucide:map-pin" class="w-3.5 h-3.5" />
-      {PROFILE.location}
-    </span>
-  </div> -->
+  <!-- Particle portrait: right column on desktop, behind the headline on mobile -->
+  <div class="hero__portrait">
+    <PortraitParticles class="hero__portrait-inner" />
+  </div>
 
-  <!-- Pure Typographic Center Hero (Decluttered & Clean) -->
-  <div class="my-auto py-2 sm:py-4 md:py-6 w-full" data-hero-parallax>
-    <!-- Fluid Hero Headline: masked word-by-word reveal -->
+  <!-- Copy block (sits above the canvas) -->
+  <div class="hero__copy my-auto py-2 sm:py-4 md:py-6 w-full relative z-10" data-hero-parallax>
     <div class="w-full">
       <h1
-        class="font-display font-medium text-[var(--text-primary)] leading-[0.96] pb-2 sm:pb-3 select-none text-[clamp(2.8rem,9.5vw,9.5rem)] tracking-[-0.045em] break-words"
+        class="hero__title font-display font-medium text-[var(--text-primary)] leading-[0.96] pb-2 sm:pb-3 select-none tracking-[-0.045em] break-words"
         data-reveal="words"
       >
         Hi, i'm Achmad Nabil Afgareza<span
@@ -32,7 +27,6 @@ import { Icon } from "astro-icon/components";
       </h1>
     </div>
 
-    <!-- Clean, Focused Subtitle -->
     <div class="overflow-hidden mt-4 sm:mt-5 md:mt-6 max-w-2xl" data-reveal>
       <p
         class="text-base sm:text-lg md:text-xl font-light text-[var(--text-muted)] leading-relaxed"
@@ -70,26 +64,86 @@ import { Icon } from "astro-icon/components";
     </div>
   </div>
 
-  <!-- Bottom Bar: Section Number + Scroll Indicator -->
+  <!-- Bottom bar: availability · scroll hint · location -->
   <div
-    class="flex items-end justify-center pt-2 sm:pt-4 text-xs font-mono text-[var(--text-muted)]"
+    class="relative z-10 flex sm:grid sm:grid-cols-3 items-center sm:items-end justify-center sm:justify-between gap-4 pt-2 sm:pt-4 text-xs font-mono text-[var(--text-muted)]"
     data-reveal
   >
-    <div class="flex items-center gap-3">
-      <!-- <span class="text-sm font-semibold text-[var(--text-primary)]">00</span>
-      <span>// INTRODUCTION</span> -->
+    <div class="hidden sm:flex items-center gap-2.5">
+      {PROFILE.statusBadge.isOpenToWork && (
+        <>
+          <span class="uppercase tracking-wider text-[var(--text-primary)]">{PROFILE.statusBadge.label}</span>
+        </>
+      )}
     </div>
 
     <a
       href="#about"
-      class="nav-scroll-trigger flex items-center gap-2 hover:text-[var(--text-primary)] transition-colors py-1"
+      class="nav-scroll-trigger flex items-center justify-center gap-2 hover:text-[var(--text-primary)] transition-colors py-1"
     >
       <span>SCROLL TO EXPLORE</span>
       <Icon name="lucide:arrow-down" class="w-3.5 h-3.5 animate-bounce" />
     </a>
 
-    <!-- <div>
-      <span>EST. 2024 · EAST JAVA</span>
-    </div> -->
+    <div class="hidden sm:flex items-center justify-end gap-1.5 uppercase tracking-wider">
+      <Icon name="lucide:map-pin" class="w-3.5 h-3.5 opacity-70" />
+      <span>{PROFILE.location.replace(', Indonesia', '')}</span>
+    </div>
   </div>
 </section>
+
+<style>
+  /* ---------- Portrait placement ---------- */
+  .hero__portrait {
+    /* Mobile: a centred block above the headline; the copy pulls up over its lower part */
+    position: relative;
+    z-index: 0;
+    display: flex;
+    justify-content: center;
+    height: clamp(240px, 40svh, 420px);
+    margin-top: 0.5rem;
+    margin-bottom: calc(-1 * clamp(56px, 10svh, 120px));
+    max-width: 100%;
+  }
+
+  /* Shift portrait left on mobile portrait so the face profile is visually balanced */
+  .hero__portrait :global(.portrait) {
+    transform: translateX(-10%);
+  }
+
+  .hero__title {
+    font-size: clamp(2.8rem, 9.5vw, 9.5rem);
+  }
+
+  @media (min-width: 1024px) {
+    .hero__portrait {
+      /* Desktop: right column, grounded at the bottom of the hero section */
+      position: absolute;
+      right: 3rem;
+      bottom: 0;
+      top: auto;
+      transform: none;
+      height: min(90svh, 58vw, 920px);
+      margin: 0;
+      max-width: none;
+    }
+
+    .hero__portrait :global(.portrait) {
+      transform: none;
+    }
+
+    .hero__copy {
+      max-width: 62%;
+    }
+
+    .hero__title {
+      font-size: clamp(2.8rem, 6.4vw, 6.6rem);
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .hero__copy {
+      max-width: 60%;
+    }
+  }
+</style>
