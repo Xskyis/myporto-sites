@@ -1,0 +1,19 @@
+# Build output
+dist/
+.astro/
+
+# Dependencies
+node_modules/
+
+# Lockfiles
+package-lock.json
+skills-lock.json
+
+# Static assets and generated data (binary)
+public/
+src/data/*.bin
+
+# Local-only tooling (gitignored)
+.agents/
+scripts/
+src/assets/

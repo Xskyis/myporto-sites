@@ -22,9 +22,9 @@ pnpm-debug.log*
 Thumbs.db
 
 .agents/
+AGENTS.md
 
 # Offline tooling / generator scripts and intermediate outputs
 scripts/
-src/assets/
 
 

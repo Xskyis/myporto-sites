@@ -2,7 +2,6 @@
 import { TECH_STACK, TECH_CATEGORIES } from "../data/techstack";
 import { Icon } from "astro-icon/components";
 
-const prioritizedTech = TECH_STACK.filter((t) => t.isPrioritized);
 const groupedTech = TECH_CATEGORIES.map((cat) => ({
   category: cat,
   items: TECH_STACK.filter((t) => t.category === cat),

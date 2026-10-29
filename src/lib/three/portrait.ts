@@ -2,7 +2,8 @@
  * Interactive particle portrait for the Hero.
  *
  * - Data: src/data/portrait-points.bin (uint16 ×4: x, y, z, tone) produced by
- *   scripts/make-portrait-points.mjs. Decoded here into Float32 attributes.
+ *   scripts/make-portrait-points.mjs, plus a pre-sliced mobile variant. Decoded here into
+ *   Float32 attributes.
  * - Rendering: THREE.Points + custom ShaderMaterial. All motion (breathing drift, cursor
  *   repulsion, intro assembly, scroll scatter) lives in the vertex shader; the CPU only
  *   lerps a handful of uniforms per frame.
@@ -13,6 +14,7 @@
 import * as THREE from 'three';
 import { gsap } from 'gsap';
 import pointsUrl from '../../data/portrait-points.bin?url';
+import pointsUrlMobile from '../../data/portrait-points-mobile.bin?url';
 import meta from '../../data/portrait-points.meta.json';
 
 export interface PortraitOptions {
@@ -234,7 +236,9 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
   const count = options.reduced ? meta.mobileCount : meta.count;
 
   // --- data ------------------------------------------------------------------
-  const res = await fetch(pointsUrl);
+  // `reduced` (mobile / low-end) fetches a smaller pre-sliced buffer instead of downloading
+  // the desktop payload and discarding everything past the prefix.
+  const res = await fetch(options.reduced ? pointsUrlMobile : pointsUrl);
   if (!res.ok) throw new Error(`portrait points: HTTP ${res.status}`);
   const { positions, tones } = decodePoints(await res.arrayBuffer(), count);
 

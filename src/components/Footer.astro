@@ -153,29 +153,45 @@ import { Icon } from "astro-icon/components";
 </footer>
 
 <script>
+  let footerAbortController: AbortController | null = null;
+
   function setupFooter() {
-    // Copy email handler
+    // One owner per page load: abort the previous listeners so repeated navigations
+    // cannot stack duplicate clipboard handlers on the same button.
+    footerAbortController?.abort();
+    footerAbortController = new AbortController();
+    const { signal } = footerAbortController;
+
     const copyBtn = document.getElementById("copy-email-btn");
     const copyText = document.getElementById("copy-text");
+    if (!copyBtn || !copyText) return;
 
-    if (copyBtn && copyText) {
-      copyBtn.addEventListener("click", async () => {
+    let resetTimer: number | undefined;
+
+    copyBtn.addEventListener(
+      "click",
+      async () => {
         try {
           await navigator.clipboard.writeText("nabilafgareza12@gmail.com");
           copyText.textContent = "Copied to clipboard!";
           copyBtn.classList.add("border-emerald-500", "text-emerald-500");
 
-          setTimeout(() => {
+          window.clearTimeout(resetTimer);
+          resetTimer = window.setTimeout(() => {
             copyText.textContent = "Copy email";
             copyBtn.classList.remove("border-emerald-500", "text-emerald-500");
           }, 2500);
         } catch (err) {
           console.warn("Clipboard write failed:", err);
         }
-      });
-    }
+      },
+      { signal },
+    );
   }
 
-  setupFooter();
   document.addEventListener("astro:page-load", setupFooter);
+  document.addEventListener("astro:before-swap", () => {
+    footerAbortController?.abort();
+    footerAbortController = null;
+  });
 </script>

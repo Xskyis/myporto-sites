@@ -1,14 +1,15 @@
 import * as THREE from 'three';
 import { gsap } from 'gsap';
-import * as RAPIER_MODULE from '@dimforge/rapier3d-compat';
-import type { Collider, RigidBody, World } from '@dimforge/rapier3d-compat';
 import type { PaletteMode, MonoTone } from '../../data/palette';
 
-// The compat build ships both a default and namespace export depending on the bundler
-// interop path; normalise to the namespace shape at runtime. Types come from the
-// explicit `import type` above since a value binding can't be used as a type namespace.
-const RAPIER = ((RAPIER_MODULE as { default?: unknown }).default ||
-  RAPIER_MODULE) as typeof import('@dimforge/rapier3d-compat');
+/**
+ * Interactive ball pit for the footer.
+ *
+ * Physics is a compact 2D impulse solver (gravity + circle/circle + walls) instead of a full
+ * rigid-body engine: the pit is a decorative `aria-hidden` element, the spheres are untextured
+ * (rotation is invisible), and `@dimforge/rapier3d-compat` inlined ~3 MB of base64 WASM into the
+ * client bundle. This keeps the whole module small while behaving the same on screen.
+ */
 
 function getCurrentPaletteState(): { palette: PaletteMode; tone: MonoTone } {
   if (typeof document === 'undefined') {
@@ -20,9 +21,16 @@ function getCurrentPaletteState(): { palette: PaletteMode; tone: MonoTone } {
   return { palette, tone };
 }
 
-// Ball Pit State
-let rapierInitialized = false;
-let physicsWorld: World | null = null;
+interface Ball {
+  x: number;
+  y: number;
+  z: number;
+  vx: number;
+  vy: number;
+  r: number;
+}
+
+// --- module state ------------------------------------------------------------
 let threeRenderer: THREE.WebGLRenderer | null = null;
 let threeScene: THREE.Scene | null = null;
 let threeCamera: THREE.OrthographicCamera | null = null;
@@ -30,12 +38,10 @@ let animFrameId: number | null = null;
 let isVisible = false;
 let isTabActive = true;
 
-// Instanced Mesh & Physics Bodies
 let instancedMesh: THREE.InstancedMesh | null = null;
 let sphereGeometry: THREE.SphereGeometry | null = null;
 let sphereMaterial: THREE.MeshStandardMaterial | null = null;
-let rigidBodies: RigidBody[] = [];
-let ballRadii: number[] = [];
+let balls: Ball[] = [];
 let ballColors: THREE.Color[] = [];
 let totalBalls = 90;
 
@@ -48,14 +54,22 @@ const mouse = {
   isActive: false,
 };
 
-// Container Dimensions in World Units
+// Container dimensions in world units
 let frustumW = 20;
 let frustumH = 10;
-// Only the boundaries that move on resize need handles; back/front/ceiling are sized
-// generously at creation and never repositioned.
-let floorCollider: Collider | null = null;
-let leftWallCollider: Collider | null = null;
-let rightWallCollider: Collider | null = null;
+
+// --- solver tuning -----------------------------------------------------------
+const FIXED_DT = 1 / 60;
+const MAX_SUBSTEPS = 3;
+const GRAVITY = -16;
+const BALL_RESTITUTION = 0.45;
+const WALL_RESTITUTION = 0.25;
+const LINEAR_DAMPING = 0.35;
+const MAX_SPEED = 25;
+const REPEL_RADIUS = 2.5;
+const REPEL_ACCEL = 30;
+const TOSS_RADIUS = 4;
+const TOSS_FORCE = 22;
 
 export function setBallPitVisible(visible: boolean) {
   isVisible = visible;
@@ -127,15 +141,99 @@ export function updateBallPitColors(immediate = false) {
   }
 }
 
+/**
+ * One fixed physics step: integrate, resolve ball/ball overlaps with a restitution impulse,
+ * then clamp against the pit walls.
+ */
+function stepPhysics(dt: number) {
+  const floor = -frustumH / 2;
+  const left = -frustumW / 2;
+  const right = frustumW / 2;
+  const damp = Math.max(0, 1 - LINEAR_DAMPING * dt);
+
+  for (const b of balls) {
+    b.vy += GRAVITY * dt;
+    b.vx *= damp;
+    b.vy *= damp;
+
+    const speed = Math.hypot(b.vx, b.vy);
+    if (speed > MAX_SPEED) {
+      const k = MAX_SPEED / speed;
+      b.vx *= k;
+      b.vy *= k;
+    }
+
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+  }
+
+  // Resolving the floor only once at the end would push the bottom row back into the pile,
+  // so the wall pass is interleaved with the relaxation passes.
+  const resolveWalls = () => {
+    for (const b of balls) {
+      if (b.y - b.r < floor) {
+        b.y = floor + b.r;
+        if (b.vy < 0) b.vy = -b.vy * WALL_RESTITUTION;
+        b.vx *= 0.98;
+      }
+      if (b.x - b.r < left) {
+        b.x = left + b.r;
+        if (b.vx < 0) b.vx = -b.vx * WALL_RESTITUTION;
+      }
+      if (b.x + b.r > right) {
+        b.x = right - b.r;
+        if (b.vx > 0) b.vx = -b.vx * WALL_RESTITUTION;
+      }
+    }
+  };
+
+  // Four passes keep a 110-ball pile from visibly overlapping at rest.
+  for (let iter = 0; iter < 4; iter++) {
+    for (let i = 0; i < balls.length; i++) {
+      const a = balls[i];
+      for (let j = i + 1; j < balls.length; j++) {
+        const b = balls[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const minDist = a.r + b.r;
+        const distSq = dx * dx + dy * dy;
+        if (distSq >= minDist * minDist || distSq === 0) continue;
+
+        const dist = Math.sqrt(distSq);
+        const nx = dx / dist;
+        const ny = dy / dist;
+        const overlap = minDist - dist;
+
+        // Mass ∝ r², split the positional correction the same way.
+        const massA = a.r * a.r;
+        const massB = b.r * b.r;
+        const massSum = massA + massB;
+        a.x -= nx * overlap * (massB / massSum);
+        a.y -= ny * overlap * (massB / massSum);
+        b.x += nx * overlap * (massA / massSum);
+        b.y += ny * overlap * (massA / massSum);
+
+        const relVn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+        if (relVn > 0) continue; // already separating
+
+        const invA = 1 / massA;
+        const invB = 1 / massB;
+        const impulse = (-(1 + BALL_RESTITUTION) * relVn) / (invA + invB);
+
+        a.vx -= impulse * invA * nx;
+        a.vy -= impulse * invA * ny;
+        b.vx += impulse * invB * nx;
+        b.vy += impulse * invB * ny;
+      }
+    }
+
+    resolveWalls();
+  }
+}
+
 export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void> {
   const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (isReduced) return () => {};
-
-  // Initialize Rapier WASM
-  if (!rapierInitialized) {
-    await RAPIER.init();
-    rapierInitialized = true;
-  }
 
   const container = canvas.parentElement;
   if (!container) return () => {};
@@ -145,7 +243,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
   const height = rect.height || Math.max(350, window.innerHeight * 0.55);
 
   const isMobile = width < 768;
-  totalBalls = isMobile ? 45 : (width > 1200 ? 110 : 85);
+  totalBalls = isMobile ? 45 : width > 1200 ? 110 : 85;
 
   // 1. Setup Three.js Scene
   threeScene = new THREE.Scene();
@@ -160,7 +258,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     frustumH / 2,
     -frustumH / 2,
     0.1,
-    100
+    100,
   );
   threeCamera.position.set(0, 0, 20);
   threeCamera.lookAt(0, 0, 0);
@@ -193,54 +291,9 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
   fillLight.position.set(-6, -4, 6);
   threeScene.add(fillLight);
 
-  // 2. Setup Rapier Physics World
-  const gravity = { x: 0.0, y: -16.0, z: 0.0 };
-  physicsWorld = new RAPIER.World(gravity);
-
-  // Build boundary box (solid, thick walls preventing tunneling)
-  const floorHeight = 3.0;
-  const wallThickness = 3.0;
+  // 2. Instanced spheres + ball state
   const depth = 6.0;
 
-  floorCollider = physicsWorld.createCollider(
-    RAPIER.ColliderDesc.cuboid(frustumW * 2, floorHeight, depth * 2)
-      .setTranslation(0, -frustumH / 2 - floorHeight + 0.1, 0)
-      .setRestitution(0.25)
-      .setFriction(0.5)
-  );
-
-  leftWallCollider = physicsWorld.createCollider(
-    RAPIER.ColliderDesc.cuboid(wallThickness, frustumH * 2, depth * 2)
-      .setTranslation(-frustumW / 2 - wallThickness + 0.1, 0, 0)
-      .setRestitution(0.25)
-  );
-
-  rightWallCollider = physicsWorld.createCollider(
-    RAPIER.ColliderDesc.cuboid(wallThickness, frustumH * 2, depth * 2)
-      .setTranslation(frustumW / 2 + wallThickness - 0.1, 0, 0)
-      .setRestitution(0.25)
-  );
-
-  // Back wall
-  physicsWorld.createCollider(
-    RAPIER.ColliderDesc.cuboid(frustumW * 2, frustumH * 2, wallThickness)
-      .setTranslation(0, 0, -depth / 2 - wallThickness)
-  );
-
-  // Front wall
-  physicsWorld.createCollider(
-    RAPIER.ColliderDesc.cuboid(frustumW * 2, frustumH * 2, wallThickness)
-      .setTranslation(0, 0, depth / 2 + wallThickness)
-  );
-
-  // Ceiling (keeps tossed balls from flying out of the pit)
-  physicsWorld.createCollider(
-    RAPIER.ColliderDesc.cuboid(frustumW * 2, wallThickness, depth * 2)
-      .setTranslation(0, frustumH / 2 + 7, 0)
-      .setRestitution(0.2)
-  );
-
-  // 3. Create InstancedMesh & RigidBodies
   sphereGeometry = new THREE.SphereGeometry(1, 24, 24);
   sphereMaterial = new THREE.MeshStandardMaterial({
     roughness: 0.25,
@@ -251,8 +304,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
   instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   threeScene.add(instancedMesh);
 
-  rigidBodies = [];
-  ballRadii = [];
+  balls = [];
   ballColors = [];
 
   const initialPalette = getActiveBallPalette();
@@ -263,35 +315,18 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     let r = 0.45;
     if (i % 5 === 0) r = 0.85;
     else if (i % 2 === 0) r = 0.62;
-    ballRadii.push(r);
 
     // Initial drop position (staggered just above the visible pit)
-    const posX = (Math.random() - 0.5) * (frustumW * 0.85);
-    const posY = frustumH / 2 + 0.8 + Math.random() * 3.5 + (i / totalBalls) * 4.0;
-    const posZ = (Math.random() - 0.5) * (depth * 0.6);
+    const x = (Math.random() - 0.5) * (frustumW * 0.85);
+    const y = frustumH / 2 + 0.8 + Math.random() * 3.5 + (i / totalBalls) * 4.0;
+    const z = (Math.random() - 0.5) * (depth * 0.6);
 
-    // Dynamic RigidBody
-    const rbDesc = RAPIER.RigidBodyDesc.dynamic()
-      .setTranslation(posX, posY, posZ)
-      .setLinearDamping(0.35)
-      .setAngularDamping(0.45);
-    const body = physicsWorld.createRigidBody(rbDesc);
+    balls.push({ x, y, z, vx: 0, vy: 0, r });
 
-    // Ball Collider
-    const colliderDesc = RAPIER.ColliderDesc.ball(r)
-      .setRestitution(0.45)
-      .setFriction(0.35)
-      .setDensity(1.0);
-    physicsWorld.createCollider(colliderDesc, body);
-
-    rigidBodies.push(body);
-
-    // Initial matrix
     dummyMatrix.makeScale(r, r, r);
-    dummyMatrix.setPosition(posX, posY, posZ);
+    dummyMatrix.setPosition(x, y, z);
     instancedMesh.setMatrixAt(i, dummyMatrix);
 
-    // Color
     const c = initialPalette[i % initialPalette.length].clone();
     ballColors.push(c);
     instancedMesh.setColorAt(i, c);
@@ -302,13 +337,18 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     instancedMesh.instanceColor.needsUpdate = true;
   }
 
-  // 4. Pointer Interaction (Force Field & Impulse)
+  // 3. Pointer Interaction (Force Field & Impulse)
   const onPointerMove = (e: PointerEvent) => {
     const canvasRect = canvas.getBoundingClientRect();
     const clientX = e.clientX - canvasRect.left;
     const clientY = e.clientY - canvasRect.top;
 
-    if (clientX >= 0 && clientX <= canvasRect.width && clientY >= 0 && clientY <= canvasRect.height) {
+    if (
+      clientX >= 0 &&
+      clientX <= canvasRect.width &&
+      clientY >= 0 &&
+      clientY <= canvasRect.height
+    ) {
       mouse.targetWorldX = (clientX / canvasRect.width) * frustumW - frustumW / 2;
       mouse.targetWorldY = -((clientY / canvasRect.height) * frustumH - frustumH / 2);
       mouse.isActive = true;
@@ -335,26 +375,15 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     const clickX = (clientX / canvasRect.width) * frustumW - frustumW / 2;
     const clickY = -((clientY / canvasRect.height) * frustumH - frustumH / 2);
 
-    // Apply strong radial impulse to nearby balls
-    for (let i = 0; i < totalBalls; i++) {
-      const body = rigidBodies[i];
-      if (!body) continue;
-      const pos = body.translation();
-      const dx = pos.x - clickX;
-      const dy = pos.y - clickY;
+    for (const ball of balls) {
+      const dx = ball.x - clickX;
+      const dy = ball.y - clickY;
       const dist = Math.hypot(dx, dy);
+      if (dist >= TOSS_RADIUS) continue;
 
-      if (dist < 4.0) {
-        const force = (1 - dist / 4.0) * 22;
-        body.applyImpulse(
-          {
-            x: (dx / (dist || 1)) * force + (Math.random() - 0.5) * 4,
-            y: (dy / (dist || 1)) * force + Math.random() * 8 + 4,
-            z: (Math.random() - 0.5) * 6,
-          },
-          true
-        );
-      }
+      const force = (1 - dist / TOSS_RADIUS) * TOSS_FORCE;
+      ball.vx += (dx / (dist || 1)) * force + (Math.random() - 0.5) * 4;
+      ball.vy += (dy / (dist || 1)) * force + Math.random() * 8 + 4;
     }
   };
 
@@ -370,7 +399,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
 
   // Resize handler
   const onResize = () => {
-    if (!threeRenderer || !threeCamera || !container) return;
+    if (!threeRenderer || !threeCamera) return;
     const r = container.getBoundingClientRect();
     const w = r.width || window.innerWidth;
     const h = r.height || Math.max(350, window.innerHeight * 0.55);
@@ -387,11 +416,6 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     threeCamera.top = frustumH / 2;
     threeCamera.bottom = -frustumH / 2;
     threeCamera.updateProjectionMatrix();
-
-    // Update boundary positions
-    if (floorCollider) floorCollider.setTranslation({ x: 0, y: -frustumH / 2 - floorHeight + 0.2, z: 0 });
-    if (leftWallCollider) leftWallCollider.setTranslation({ x: -frustumW / 2 - wallThickness + 0.1, y: 0, z: 0 });
-    if (rightWallCollider) rightWallCollider.setTranslation({ x: frustumW / 2 + wallThickness - 0.1, y: 0, z: 0 });
   };
   window.addEventListener('resize', onResize);
 
@@ -418,85 +442,73 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
   // Ensure initial color matches current active palette
   updateBallPitColors(true);
 
-  // 5. Physics & Render Loop
+  // 4. Render loop (fixed-step physics, render on every frame)
   isVisible = true;
   const dummyMatrixUpdate = new THREE.Matrix4();
   const dummyScale = new THREE.Vector3();
   const dummyQuat = new THREE.Quaternion();
   const dummyPos = new THREE.Vector3();
 
+  let accumulator = 0;
+  let lastTime = performance.now();
+
   const animate = () => {
     animFrameId = requestAnimationFrame(animate);
 
-    if (!isVisible || !isTabActive || !physicsWorld || !threeRenderer || !threeScene || !threeCamera) {
+    if (!isVisible || !isTabActive || !threeRenderer || !threeScene || !threeCamera) {
+      lastTime = performance.now();
       return;
     }
 
-    // Lerp mouse force field
+    const now = performance.now();
+    const frameDt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+
+    // Lerp the pointer force field, then push nearby balls away.
     mouse.worldX += (mouse.targetWorldX - mouse.worldX) * 0.15;
     mouse.worldY += (mouse.targetWorldY - mouse.worldY) * 0.15;
 
-    // Apply repulsive force field around cursor / touch
     if (mouse.isActive && Math.abs(mouse.worldX) < frustumW && Math.abs(mouse.worldY) < frustumH) {
-      for (let i = 0; i < totalBalls; i++) {
-        const body = rigidBodies[i];
-        if (!body) continue;
-        const pos = body.translation();
-        const dx = pos.x - mouse.worldX;
-        const dy = pos.y - mouse.worldY;
+      for (const ball of balls) {
+        const dx = ball.x - mouse.worldX;
+        const dy = ball.y - mouse.worldY;
         const dist = Math.hypot(dx, dy);
+        if (dist >= REPEL_RADIUS || dist <= 0.01) continue;
 
-        if (dist < 2.5 && dist > 0.01) {
-          const force = (1 - dist / 2.5) * 5.5;
-          body.applyImpulse(
-            {
-              x: (dx / dist) * force,
-              y: (dy / dist) * force,
-              z: 0,
-            },
-            true
-          );
-        }
+        const force = (1 - dist / REPEL_RADIUS) * REPEL_ACCEL * frameDt;
+        ball.vx += (dx / dist) * force;
+        ball.vy += (dy / dist) * force;
       }
     }
 
-    // Step physics world (fixed 60Hz delta)
-    physicsWorld.step();
+    accumulator += frameDt;
+    let steps = 0;
+    while (accumulator >= FIXED_DT && steps < MAX_SUBSTEPS) {
+      stepPhysics(FIXED_DT);
+      accumulator -= FIXED_DT;
+      steps++;
+    }
+    if (steps === MAX_SUBSTEPS) accumulator = 0; // drop the backlog after a long stall
 
-    // Sync Three.js InstancedMesh with Rapier RigidBodies
-    for (let i = 0; i < totalBalls; i++) {
-      const body = rigidBodies[i];
-      if (!body) continue;
-
-      const t = body.translation();
-
-      // Clamp runaway velocities to prevent penetration
-      const lv = body.linvel();
-      const speed = Math.hypot(lv.x, lv.y, lv.z);
-      if (speed > 25) {
-        body.setLinvel({ x: (lv.x / speed) * 25, y: (lv.y / speed) * 25, z: (lv.z / speed) * 25 }, true);
+    // Safety: keep runaway balls inside the pit instead of letting them vanish
+    for (const ball of balls) {
+      if (
+        ball.y < -frustumH / 2 - 1 ||
+        Math.abs(ball.x) > frustumW / 2 + 1 ||
+        ball.y > frustumH / 2 + 7
+      ) {
+        ball.x = (Math.random() - 0.5) * (frustumW * 0.7);
+        ball.y = frustumH / 2 + 0.5 + Math.random() * 2;
+        ball.vx = 0;
+        ball.vy = -2;
       }
+    }
 
-      // Safety: keep within bounds so balls never disappear
-      if (t.y < -frustumH / 2 - 1 || Math.abs(t.x) > frustumW / 2 + 1 || t.y > frustumH / 2 + 7) {
-        body.setTranslation(
-          {
-            x: (Math.random() - 0.5) * (frustumW * 0.7),
-            y: frustumH / 2 + 0.5 + Math.random() * 2,
-            z: (Math.random() - 0.5) * 2,
-          },
-          true
-        );
-        body.setLinvel({ x: 0, y: -2, z: 0 }, true);
-      }
-
-      const r = body.rotation();
-      const rad = ballRadii[i];
-
-      dummyPos.set(t.x, t.y, t.z);
-      dummyQuat.set(r.x, r.y, r.z, r.w);
-      dummyScale.set(rad, rad, rad);
-
+    // Sync the instanced mesh (spheres are untextured, so rotation is invisible → identity)
+    for (let i = 0; i < balls.length; i++) {
+      const ball = balls[i];
+      dummyPos.set(ball.x, ball.y, ball.z);
+      dummyScale.set(ball.r, ball.r, ball.r);
       dummyMatrixUpdate.compose(dummyPos, dummyQuat, dummyScale);
       instancedMesh!.setMatrixAt(i, dummyMatrixUpdate);
     }
@@ -525,14 +537,9 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     sphereMaterial?.dispose();
     threeRenderer?.dispose();
 
-    if (physicsWorld) {
-      physicsWorld.free();
-      physicsWorld = null;
-    }
-    // Collider handles are owned by the freed world; drop them so a later resize can't touch them
-    floorCollider = null;
-    leftWallCollider = null;
-    rightWallCollider = null;
+    // Palette tweens from the previous mount would otherwise keep writing through the
+    // module-level `instancedMesh` reference into the next one.
+    gsap.killTweensOf(ballColors);
 
     instancedMesh = null;
     sphereGeometry = null;
@@ -540,8 +547,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     threeRenderer = null;
     threeScene = null;
     threeCamera = null;
-    rigidBodies = [];
-    ballRadii = [];
+    balls = [];
     ballColors = [];
     isVisible = false;
   };

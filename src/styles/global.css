@@ -88,11 +88,14 @@ body {
     border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Custom Cursor Desktop Reset - hide OS native cursor so it does not overlap */
-@media (pointer: fine) {
-  *,
-  *::before,
-  *::after {
+/* Custom Cursor Desktop Reset - hide the OS cursor only while the custom cursor is
+   actually running. The `has-custom-cursor` class is set by CustomCursor.astro after it
+   mounts, so a failed or disabled script never leaves desktop visitors without a pointer.
+   The width query mirrors the `md:` breakpoint where the cursor elements are visible. */
+@media (pointer: fine) and (min-width: 768px) {
+  html.has-custom-cursor *,
+  html.has-custom-cursor *::before,
+  html.has-custom-cursor *::after {
     cursor: none !important;
   }
 }

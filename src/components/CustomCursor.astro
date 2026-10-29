@@ -24,7 +24,14 @@
     const ring = document.getElementById('cursor-ring');
     const dot = document.getElementById('cursor-dot');
 
-    if (isTouch || !ring || !dot) return null;
+    if (isTouch || !ring || !dot) {
+      document.documentElement.classList.remove('has-custom-cursor');
+      return null;
+    }
+
+    // The native cursor is hidden by CSS only once this class exists, so a missing or
+    // broken custom cursor can never leave desktop visitors without a pointer.
+    document.documentElement.classList.add('has-custom-cursor');
 
     let mouseX = -100;
     let mouseY = -100;
@@ -119,6 +126,7 @@
       document.removeEventListener('mouseover', handleMouseOver);
       document.removeEventListener('mouseout', handleMouseOut);
       if (animFrameId) cancelAnimationFrame(animFrameId);
+      document.documentElement.classList.remove('has-custom-cursor');
     };
   }
 

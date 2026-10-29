@@ -80,7 +80,7 @@ const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
   <!-- Floating Cursor Hover Preview for Desktop -->
   <div
     id="project-preview-modal"
-    class="pointer-events-none fixed top-0 left-0 z-40 hidden md:block w-80 h-52 rounded-xl overflow-hidden border border-hairline bg-[var(--bg-surface)] shadow-2xl opacity-0 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-300 will-change-transform"
+    class="pointer-events-none fixed top-0 left-0 z-40 hidden md:block w-80 h-52 rounded-xl overflow-hidden border border-hairline bg-[var(--bg-surface)] shadow-2xl opacity-0 transition-opacity duration-300 will-change-transform"
     aria-hidden="true"
   >
     <img
@@ -107,60 +107,81 @@ const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
 </section>
 
 <script>
-  function setupProjectHover() {
+  let hoverCleanup: (() => void) | null = null;
+
+  function setupProjectHover(): (() => void) | null {
     const isTouch = window.matchMedia('(pointer: coarse)').matches;
     const previewModal = document.getElementById('project-preview-modal');
     const previewImg = document.getElementById('project-preview-img') as HTMLImageElement | null;
     const rows = document.querySelectorAll<HTMLElement>('.project-row');
 
-    if (isTouch || !previewModal || !previewImg) return;
+    if (isTouch || !previewModal || !previewImg) return null;
+
+    const abort = new AbortController();
+    const { signal } = abort;
 
     let targetX = 0;
     let targetY = 0;
     let currentX = 0;
     let currentY = 0;
-    let isHovering = false;
+    let rafId: number | null = null;
 
     window.addEventListener('pointermove', (e) => {
       targetX = e.clientX + 30;
       targetY = e.clientY + 20;
-    }, { passive: true });
+    }, { passive: true, signal });
 
+    // The follow loop only runs while a row is hovered. It used to tick forever, which
+    // leaked one requestAnimationFrame chain (plus its listeners) per navigation.
     const updatePosition = () => {
-      if (isHovering) {
-        currentX += (targetX - currentX) * 0.15;
-        currentY += (targetY - currentY) * 0.15;
-        previewModal.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
-      }
-      requestAnimationFrame(updatePosition);
+      currentX += (targetX - currentX) * 0.15;
+      currentY += (targetY - currentY) * 0.15;
+      previewModal.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+      rafId = requestAnimationFrame(updatePosition);
     };
-    requestAnimationFrame(updatePosition);
+
+    const startLoop = () => {
+      if (rafId === null) rafId = requestAnimationFrame(updatePosition);
+    };
+
+    const stopLoop = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = null;
+    };
 
     rows.forEach((row) => {
       row.addEventListener('mouseenter', () => {
         const cover = row.getAttribute('data-cover');
-        if (cover && previewImg) {
-          previewImg.src = cover;
-          previewModal.classList.remove('opacity-0');
-          previewModal.classList.add('opacity-100');
-          isHovering = true;
-        }
-      });
+        if (!cover) return;
+        previewImg.src = cover;
+        previewModal.classList.remove('opacity-0');
+        previewModal.classList.add('opacity-100');
+        startLoop();
+      }, { signal });
 
       row.addEventListener('mouseleave', () => {
         previewModal.classList.add('opacity-0');
         previewModal.classList.remove('opacity-100');
-        isHovering = false;
-      });
+        stopLoop();
+      }, { signal });
     });
+
+    return () => {
+      abort.abort();
+      stopLoop();
+      previewModal.classList.add('opacity-0');
+      previewModal.classList.remove('opacity-100');
+    };
   }
 
-  let hoverCleanup: (() => void) | null = null;
-
   function initHover() {
-    if (hoverCleanup) hoverCleanup();
-    setupProjectHover();
+    hoverCleanup?.();
+    hoverCleanup = setupProjectHover();
   }
 
   document.addEventListener('astro:page-load', initHover);
+  document.addEventListener('astro:before-swap', () => {
+    hoverCleanup?.();
+    hoverCleanup = null;
+  });
 </script>

@@ -7,12 +7,15 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "check": "astro check",
+    "format": "prettier --write . --ignore-unknown",
+    "format:check": "prettier --check . --ignore-unknown",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
+    "@astrojs/sitemap": "^3.7.4",
     "@astrojs/tailwind": "^6.0.2",
-    "@dimforge/rapier3d-compat": "^0.21.0",
     "@fontsource-variable/geist": "^5.2.5",
     "@fontsource/instrument-serif": "^5.2.5",
     "@iconify-json/lucide": "^1.2.147",
@@ -27,6 +30,8 @@
   "devDependencies": {
     "@imgly/background-removal-node": "^1.4.5",
     "@types/three": "^0.174.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-astro": "^1.1.2",
     "sharp": "^0.35.5",
     "typescript": "^5.7.3"
   },

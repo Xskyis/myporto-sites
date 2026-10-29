@@ -158,11 +158,13 @@ const { class: className = '' } = Astro.props;
 
     // Show the placeholder only if WebGL takes a while (avoids a static → scattered pop on fast loads)
     let placeholderShown = false;
+    const showPlaceholder = () => {
+      if (root.dataset.state !== 'idle') return;
+      root.dataset.state = 'placeholder';
+      placeholderShown = true;
+    };
     const placeholderTimer = window.setTimeout(() => {
-      if (root.dataset.state === 'idle' && !isSplashActive()) {
-        root.dataset.state = 'placeholder';
-        placeholderShown = true;
-      }
+      if (!isSplashActive()) showPlaceholder();
     }, 700);
     signal.addEventListener('abort', () => window.clearTimeout(placeholderTimer));
 
@@ -291,8 +293,28 @@ const { class: className = '' } = Astro.props;
       signal.addEventListener('abort', () => mo.disconnect());
     };
 
-    // Boot immediately so Three.js & points are loaded and ready before or during hero reveal
-    void boot();
+    // On first visit the portrait sits behind the splash curtain. Hold the three.js bundle and
+    // the point cloud (~350 KB gzip combined) until the curtain starts lifting, so they never
+    // compete with fonts/CSS on the critical path. Returning visitors boot straight away.
+    let bootStarted = false;
+    const startBoot = (withPlaceholder: boolean) => {
+      if (bootStarted || signal.aborted) return;
+      bootStarted = true;
+      window.clearTimeout(placeholderTimer);
+      // After the splash the portrait is already on screen, so the static dots must cover the
+      // gap until the first WebGL frame instead of leaving an empty box.
+      if (withPlaceholder) showPlaceholder();
+      void boot();
+    };
+
+    if (isSplashActive()) {
+      window.addEventListener('splash:hero-reveal', () => startBoot(true), { once: true, signal });
+      // Safety net: if the splash never announces (e.g. its script failed), boot anyway.
+      const safetyTimer = window.setTimeout(() => startBoot(true), 5000);
+      signal.addEventListener('abort', () => window.clearTimeout(safetyTimer));
+    } else {
+      startBoot(false);
+    }
 
     return state;
   }
