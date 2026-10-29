@@ -92,7 +92,7 @@ import { Icon } from 'astro-icon/components';
       {TIMELINE.map((item) => (
         <div class="relative group pl-6 sm:pl-8 md:pl-12 pr-4 sm:pr-8 md:pr-12 lg:pr-16 py-10 md:py-12 hover:bg-[var(--bg-surface-soft)]/50 transition-all duration-300" data-reveal>
           <!-- Node Dot -->
-          <div class="absolute -left-[7px] top-[41px] md:top-[49px] w-3.5 h-3.5 rounded-full border-2 border-[var(--bg-primary)] bg-[var(--text-muted)] group-hover:bg-[var(--accent-primary)] transition-colors duration-300"></div>
+          <div class="timeline-node-dot absolute -left-[7px] top-[41px] md:top-[49px] w-3.5 h-3.5 rounded-full border-2 border-[var(--bg-primary)] bg-[var(--text-muted)] group-hover:bg-[var(--accent-primary)] transition-all duration-300 will-change-transform"></div>
 
           <div class="flex flex-col md:flex-row md:items-baseline justify-between gap-2">
             <div>

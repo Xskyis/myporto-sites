@@ -10,6 +10,7 @@
     "check": "astro check",
     "format": "prettier --write . --ignore-unknown",
     "format:check": "prettier --check . --ignore-unknown",
+    "optimize:images": "node scripts/optimize-project-images.mjs",
     "astro": "astro"
   },
   "dependencies": {

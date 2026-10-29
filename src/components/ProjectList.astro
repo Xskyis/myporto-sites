@@ -28,7 +28,8 @@ const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
       <a
         href={`/projects/${project.id}`}
         class="project-row group block py-8 md:py-12 px-6 sm:px-8 md:px-10 transition-all duration-300 hover:bg-[var(--bg-surface-soft)]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
-        data-cover={project.data.cover || '/projects/goforumrah.svg'}
+        data-cover={project.data.cover || ''}
+        data-preview={project.data.cover ? project.data.cover.replace('/projects/', '/projects/previews/') : ''}
         data-title={project.data.title}
         data-reveal
       >
@@ -87,6 +88,10 @@ const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
       id="project-preview-img"
       src=""
       alt="Project Preview"
+      width="320"
+      height="208"
+      loading="lazy"
+      decoding="async"
       class="w-full h-full object-cover transition-transform duration-500 scale-105"
     />
   </div>
@@ -124,11 +129,18 @@ const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
     let targetY = 0;
     let currentX = 0;
     let currentY = 0;
+    let hasPosition = false;
     let rafId: number | null = null;
 
     window.addEventListener('pointermove', (e) => {
       targetX = e.clientX + 30;
       targetY = e.clientY + 20;
+      if (!hasPosition) {
+        currentX = targetX;
+        currentY = targetY;
+        hasPosition = true;
+        previewModal.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+      }
     }, { passive: true, signal });
 
     // The follow loop only runs while a row is hovered. It used to tick forever, which
@@ -151,9 +163,15 @@ const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
 
     rows.forEach((row) => {
       row.addEventListener('mouseenter', () => {
-        const cover = row.getAttribute('data-cover');
+        const cover = row.getAttribute('data-preview') || row.getAttribute('data-cover');
         if (!cover) return;
         previewImg.src = cover;
+        if (!hasPosition && targetX !== 0) {
+          currentX = targetX;
+          currentY = targetY;
+          hasPosition = true;
+          previewModal.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+        }
         previewModal.classList.remove('opacity-0');
         previewModal.classList.add('opacity-100');
         startLoop();

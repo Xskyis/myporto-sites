@@ -150,6 +150,7 @@ function setupHero(signal: AbortSignal) {
 
   // Scroll-out: hero content drifts up slower than the page and fades, giving depth to the hand-off
   const content = hero.querySelector<HTMLElement>('[data-hero-parallax]');
+  const bottomBar = hero.querySelector<HTMLElement>(':scope > div:last-child');
   const exit = gsap.timeline({
     scrollTrigger: {
       trigger: hero,
@@ -158,9 +159,11 @@ function setupHero(signal: AbortSignal) {
       scrub: true,
     },
   });
-  exit.to(hero, { opacity: 0, ease: 'none' }, 0);
   if (content) {
-    exit.to(content, { y: -90, scale: 0.985, ease: 'none', transformOrigin: 'left center' }, 0);
+    exit.to(content, { y: -90, opacity: 0, scale: 0.985, ease: 'none', transformOrigin: 'left center' }, 0);
+  }
+  if (bottomBar) {
+    exit.to(bottomBar, { opacity: 0, ease: 'none' }, 0);
   }
 }
 
@@ -237,6 +240,32 @@ function setupTimelineLine() {
       },
     }
   );
+
+  // Dynamic node dot lighting: lights up as the vertical scrub line touches each node
+  const dots = container.querySelectorAll<HTMLElement>('.timeline-node-dot');
+  dots.forEach((dot) => {
+    ScrollTrigger.create({
+      trigger: dot,
+      start: 'top 75%',
+      toggleActions: 'play reverse play reverse',
+      onEnter: () => {
+        gsap.to(dot, {
+          backgroundColor: 'var(--accent-primary)',
+          scale: 1.25,
+          duration: 0.35,
+          ease: 'back.out(2)',
+        });
+      },
+      onLeaveBack: () => {
+        gsap.to(dot, {
+          backgroundColor: 'var(--text-muted)',
+          scale: 1,
+          duration: 0.3,
+          ease: 'power2.out',
+        });
+      },
+    });
+  });
 }
 
 /* -------------------------------------------------------------------------- */
@@ -319,6 +348,7 @@ function setupVelocityMarquee(cleanups: Cleanup[], signal: AbortSignal) {
   let skew = 0;
   let direction = 1; // 1 = leftwards (scrolling down), -1 = rightwards (scrolling up)
   let hoverFactor = 1;
+  let isTickerActive = false;
 
   const velocityWatcher = ScrollTrigger.create({
     onUpdate: (self) => {
@@ -336,13 +366,48 @@ function setupVelocityMarquee(cleanups: Cleanup[], signal: AbortSignal) {
     position = wrap(position - direction * (BASE_SPEED * hoverFactor + boost) * dt);
     gsap.set(track, { xPercent: position, skewX: skew });
   };
-  gsap.ticker.add(tick);
+
+  const startTicker = () => {
+    if (!isTickerActive) {
+      isTickerActive = true;
+      gsap.ticker.add(tick);
+    }
+  };
+
+  const stopTicker = () => {
+    if (isTickerActive) {
+      isTickerActive = false;
+      gsap.ticker.remove(tick);
+    }
+  };
+
+  // Only run the ticker while the ribbon is in or near the viewport
+  const io = new IntersectionObserver(
+    ([entry]) => {
+      if (entry.isIntersecting && !document.hidden) {
+        startTicker();
+      } else {
+        stopTicker();
+      }
+    },
+    { rootMargin: '120px 0px' }
+  );
+  io.observe(ribbon);
+  signal.addEventListener('abort', () => io.disconnect());
+
+  const onVisChange = () => {
+    if (document.hidden) {
+      stopTicker();
+    }
+  };
+  document.addEventListener('visibilitychange', onVisChange, { signal });
 
   ribbon.addEventListener('pointerenter', () => (hoverFactor = 0.25), { signal });
   ribbon.addEventListener('pointerleave', () => (hoverFactor = 1), { signal });
 
   cleanups.push(() => {
-    gsap.ticker.remove(tick);
+    stopTicker();
+    io.disconnect();
     velocityWatcher.kill();
     gsap.set(track, { clearProps: 'transform' });
     track.classList.add('animate-marquee');
@@ -361,12 +426,32 @@ function setupMagneticButtons(signal: AbortSignal) {
     const xTo = gsap.quickTo(btn, 'x', { duration: 0.35, ease: 'power3.out' });
     const yTo = gsap.quickTo(btn, 'y', { duration: 0.35, ease: 'power3.out' });
 
+    let centerX = 0;
+    let centerY = 0;
+
+    btn.addEventListener(
+      'mouseenter',
+      () => {
+        // Calculate true resting center without translation distortion
+        const rect = btn.getBoundingClientRect();
+        const currentX = (gsap.getProperty(btn, 'x') as number) || 0;
+        const currentY = (gsap.getProperty(btn, 'y') as number) || 0;
+        centerX = rect.left - currentX + rect.width / 2;
+        centerY = rect.top - currentY + rect.height / 2;
+      },
+      { signal }
+    );
+
     btn.addEventListener(
       'mousemove',
       (e: MouseEvent) => {
-        const rect = btn.getBoundingClientRect();
-        const dx = (e.clientX - (rect.left + rect.width / 2)) * 0.35;
-        const dy = (e.clientY - (rect.top + rect.height / 2)) * 0.35;
+        if (!centerX) {
+          const rect = btn.getBoundingClientRect();
+          centerX = rect.left + rect.width / 2;
+          centerY = rect.top + rect.height / 2;
+        }
+        const dx = (e.clientX - centerX) * 0.35;
+        const dy = (e.clientY - centerY) * 0.35;
         xTo(dx);
         yTo(dy);
       },
@@ -376,6 +461,8 @@ function setupMagneticButtons(signal: AbortSignal) {
     btn.addEventListener(
       'mouseleave',
       () => {
+        centerX = 0;
+        centerY = 0;
         gsap.to(btn, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)' });
       },
       { signal }
