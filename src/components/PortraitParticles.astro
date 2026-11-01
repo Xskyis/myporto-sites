@@ -157,16 +157,20 @@ const { class: className = '' } = Astro.props;
       return state;
     }
 
-    // Show the placeholder only if WebGL takes a while (avoids a static → scattered pop on fast loads)
+    // Static dots appear only when WebGL is slow: too early and a fast load pops from
+    // static → animated; never and a slow load leaves an empty portrait box. Whether they
+    // were shown also decides the intro (crossfade vs. full assemble), see the boot start.
     let placeholderShown = false;
     const showPlaceholder = () => {
       if (root.dataset.state !== 'idle') return;
       root.dataset.state = 'placeholder';
       placeholderShown = true;
     };
-    const placeholderTimer = window.setTimeout(() => {
-      if (!isSplashActive()) showPlaceholder();
-    }, 700);
+    let placeholderTimer = 0;
+    const armPlaceholderTimer = (delay: number) => {
+      window.clearTimeout(placeholderTimer);
+      placeholderTimer = window.setTimeout(showPlaceholder, delay);
+    };
     signal.addEventListener('abort', () => window.clearTimeout(placeholderTimer));
 
     const boot = async () => {
@@ -211,20 +215,17 @@ const { class: className = '' } = Astro.props;
       state.handle = handle;
 
       // --- intro -----------------------------------------------------------
-      const hasRevealed = () =>
-        (window as any).__heroRevealed === true ||
-        document.documentElement.classList.contains('no-splash') ||
-        !document.getElementById('splash-screen');
-
-      if (isSplashActive() && !hasRevealed()) {
-        handle.setActive(true); // render behind the curtain
-        window.addEventListener('splash:hero-reveal', () => handle.assemble(), { once: true, signal });
-      } else if (placeholderShown) {
-        handle.showAssembled(); // crossfade static → identical live state
-        handle.setActive(true);
+      // The reveal event fires before this boot can possibly finish, so by now the curtain
+      // is lifting or already gone. When the slow-boot placeholder is up it already shows
+      // the assembled portrait — crossfade to the identical live state rather than sweeping
+      // an assemble over it, which would read as a double image. Otherwise play the full
+      // scattered → assembled intro; while the curtain is still lifting it simply runs
+      // behind it, already in motion as the hero is exposed.
+      handle.setActive(true);
+      if (placeholderShown) {
+        handle.showAssembled();
       } else {
-        handle.setActive(true);
-        handle.assemble();
+        void handle.assemble();
       }
 
       // --- visibility: only the on-screen WebGL context may run its loop ------
@@ -293,24 +294,30 @@ const { class: className = '' } = Astro.props;
 
     // On first visit the portrait sits behind the splash curtain. Hold the three.js bundle and
     // the point cloud (~350 KB gzip combined) until the curtain starts lifting, so they never
-    // compete with fonts/CSS on the critical path. Returning visitors boot straight away.
+    // compete with fonts/CSS on the critical path — then boot WITH the reveal, so the assemble
+    // intro plays from its very beginning as the hero appears, exactly like a reload.
     let bootStarted = false;
     const startBoot = (withPlaceholder: boolean) => {
       if (bootStarted || signal.aborted) return;
       bootStarted = true;
-      window.clearTimeout(placeholderTimer);
-      // After the splash the portrait is already on screen, so the static dots must cover the
-      // gap until the first WebGL frame instead of leaving an empty box.
-      if (withPlaceholder) showPlaceholder();
+      if (withPlaceholder) {
+        // Safety path (splash never announced): cover the box immediately.
+        showPlaceholder();
+      } else {
+        // 600 ms beats the splash curtain, which finishes lifting ~700 ms after the reveal
+        // event starts this boot: a slow download is covered before the box is exposed.
+        armPlaceholderTimer(600);
+      }
       void boot();
     };
 
     if (isSplashActive()) {
-      window.addEventListener('splash:hero-reveal', () => startBoot(true), { once: true, signal });
+      window.addEventListener('splash:hero-reveal', () => startBoot(false), { once: true, signal });
       // Safety net: if the splash never announces (e.g. its script failed), boot anyway.
       const safetyTimer = window.setTimeout(() => startBoot(true), 5000);
       signal.addEventListener('abort', () => window.clearTimeout(safetyTimer));
     } else {
+      // Returning visitors and subpages: no splash, boot straight away.
       startBoot(false);
     }
 
