@@ -16,6 +16,11 @@ export async function getStaticPaths() {
 const { project } = Astro.props;
 const { Content } = await render(project);
 const coverMeta = getProjectCoverMeta(project.data.cover);
+// Only advertise an AVIF source when one actually exists: a blanket `.webp → .avif` rename
+// would point non-webp covers at themselves and break the image in AVIF-capable browsers.
+const cover = project.data.cover;
+const coverWebp = cover?.endsWith('.webp') ? cover : null;
+const coverAvif = coverMeta?.avif ?? (coverWebp ? coverWebp.replace(/\.webp$/, '.avif') : null);
 
 // Next project navigation
 const allProjects = await getCollection('projects');
@@ -106,13 +111,13 @@ const nextProject = sorted[(currentIndex + 1) % sorted.length];
     </header>
 
     <!-- Project Featured Cover Media: curtain reveal + slow parallax drift inside the frame -->
-    {project.data.cover && (
+    {cover && (
       <div class="my-12 rounded-2xl overflow-hidden border border-hairline bg-[var(--bg-surface-soft)] shadow-xl" data-reveal="clip">
         <picture>
-          <source srcset={coverMeta?.avif ?? project.data.cover.replace(/\.webp$/, '.avif')} type="image/avif" />
-          <source srcset={project.data.cover} type="image/webp" />
+          {coverAvif && <source srcset={coverAvif} type="image/avif" />}
+          {coverWebp && <source srcset={coverWebp} type="image/webp" />}
           <img
-            src={project.data.cover}
+            src={cover}
             alt={`${project.data.title} cover presentation`}
             width={coverMeta?.width ?? 1600}
             height={coverMeta?.height ?? 900}

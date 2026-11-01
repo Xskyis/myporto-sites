@@ -1,6 +1,11 @@
 import { gsap } from 'gsap';
 import { getLenis } from '../scroll/lenis';
 
+// Astro fires `astro:page-load` on the initial load too, so the component's direct call and
+// its page-load hook both land here. Track the element we already booted instead of the page:
+// a ClientRouter swap installs a fresh #splash-screen, which must be handled again.
+let bootedEl: HTMLElement | null = null;
+
 export function initSplashScreen() {
   if (typeof window === 'undefined') return;
 
@@ -21,6 +26,8 @@ export function initSplashScreen() {
 
   const splashEl = document.getElementById('splash-screen');
   if (!splashEl) return;
+  if (splashEl === bootedEl) return; // already booted this exact element
+  bootedEl = splashEl;
 
   // Skip splash screen on subpages and repeat visits within the same session
   if (!isHome || (splashShown && !forceSplash)) {

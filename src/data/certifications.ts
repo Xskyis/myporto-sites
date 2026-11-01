@@ -1,3 +1,4 @@
+// Verified credentials & Google Cloud Skill Badges
 export interface Certification {
   id: string;
   title: string;
@@ -11,49 +12,509 @@ export interface Certification {
 
 export const CERTIFICATIONS: Certification[] = [
   {
-    id: 'cert-1',
-    title: 'Belajar Dasar Google Cloud',
-    issuer: 'Dicoding Indonesia',
-    issueDate: 'Aug 2024',
-    expiryDate: 'Aug 2027',
-    credentialUrl: 'https://www.dicoding.com/certificates/QLZ97Y1VDP5D',
-    isVerified: true,
-    skills: ['Google Cloud Platform', 'Cloud Computing Basics', 'Infrastructure'],
+    "id": "cert-meta-frontend",
+    "title": "Introduction to Front-End Development",
+    "issuer": "Coursera - Meta",
+    "issueDate": "Feb 2024",
+    "credentialUrl": "https://www.coursera.org/account/accomplishments/verify/7AEPP7EHWVKA",
+    "isVerified": true,
+    "skills": [
+      "HTML5",
+      "CSS3",
+      "JavaScript",
+      "Web Development",
+      "Responsive Web Design",
+      "Front-End Development",
+      "React.js",
+      "Bootstrap"
+    ]
   },
   {
-    id: 'cert-2',
-    title: 'Prompt Design in Vertex AI Skill Badge',
-    issuer: 'Google Cloud Skills Boost',
-    issueDate: 'Jun 2024',
-    credentialUrl: 'https://www.credly.com/badges/02e10d68-0ae7-48cc-b8e9-73c5f47e4fd7/linked_in_profile',
-    isVerified: true,
-    skills: ['Vertex AI', 'Generative AI', 'Prompt Engineering', 'LLM Tuning'],
+    "id": "cert-ukk-nodejs-react",
+    "title": "Certificate of Competency — Node.js & React JS",
+    "issuer": "Skills Competency Test (UKK)",
+    "issueDate": "Dec 2023",
+    "credentialUrl": "https://drive.google.com/file/d/1WKGEZi8VFiLPPoAleo3jfR5z2aV74ln5/view?usp=sharing",
+    "isVerified": true,
+    "skills": [
+      "Node.js",
+      "React JS",
+      "Very Competent"
+    ]
   },
   {
-    id: 'cert-3',
-    title: 'Introduction to Front-End Development',
-    issuer: 'Coursera - Meta',
-    issueDate: 'Feb 2024',
-    credentialUrl: 'https://www.coursera.org/account/accomplishments/verify/7AEPP7EHWVKA',
-    isVerified: true,
-    skills: ['html','css','javascript','web development', 'responsive web design','front-end web development','react.js','web development tools','bootstrap (front-end framework)',],
+    "id": "cert-hackerrank-problem-solving",
+    "title": "Problem Solving (Basic)",
+    "issuer": "HackerRank",
+    "issueDate": "Oct 2023",
+    "credentialUrl": "https://www.hackerrank.com/certificates/0531e1093f67",
+    "isVerified": true,
+    "skills": [
+      "Data Structures",
+      "Algorithms",
+      "Problem Solving"
+    ]
   },
   {
-    id: 'cert-4',
-    title: 'Problem Solving (Basic)',
-    issuer: 'HackerRank',
-    issueDate: 'Oct 2023',
-    credentialUrl: 'https://www.hackerrank.com/certificates/0531e1093f67',
-    isVerified: true,
-    skills: ['Data Structures','Algorithms','Problem Solving','Problem-Solving Skills',],
+    "id": "cert-certiport-html-css",
+    "title": "IT Specialist - HTML and CSS",
+    "issuer": "Certiport",
+    "issueDate": "Oct 2023",
+    "credentialUrl": "https://www.credly.com/badges/167b1b38-01ba-433a-8ddf-c9446f314a80",
+    "isVerified": true,
+    "skills": [
+      "HTML5",
+      "CSS3"
+    ]
   },
   {
-    id: 'cert-5',
-    title: 'IT Specialist - HTML and CSS',
-    issuer: 'Certiport',
-    issueDate: 'Oct 2023',
-    credentialUrl: 'https://www.credly.com/badges/167b1b38-01ba-433a-8ddf-c9446f314a80',
-    isVerified: true,
-    skills: ['html','css'],
+    "id": "credly-4ee9a90c-c35b-40e8-934d-2fe152389d0b",
+    "title": "Kickstarting Application Development with Gemini Code Assist",
+    "issuer": "Google Cloud",
+    "issueDate": "Aug 2026",
+    "credentialUrl": "https://www.credly.com/badges/4ee9a90c-c35b-40e8-934d-2fe152389d0b",
+    "isVerified": true,
+    "skills": [
+      "Cloud Function",
+      "Debugging",
+      "Gemini Code Assist"
+    ]
+  },
+  {
+    "id": "credly-c399a8e9-e141-49be-8580-b720d6303a76",
+    "title": "Deploy Multi-Agent Architectures",
+    "issuer": "Google Cloud",
+    "issueDate": "Apr 2026",
+    "credentialUrl": "https://www.credly.com/badges/c399a8e9-e141-49be-8580-b720d6303a76",
+    "isVerified": true,
+    "skills": [
+      "AI Agents",
+      "Agent Development Kit",
+      "Authentication Protocols",
+      "Model Context Protocol"
+    ]
+  },
+  {
+    "id": "credly-b64de001-0b95-4357-ae9b-dd263510d0ea",
+    "title": "Prepare Data for ML APIs on Google Cloud Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/b64de001-0b95-4357-ae9b-dd263510d0ea",
+    "isVerified": true,
+    "skills": [
+      "Cloud Natural Language API",
+      "Data Pipeline",
+      "Data Preparation",
+      "DataProc",
+      "Dataflow",
+      "Google Cloud Speech API",
+      "Machine Learning",
+      "Python",
+      "TensorFlow",
+      "Vertex AI",
+      "Video Intelligence API"
+    ]
+  },
+  {
+    "id": "credly-1ed1c9e0-9727-4f81-a433-5bc38853f624",
+    "title": "The Basics of Google Cloud Compute Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/1ed1c9e0-9727-4f81-a433-5bc38853f624",
+    "isVerified": true,
+    "skills": [
+      "Compute Engine",
+      "Persistent Disks",
+      "Virtual Machines",
+      "Web Servers"
+    ]
+  },
+  {
+    "id": "credly-750e9131-aa12-4778-86a2-0dfd4b39dcab",
+    "title": "Use APIs to Work with Cloud Storage Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/750e9131-aa12-4778-86a2-0dfd4b39dcab",
+    "isVerified": true,
+    "skills": [
+      "API",
+      "API Management",
+      "Cloud Storage"
+    ]
+  },
+  {
+    "id": "credly-36e86619-9ef8-46d4-adfc-3c27cfdaa192",
+    "title": "Use Machine Learning APIs on Google Cloud Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/36e86619-9ef8-46d4-adfc-3c27cfdaa192",
+    "isVerified": true,
+    "skills": [
+      "BigQuery",
+      "Cloud Natural Language API",
+      "Cloud Translation",
+      "Cloud Vision API",
+      "Machine Learning",
+      "Python"
+    ]
+  },
+  {
+    "id": "credly-b232ec97-656c-49ec-86c6-4d53aea0b39b",
+    "title": "Mitigate Threats and Vulnerabilities with Security Command Center Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/b232ec97-656c-49ec-86c6-4d53aea0b39b",
+    "isVerified": true,
+    "skills": [
+      "Beyondcorp Enterprise Security",
+      "Cloud Security",
+      "Security Command Center"
+    ]
+  },
+  {
+    "id": "credly-4ab6bcaa-5b57-4c79-87d9-040cc4a4a95f",
+    "title": "Monitor and Log with Google Cloud Operations Suite Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/4ab6bcaa-5b57-4c79-87d9-040cc4a4a95f",
+    "isVerified": true,
+    "skills": [
+      "Alerts",
+      "Cloud Functions",
+      "Compute Engine",
+      "Dashboard",
+      "Logging",
+      "Monitoring"
+    ]
+  },
+  {
+    "id": "credly-47fd4665-e3e8-427e-abff-49420c63c5e2",
+    "title": "Perform Predictive Data Analysis in BigQuery Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/47fd4665-e3e8-427e-abff-49420c63c5e2",
+    "isVerified": true,
+    "skills": [
+      "BigQuery",
+      "BigQuery ML",
+      "Data Science",
+      "Machine Learning (ML)",
+      "SQL"
+    ]
+  },
+  {
+    "id": "credly-1a830945-328b-4b9f-851d-324053ac505a",
+    "title": "Configure Service Accounts and IAM Roles for Google Cloud Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/1a830945-328b-4b9f-851d-324053ac505a",
+    "isVerified": true,
+    "skills": [
+      "BigQuery",
+      "IAM",
+      "IAM Roles"
+    ]
+  },
+  {
+    "id": "credly-9e3b8ed0-c852-444b-8407-cfa4181ea8ae",
+    "title": "Develop Serverless Applications on Cloud Run Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/9e3b8ed0-c852-444b-8407-cfa4181ea8ae",
+    "isVerified": true,
+    "skills": [
+      "Cloud Build",
+      "Cloud Run",
+      "Cloud Storage",
+      "Containers",
+      "Docker",
+      "Firestore",
+      "Microserverice",
+      "Pub/sub",
+      "REST API",
+      "Serverless",
+      "Service Account"
+    ]
+  },
+  {
+    "id": "credly-f3476858-5543-47a7-a5a4-7c92d70af023",
+    "title": "Engineer Data for Predictive Modeling with BigQuery ML Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/f3476858-5543-47a7-a5a4-7c92d70af023",
+    "isVerified": true,
+    "skills": [
+      "BigQuery",
+      "BigQuery ML",
+      "Data Engineering",
+      "Data Ingestion",
+      "Data Pipelines",
+      "Data Preparation",
+      "Dataflow",
+      "ETL",
+      "Machine Learning",
+      "Orchestration"
+    ]
+  },
+  {
+    "id": "credly-7479c9d0-6055-4086-8f2c-1e65839cafd9",
+    "title": "Enhance Gemini Model Capabilities",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/7479c9d0-6055-4086-8f2c-1e65839cafd9",
+    "isVerified": true,
+    "skills": [
+      "Artificial General Intelligence",
+      "Artificial Intelligence (AI)",
+      "Gemini",
+      "Intelligent Systems",
+      "Software Coding"
+    ]
+  },
+  {
+    "id": "credly-ef404c7a-9448-418d-a79c-b4d6f1fa5742",
+    "title": "Explore Generative AI with the Vertex AI Gemini API Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/ef404c7a-9448-418d-a79c-b4d6f1fa5742",
+    "isVerified": true,
+    "skills": [
+      "Gemini",
+      "Generative AI",
+      "Python",
+      "Vertex AI"
+    ]
+  },
+  {
+    "id": "credly-47d5e581-5290-4da6-bb0b-c6225614ced9",
+    "title": "Implement Cloud Security Fundamentals on Google Cloud Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/47d5e581-5290-4da6-bb0b-c6225614ced9",
+    "isVerified": true,
+    "skills": [
+      "App Deployment",
+      "Authentication",
+      "Cloud Key Management",
+      "GKE",
+      "Identity And Access Management",
+      "Kubectl",
+      "Kubernetes",
+      "Security",
+      "Service Account",
+      "VPC Peering"
+    ]
+  },
+  {
+    "id": "credly-4bdca0e3-0ccf-45d0-895c-5c3183c6528a",
+    "title": "Implement Multimodal Vector Search with BigQuery",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/4bdca0e3-0ccf-45d0-895c-5c3183c6528a",
+    "isVerified": true,
+    "skills": [
+      "Code Generation",
+      "Generative AI",
+      "Vector Databases"
+    ]
+  },
+  {
+    "id": "credly-5b580601-6e0b-4f0f-bf14-d3a4a8e253e9",
+    "title": "Inspect Rich Documents with Gemini Multimodality and Multimodal RAG Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/5b580601-6e0b-4f0f-bf14-d3a4a8e253e9",
+    "isVerified": true,
+    "skills": [
+      "Gemini",
+      "Multimodality",
+      "RAG",
+      "Vertex AI"
+    ]
+  },
+  {
+    "id": "credly-ef392407-8334-4576-a78e-187a188efdaf",
+    "title": "Automate Data Capture at Scale with Document AI Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/ef392407-8334-4576-a78e-187a188efdaf",
+    "isVerified": true,
+    "skills": [
+      "Data Capture",
+      "Data Extraction",
+      "Data Processing",
+      "Document AI"
+    ]
+  },
+  {
+    "id": "credly-3e95b579-dcf8-470d-a262-75699cc9b46e",
+    "title": "Build Serverless Applications with Cloud Run Functions",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/3e95b579-dcf8-470d-a262-75699cc9b46e",
+    "isVerified": true,
+    "skills": [
+      "Cloud Functions",
+      "Cloud Storage",
+      "Google Cloud Console"
+    ]
+  },
+  {
+    "id": "credly-5e0f58b1-9029-4d11-9d5c-e220fb2fd01e",
+    "title": "Develop GenAI Apps with Gemini and Streamlit Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/5e0f58b1-9029-4d11-9d5c-e220fb2fd01e",
+    "isVerified": true,
+    "skills": [
+      "Application Development",
+      "Gemini",
+      "Generative AI",
+      "Python",
+      "Streamlit",
+      "Vertex AI"
+    ]
+  },
+  {
+    "id": "credly-ca5b41ea-afda-4993-bd36-f19899c74044",
+    "title": "Build Real World AI Applications with Gemini and Imagen Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jan 2026",
+    "credentialUrl": "https://www.credly.com/badges/ca5b41ea-afda-4993-bd36-f19899c74044",
+    "isVerified": true,
+    "skills": [
+      "Gemini",
+      "Imagen",
+      "Natural Language Processing (NLP)",
+      "Vertex AI"
+    ]
+  },
+  {
+    "id": "cert-dicoding-gcp",
+    "title": "Belajar Dasar Google Cloud",
+    "issuer": "Dicoding Indonesia",
+    "issueDate": "Aug 2024",
+    "expiryDate": "Aug 2027",
+    "credentialUrl": "https://www.dicoding.com/certificates/QLZ97Y1VDP5D",
+    "isVerified": true,
+    "skills": [
+      "Google Cloud Platform",
+      "Cloud Computing Basics",
+      "Infrastructure"
+    ]
+  },
+  {
+    "id": "credly-def5a614-a4c4-488b-a214-ffa4e78d56d7",
+    "title": "Analyze Sentiment with Natural Language API Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jul 2024",
+    "credentialUrl": "https://www.credly.com/badges/def5a614-a4c4-488b-a214-ffa4e78d56d7",
+    "isVerified": true,
+    "skills": [
+      "NLP",
+      "Natural Language API",
+      "Sentiment Analysis"
+    ]
+  },
+  {
+    "id": "credly-f32193fb-e874-4467-b0bc-6451e8465b2c",
+    "title": "Derive Insights from BigQuery Data Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jul 2024",
+    "credentialUrl": "https://www.credly.com/badges/f32193fb-e874-4467-b0bc-6451e8465b2c",
+    "isVerified": true,
+    "skills": [
+      "BigQuery",
+      "Business Intelligence",
+      "Cloud SQL",
+      "Data Analysis",
+      "Data Science",
+      "Google Apps Script",
+      "SQL"
+    ]
+  },
+  {
+    "id": "credly-e360bda7-5ae9-4aff-ad01-370b65f96f89",
+    "title": "Detect Manufacturing Defects using Visual Inspection AI Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jul 2024",
+    "credentialUrl": "https://www.credly.com/badges/e360bda7-5ae9-4aff-ad01-370b65f96f89",
+    "isVerified": true,
+    "skills": [
+      "ML Models",
+      "Machine Learning",
+      "Visual Inspection AI"
+    ]
+  },
+  {
+    "id": "credly-e4cc84de-f183-4694-ad34-6cea2e9a7398",
+    "title": "Create ML Models with BigQuery ML Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jul 2024",
+    "credentialUrl": "https://www.credly.com/badges/e4cc84de-f183-4694-ad34-6cea2e9a7398",
+    "isVerified": true,
+    "skills": [
+      "BigQuery ML",
+      "Dialogflow",
+      "Forecasting",
+      "Machine Learning"
+    ]
+  },
+  {
+    "id": "credly-b2f1fffb-cd9c-4e93-8a7a-49420ec8baa8",
+    "title": "Analyze Speech and Language with Google APIs Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jul 2024",
+    "credentialUrl": "https://www.credly.com/badges/b2f1fffb-cd9c-4e93-8a7a-49420ec8baa8",
+    "isVerified": true,
+    "skills": [
+      "NLP",
+      "Natural Language API",
+      "Sentiment Analysis",
+      "Speech Recognition",
+      "Speech Synthesis"
+    ]
+  },
+  {
+    "id": "credly-905bdeb7-5c59-4885-bfc7-8db7160142cb",
+    "title": "Build and Deploy Machine Learning Solutions on Vertex AI Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jul 2024",
+    "credentialUrl": "https://www.credly.com/badges/905bdeb7-5c59-4885-bfc7-8db7160142cb",
+    "isVerified": true,
+    "skills": [
+      "AutoML",
+      "BERT",
+      "Cloud Build",
+      "ML Model Training",
+      "Vertex AI"
+    ]
+  },
+  {
+    "id": "credly-8e598387-7ab2-4928-8515-72a1693c22a4",
+    "title": "Classify Images with TensorFlow on Google Cloud",
+    "issuer": "Google Cloud",
+    "issueDate": "Jul 2024",
+    "credentialUrl": "https://www.credly.com/badges/8e598387-7ab2-4928-8515-72a1693c22a4",
+    "isVerified": true,
+    "skills": [
+      "Machine Learning (ML)",
+      "TensorFlow",
+      "Vertex AI"
+    ]
+  },
+  {
+    "id": "credly-02e10d68-0ae7-48cc-b8e9-73c5f47e4fd7",
+    "title": "Prompt Design in Vertex AI Skill Badge",
+    "issuer": "Google Cloud",
+    "issueDate": "Jun 2024",
+    "credentialUrl": "https://www.credly.com/badges/02e10d68-0ae7-48cc-b8e9-73c5f47e4fd7",
+    "isVerified": true,
+    "skills": [
+      "Artificial Intelligence (AI)",
+      "Gemini APIs",
+      "Generative AI",
+      "Prompt Engineering"
+    ]
   },
 ];

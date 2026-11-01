@@ -32,8 +32,16 @@
 </div>
 
 <script>
+  import { detectWebGL } from '../lib/three/webgl-tier';
+
   let teardownPit: (() => void) | null = null;
   let observer: IntersectionObserver | null = null;
+  let initializing = false;
+
+  function showFallback(canvas: HTMLCanvasElement | null, fallback: HTMLElement | null) {
+    if (canvas) canvas.style.display = 'none';
+    fallback?.classList.remove('hidden');
+  }
 
   async function setupBallPit() {
     const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -41,19 +49,28 @@
     const fallback = document.getElementById('ball-pit-fallback');
 
     if (isReduced) {
-      if (canvas) canvas.style.display = 'none';
-      if (fallback) fallback.classList.remove('hidden');
+      showFallback(canvas, fallback);
       return;
     }
 
     if (!canvas) return;
+
+    // Same gate as the portrait: never download three.js for a software renderer, where the
+    // ball pit would steal frames from the device least able to afford them.
+    if (detectWebGL() !== 'hardware') {
+      showFallback(canvas, fallback);
+      return;
+    }
 
     // Use IntersectionObserver for lazy initialization & pause when out of view
     observer = new IntersectionObserver(
       async (entries) => {
         const [entry] = entries;
         if (entry.isIntersecting) {
-          if (!teardownPit) {
+          // `teardownPit` is only assigned after init resolves; without this flag two entries
+          // arriving inside that await window start a second renderer and leak the first.
+          if (!teardownPit && !initializing) {
+            initializing = true;
             try {
               const { initBallPit, setBallPitVisible } = await import('../lib/three/ballpit');
               teardownPit = await initBallPit(canvas);
@@ -62,10 +79,11 @@
               canvas.classList.add('opacity-100');
             } catch (err) {
               console.warn('Ball pit init error, showing fallback:', err);
-              if (canvas) canvas.style.display = 'none';
-              if (fallback) fallback.classList.remove('hidden');
+              showFallback(canvas, fallback);
+            } finally {
+              initializing = false;
             }
-          } else {
+          } else if (teardownPit) {
             const { setBallPitVisible } = await import('../lib/three/ballpit');
             setBallPitVisible(true);
           }

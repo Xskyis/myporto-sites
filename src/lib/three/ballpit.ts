@@ -35,6 +35,7 @@ let threeRenderer: THREE.WebGLRenderer | null = null;
 let threeScene: THREE.Scene | null = null;
 let threeCamera: THREE.OrthographicCamera | null = null;
 let animFrameId: number | null = null;
+let resumeLoop: (() => void) | null = null;
 let isVisible = false;
 let isTabActive = true;
 
@@ -72,7 +73,10 @@ const TOSS_RADIUS = 4;
 const TOSS_FORCE = 22;
 
 export function setBallPitVisible(visible: boolean) {
+  if (visible === isVisible) return;
   isVisible = visible;
+  // The loop stops itself when it has nothing to draw; restart it on re-entry.
+  if (visible) resumeLoop?.();
 }
 
 // Palette definitions for balls
@@ -422,6 +426,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
   // Visibility handler
   const onVisibilityChange = () => {
     isTabActive = !document.hidden;
+    if (isTabActive && isVisible) resumeLoop?.();
   };
   document.addEventListener('visibilitychange', onVisibilityChange);
 
@@ -453,8 +458,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
   let lastTime = performance.now();
 
   const animate = () => {
-    animFrameId = requestAnimationFrame(animate);
-
+    animFrameId = null;
     if (!isVisible || !isTabActive || !threeRenderer || !threeScene || !threeCamera) {
       lastTime = performance.now();
       return;
@@ -515,6 +519,14 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
 
     instancedMesh!.instanceMatrix.needsUpdate = true;
     threeRenderer.render(threeScene, threeCamera);
+
+    animFrameId = requestAnimationFrame(animate);
+  };
+
+  resumeLoop = () => {
+    if (animFrameId !== null) return;
+    lastTime = performance.now();
+    animFrameId = requestAnimationFrame(animate);
   };
 
   animate();
@@ -522,6 +534,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
   // Teardown function
   return () => {
     if (animFrameId) cancelAnimationFrame(animFrameId);
+    resumeLoop = null;
     window.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerdown', onPointerDown);
     canvas.removeEventListener('pointerleave', onPointerLeave);

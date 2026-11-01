@@ -164,7 +164,6 @@ function applyHeaderOffset(target: HTMLElement) {
         window.scrollTo({ top, left: 0, behavior: 'instant' });
       }
       ScrollTrigger.update();
-      replayHeadingReveal(target);
     });
   });
 }
@@ -201,26 +200,15 @@ export function scrollToTarget(
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       onComplete: () => {
         options?.onComplete?.();
-        replayHeadingReveal(targetEl);
       },
     });
   } else {
-    targetEl.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth' });
+    // No Lenis (reduced motion or init failure): apply the header offset ourselves, otherwise
+    // the section top lands under the fixed navbar.
+    const top = targetEl.getBoundingClientRect().top + window.scrollY + offset;
+    window.scrollTo({ top, left: 0, behavior: prefersReduced ? 'auto' : 'smooth' });
     setTimeout(() => {
       options?.onComplete?.();
-      replayHeadingReveal(targetEl);
     }, prefersReduced ? 50 : 600);
-  }
-}
-
-// Replay a subtle accent reveal on the section heading when navigated to
-function replayHeadingReveal(sectionEl: HTMLElement) {
-  const heading = sectionEl.querySelector<HTMLElement>('h2, h3, [data-reveal]');
-  if (heading) {
-    gsap.fromTo(
-      heading,
-      { y: 8, opacity: 0.8 },
-      { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }
-    );
   }
 }

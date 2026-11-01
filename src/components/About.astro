@@ -3,6 +3,13 @@ import { PROFILE } from '../data/profile';
 import { TIMELINE } from '../data/timeline';
 import { CERTIFICATIONS } from '../data/certifications';
 import { Icon } from 'astro-icon/components';
+
+const PAGE_SIZE = 5;
+const certPages: (typeof CERTIFICATIONS)[] = [];
+for (let i = 0; i < CERTIFICATIONS.length; i += PAGE_SIZE) {
+  certPages.push(CERTIFICATIONS.slice(i, i + PAGE_SIZE));
+}
+const totalCertPages = certPages.length;
 ---
 
 <section id="about" class="pt-12 sm:pt-14 md:pt-16 pb-16 md:pb-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto z-10 relative" aria-label="About Section">
@@ -138,62 +145,123 @@ import { Icon } from 'astro-icon/components';
 
   <!-- Certifications & Languages Grid -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-10 md:pt-12 border-t-hairline">
-    <!-- Certifications (Expandable Accordion) -->
-    <div class="lg:col-span-8" data-reveal>
-      <div class="pb-6">
-        <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Verified Credentials</span>
-        <h3 class="text-2xl font-display font-medium text-[var(--text-primary)] mt-1">
-          Certificate
-        </h3>
-      </div>
+    <!-- Certifications (Horizontal Paginated Slider) -->
+    <div class="lg:col-span-8 flex flex-col justify-between" data-reveal>
+      <div>
+        <div class="pb-6 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Verified Credentials</span>
+            <h3 class="text-2xl font-display font-medium text-[var(--text-primary)] mt-1">
+              Certificates &amp; Skill Badges ({CERTIFICATIONS.length})
+            </h3>
+          </div>
 
-      <div id="certs-list" class="divide-y divide-hairline border-y border-hairline">
-        {CERTIFICATIONS.map((cert, idx) => (
-          <div
-            data-cert-index={idx}
-            class={`py-5 px-4 sm:px-6 md:px-8 cert-item ${idx >= 2 ? 'hidden opacity-0' : ''} hover:bg-[var(--bg-surface-soft)]/50 transition-all duration-300`}
-          >
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div class="flex items-start gap-3">
-                <span class="text-xs font-mono text-[var(--text-muted)] pt-0.5">0{idx + 1}</span>
-                <div>
-                  <h4 class="text-base font-semibold text-[var(--text-primary)]">
-                    {cert.title}
-                  </h4>
-                  <p class="text-xs text-[var(--text-muted)]">
-                    {cert.issuer} · Issued {cert.issueDate} {cert.expiryDate ? `(Valid until ${cert.expiryDate})` : ''}
-                  </p>
-                </div>
-              </div>
-
-              <a
-                href={cert.credentialUrl && !cert.credentialUrl.includes('TODO') ? cert.credentialUrl : (cert.credentialUrl || 'https://www.linkedin.com/in/nabilfgrza/details/certifications/')}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-hairline bg-[var(--bg-surface)] hover:bg-[var(--accent-primary)] hover:text-[var(--accent-contrast)] hover:border-[var(--accent-primary)] text-xs font-mono text-[var(--text-primary)] transition-all duration-200 group/cert-btn focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] shadow-xs"
-                aria-label={`View certificate for ${cert.title}`}
+          <!-- Top Navigation Controls -->
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-mono text-[var(--text-muted)] tracking-wider">
+              PAGE <span id="cert-page-current" class="text-[var(--text-primary)] font-semibold">01</span> / {String(totalCertPages).padStart(2, '0')}
+            </span>
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                id="cert-prev-btn"
+                class="cert-prev-btn w-8 h-8 rounded-full border border-hairline bg-[var(--bg-surface)] flex items-center justify-center text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-all disabled:opacity-30 disabled:pointer-events-none focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] shadow-xs"
+                aria-label="Previous page of certificates"
+                disabled
               >
-                <span>Credential</span>
-                <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5 opacity-60 group-hover/cert-btn:opacity-100 group-hover/cert-btn:translate-x-0.5 group-hover/cert-btn:-translate-y-0.5 transition-transform duration-200" />
-              </a>
+                <Icon name="lucide:arrow-left" class="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                id="cert-next-btn"
+                class="cert-next-btn w-8 h-8 rounded-full border border-hairline bg-[var(--bg-surface)] flex items-center justify-center text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-all disabled:opacity-30 disabled:pointer-events-none focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] shadow-xs"
+                aria-label="Next page of certificates"
+              >
+                <Icon name="lucide:arrow-right" class="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
-        ))}
+        </div>
+
+        <!-- Horizontal Slide Viewport & Track -->
+        <div
+          id="certs-viewport"
+          class="relative overflow-hidden w-full border-y border-hairline"
+          data-total={CERTIFICATIONS.length}
+          aria-label="Certificates list paginated"
+        >
+          <div
+            id="certs-track"
+            class="flex w-full will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style="transform: translateX(0%);"
+          >
+            {certPages.map((page, pageIdx) => (
+              <div
+                class="w-full shrink-0 divide-y divide-hairline min-h-[385px]"
+                data-cert-page={pageIdx}
+                aria-hidden={pageIdx !== 0}
+              >
+                {page.map((cert, itemIdx) => {
+                  const globalIdx = pageIdx * PAGE_SIZE + itemIdx;
+                  return (
+                    <div
+                      class="py-4 sm:py-5 px-3 sm:px-6 md:px-8 cert-item hover:bg-[var(--bg-surface-soft)]/50 transition-all duration-300"
+                    >
+                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-start gap-3">
+                          <span class="text-xs font-mono text-[var(--text-muted)] pt-0.5">
+                            {String(globalIdx + 1).padStart(2, '0')}
+                          </span>
+                          <div>
+                            <h4 class="text-sm sm:text-base font-semibold text-[var(--text-primary)] line-clamp-1">
+                              {cert.title}
+                            </h4>
+                            <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                              {cert.issuer} · Issued {cert.issueDate} {cert.expiryDate ? `(Valid until ${cert.expiryDate})` : ''}
+                            </p>
+                          </div>
+                        </div>
+
+                        <a
+                          href={cert.credentialUrl && !cert.credentialUrl.includes('TODO') ? cert.credentialUrl : (cert.credentialUrl || 'https://www.linkedin.com/in/nabilfgrza/details/certifications/')}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-hairline bg-[var(--bg-surface)] hover:bg-[var(--accent-primary)] hover:text-[var(--accent-contrast)] hover:border-[var(--accent-primary)] text-xs font-mono text-[var(--text-primary)] transition-all duration-200 group/cert-btn focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] shadow-xs"
+                          aria-label={`View certificate for ${cert.title}`}
+                        >
+                          <span>Credential</span>
+                          <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5 opacity-60 group-hover/cert-btn:opacity-100 group-hover/cert-btn:translate-x-0.5 group-hover/cert-btn:-translate-y-0.5 transition-transform duration-200" />
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <!-- Load More Button at the bottom -->
-      <div class="pt-6 flex justify-center">
-        <button
-          type="button"
-          id="load-more-certs"
-          data-total={CERTIFICATIONS.length}
-          data-initial="2"
-          data-step="2"
-          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-hairline bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-soft)] text-xs font-mono font-medium text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] shadow-xs"
-        >
-          <span id="load-more-certs-text">Load More</span>
-          <Icon name="lucide:chevron-down" id="load-more-certs-icon" class="w-3.5 h-3.5 transition-transform duration-300" />
-        </button>
+      <!-- Bottom Pagination Controls (Indicator & Numeric Pills) -->
+      <div class="pt-6 flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
+        <span id="cert-page-range" class="text-[var(--text-muted)]">
+          Showing 01–05 of {CERTIFICATIONS.length} credentials
+        </span>
+
+        <!-- Page Pills -->
+        <div class="flex items-center gap-1.5" role="navigation" aria-label="Certificate Pages">
+          {certPages.map((_, pIdx) => (
+            <button
+              type="button"
+              class={`cert-page-pill w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-mono text-xs border transition-all duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] ${pIdx === 0 ? 'bg-[var(--accent-primary)] text-[var(--accent-contrast)] border-[var(--accent-primary)] font-semibold shadow-xs' : 'border-hairline bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]'}`}
+              data-page-index={pIdx}
+              aria-label={`Go to page ${pIdx + 1}`}
+              aria-current={pIdx === 0 ? 'page' : undefined}
+            >
+              {String(pIdx + 1).padStart(2, '0')}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
 
@@ -245,82 +313,155 @@ import { Icon } from 'astro-icon/components';
 <script>
   let certsAbortController: AbortController | null = null;
 
-  function setupCertsLoadMore() {
+  function setupCertsPagination() {
     if (certsAbortController) {
       certsAbortController.abort();
     }
     certsAbortController = new AbortController();
     const { signal } = certsAbortController;
 
-    const btn = document.getElementById('load-more-certs');
-    const btnText = document.getElementById('load-more-certs-text');
-    const btnIcon = document.getElementById('load-more-certs-icon');
-    const certItems = document.querySelectorAll<HTMLElement>('#certs-list .cert-item');
+    const track = document.getElementById('certs-track');
+    const viewport = document.getElementById('certs-viewport');
+    const prevBtns = document.querySelectorAll<HTMLButtonElement>('.cert-prev-btn');
+    const nextBtns = document.querySelectorAll<HTMLButtonElement>('.cert-next-btn');
+    const pagePills = document.querySelectorAll<HTMLButtonElement>('.cert-page-pill');
+    const pageCurrent = document.getElementById('cert-page-current');
+    const pageRange = document.getElementById('cert-page-range');
+    const pageElements = document.querySelectorAll<HTMLElement>('[data-cert-page]');
 
-    if (!btn || !btnText || certItems.length === 0) return;
+    if (!track || pageElements.length === 0) return;
 
-    const total = certItems.length;
-    const initialVisible = 2;
-    const step = 2;
-    let currentVisible = initialVisible;
+    const totalPages = pageElements.length;
+    const totalItems = parseInt(viewport?.getAttribute('data-total') || '34', 10);
+    const pageSize = 5;
+    let currentPage = 0;
 
-    // Ensure initial visual state
-    certItems.forEach((el, idx) => {
-      if (idx < currentVisible) {
-        el.classList.remove('hidden', 'opacity-0');
-      } else {
-        el.classList.add('hidden', 'opacity-0');
+    const updateUI = () => {
+      // 1. Move track horizontally (hardware-accelerated translateX)
+      track.style.transform = `translateX(-${currentPage * 100}%)`;
+
+      // 2. Update page current indicator
+      if (pageCurrent) {
+        pageCurrent.textContent = String(currentPage + 1).padStart(2, '0');
       }
+
+      // 3. Update range text
+      if (pageRange) {
+        const start = currentPage * pageSize + 1;
+        const end = Math.min((currentPage + 1) * pageSize, totalItems);
+        pageRange.textContent = `Showing ${String(start).padStart(2, '0')}–${String(end).padStart(2, '0')} of ${totalItems} credentials`;
+      }
+
+      // 4. Update Prev / Next buttons disabled state
+      prevBtns.forEach((btn) => {
+        btn.disabled = currentPage === 0;
+      });
+      nextBtns.forEach((btn) => {
+        btn.disabled = currentPage === totalPages - 1;
+      });
+
+      // 5. Update Page Pills styling
+      pagePills.forEach((pill, idx) => {
+        const isCurrent = idx === currentPage;
+        if (isCurrent) {
+          pill.setAttribute('aria-current', 'page');
+          pill.classList.add(
+            'bg-[var(--accent-primary)]',
+            'text-[var(--accent-contrast)]',
+            'border-[var(--accent-primary)]',
+            'font-semibold',
+            'shadow-xs'
+          );
+          pill.classList.remove(
+            'border-hairline',
+            'bg-[var(--bg-surface)]',
+            'text-[var(--text-muted)]'
+          );
+        } else {
+          pill.removeAttribute('aria-current');
+          pill.classList.remove(
+            'bg-[var(--accent-primary)]',
+            'text-[var(--accent-contrast)]',
+            'border-[var(--accent-primary)]',
+            'font-semibold',
+            'shadow-xs'
+          );
+          pill.classList.add(
+            'border-hairline',
+            'bg-[var(--bg-surface)]',
+            'text-[var(--text-muted)]'
+          );
+        }
+      });
+
+      // 6. Accessibility aria-hidden
+      pageElements.forEach((el, idx) => {
+        el.setAttribute('aria-hidden', String(idx !== currentPage));
+      });
+    };
+
+    const goToPage = (page: number) => {
+      if (page < 0 || page >= totalPages) return;
+      currentPage = page;
+      updateUI();
+    };
+
+    // Attach click listeners to Prev / Next
+    prevBtns.forEach((btn) => {
+      btn.addEventListener('click', () => goToPage(currentPage - 1), { signal });
+    });
+    nextBtns.forEach((btn) => {
+      btn.addEventListener('click', () => goToPage(currentPage + 1), { signal });
     });
 
-    btn.addEventListener('click', () => {
-      if (currentVisible >= total) {
-        // Collapse back to initial 2 items
-        currentVisible = initialVisible;
-        certItems.forEach((el, idx) => {
-          if (idx >= initialVisible) {
-            el.classList.add('opacity-0');
-            setTimeout(() => {
-              if (currentVisible <= idx) {
-                el.classList.add('hidden');
-              }
-            }, 250);
-          }
-        });
-        btnText.textContent = 'Load More';
-        if (btnIcon) {
-          btnIcon.classList.remove('rotate-180');
-        }
-      } else {
-        // Load next 2 items
-        const nextVisible = Math.min(currentVisible + step, total);
-        for (let i = currentVisible; i < nextVisible; i++) {
-          const el = certItems[i];
-          if (el) {
-            el.classList.remove('hidden');
-            setTimeout(() => {
-              el.classList.remove('opacity-0');
-            }, (i - currentVisible) * 60 + 20);
-          }
-        }
-        currentVisible = nextVisible;
+    // Attach click listeners to Page Pills
+    pagePills.forEach((pill) => {
+      pill.addEventListener(
+        'click',
+        () => {
+          const pIdx = parseInt(pill.getAttribute('data-page-index') || '0', 10);
+          goToPage(pIdx);
+        },
+        { signal }
+      );
+    });
 
-        if (currentVisible >= total) {
-          btnText.textContent = 'Collapse list';
-          if (btnIcon) {
-            btnIcon.classList.add('rotate-180');
-          }
-        } else {
-          btnText.textContent = 'Load More';
-          if (btnIcon) {
-            btnIcon.classList.remove('rotate-180');
+    // Touch swipe support (left / right)
+    let touchStartX = 0;
+    let touchStartY = 0;
+    track.addEventListener(
+      'touchstart',
+      (e: TouchEvent) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      },
+      { passive: true, signal }
+    );
+
+    track.addEventListener(
+      'touchend',
+      (e: TouchEvent) => {
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const dx = touchEndX - touchStartX;
+        const dy = touchEndY - touchStartY;
+        // only trigger horizontal swipe if horizontal movement is larger than vertical
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+          if (dx < 0) {
+            goToPage(currentPage + 1);
+          } else {
+            goToPage(currentPage - 1);
           }
         }
-      }
-    }, { signal });
+      },
+      { passive: true, signal }
+    );
+
+    // Initial update
+    updateUI();
   }
 
-  document.addEventListener('astro:page-load', setupCertsLoadMore);
+  document.addEventListener('astro:page-load', setupCertsPagination);
   document.addEventListener('astro:before-swap', () => {
     if (certsAbortController) {
       certsAbortController.abort();

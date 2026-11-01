@@ -141,8 +141,20 @@ function setupHero(signal: AbortSignal) {
     });
 
     if (isSplashActive) {
-      // Hold until the splash curtain wipe exposes the hero
-      window.addEventListener('splash:hero-reveal', () => entrance.play(), { once: true, signal });
+      // Hold until the splash curtain wipe exposes the hero. Safety net: the splash script can
+      // fail after adding `js-anim` (which hides every [data-reveal]) and never announce, so
+      // never let the hero stay invisible.
+      const reveal = () => entrance.play();
+      const revealTimer = window.setTimeout(reveal, 6000);
+      window.addEventListener(
+        'splash:hero-reveal',
+        () => {
+          window.clearTimeout(revealTimer);
+          reveal();
+        },
+        { once: true, signal }
+      );
+      signal.addEventListener('abort', () => window.clearTimeout(revealTimer));
     } else {
       entrance.delay(0.1).play();
     }
