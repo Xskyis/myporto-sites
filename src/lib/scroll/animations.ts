@@ -43,6 +43,11 @@ export function initScrollAnimations(): Cleanup {
     setupMagneticButtons(signal);
   });
 
+  // `js-anim` (global.css) exists only to hide [data-reveal] between first paint and the
+  // moment GSAP takes over. Every reveal now owns an inline opacity, so release the class:
+  // from here on a broken animation path can only mean "visible", never "blank".
+  document.documentElement.classList.remove('js-anim');
+
   scheduleRefresh(signal);
 
   return () => {

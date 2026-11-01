@@ -10,8 +10,16 @@ ScrollTrigger.config({ ignoreMobileResize: true });
 
 let lenisInstance: Lenis | null = null;
 
-/** Fixed header is 80px tall; land section tops just below it. */
-const HEADER_OFFSET = -75;
+/**
+ * Scroll offset so anchored sections land just below the fixed header. The header is h-20
+ * (80px today); targets are tucked 5px behind its bottom edge so the hairline border seam is
+ * absorbed by the section's own padding. Measured at call time so a future header height
+ * change can't silently desync the landing position.
+ */
+function headerOffset(): number {
+  const height = document.getElementById('main-header')?.offsetHeight ?? 80;
+  return -(height - 5);
+}
 
 export function initLenis(): Lenis | null {
   if (typeof window === 'undefined') return null;
@@ -157,7 +165,7 @@ function applyHeaderOffset(target: HTMLElement) {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       if (!target.isConnected) return;
-      const top = target.getBoundingClientRect().top + window.scrollY + HEADER_OFFSET;
+      const top = target.getBoundingClientRect().top + window.scrollY + headerOffset();
       if (lenisInstance) {
         lenisInstance.scrollTo(top, { immediate: true, force: true });
       } else {
@@ -184,7 +192,7 @@ export function scrollToTarget(
   if (!targetEl) return;
 
   const targetSelector = typeof target === 'string' ? target : `#${targetEl.id}`;
-  const offset = options?.offset ?? HEADER_OFFSET;
+  const offset = options?.offset ?? headerOffset();
   const duration = prefersReduced ? 0.01 : (options?.duration ?? 1.4);
 
   // Update URL hash without causing an instant browser jump. Keep the existing state object:

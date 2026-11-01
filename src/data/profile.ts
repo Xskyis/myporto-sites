@@ -3,6 +3,7 @@ export interface ProfileData {
   nickname: string;
   headline: string;
   role: string;
+  email: string;
   location: string;
   tagline: string;
   statusBadge: {
@@ -35,6 +36,7 @@ export const PROFILE: ProfileData = {
   name: 'Achmad Nabil Afgareza',
   nickname: 'Nabil',
   role: 'Frontend Developer',
+  email: 'nabilafgareza12@gmail.com',
   headline: 'Frontend Developer · Informatics Engineering Student',
   location: 'Malang, East Java, Indonesia',
   tagline: 'Learning by doing.',

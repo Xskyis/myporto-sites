@@ -132,7 +132,7 @@ const isHome = currentPath === "/";
           aria-pressed="false"
           aria-label="Switch to Poster Color Palette (Marine Blue + Red + Cream)"
         >
-          <span class="w-2.5 h-2.5 rounded-full bg-[#D82B2F]" aria-hidden="true"
+          <span class="w-2.5 h-2.5 rounded-full bg-[var(--swatch-color)]" aria-hidden="true"
           ></span>
           <span class="hidden sm:inline">Color</span>
         </button>
@@ -236,7 +236,17 @@ const isHome = currentPath === "/";
   let navAbortController: AbortController | null = null;
   let navScrollTriggers: ScrollTrigger[] = [];
 
+  // The mobile menu locks scrolling with an inline style on <body>. Astro replaces <body> on
+  // every swap, so the lock usually disappears with it – but release it on both ends of a
+  // navigation anyway, so no path (a cancelled swap, a persisted body, a bfcache restore) can
+  // leave the next page scroll-locked.
+  const releaseBodyScrollLock = () => {
+    document.body.style.overflow = "";
+  };
+
   function setupNavbar() {
+    releaseBodyScrollLock();
+
     // 0. Clean up previous listeners and triggers to prevent duplicate callbacks
     if (navAbortController) {
       navAbortController.abort();
@@ -517,6 +527,13 @@ const isHome = currentPath === "/";
       newPalette: "mono" | "color",
       event?: MouseEvent,
     ) => {
+      // `startViewTransition` is typed inconsistently across lib.dom versions; declare the
+      // shape we need locally instead of sprinkling @ts-ignore. The runtime check below
+      // still guards browsers without the API.
+      const doc = document as Document & {
+        startViewTransition?: (update: () => void) => { ready: Promise<void> };
+      };
+
       const current = html.getAttribute("data-palette") || "mono";
       if (current === newPalette) return;
 
@@ -532,8 +549,7 @@ const isHome = currentPath === "/";
         );
       };
 
-      // @ts-ignore
-      if (!document.startViewTransition || isReduced) {
+      if (!doc.startViewTransition || isReduced) {
         apply();
         return;
       }
@@ -546,8 +562,7 @@ const isHome = currentPath === "/";
       );
 
       try {
-        // @ts-ignore
-        const transition = document.startViewTransition(apply);
+        const transition = doc.startViewTransition(apply);
         transition.ready
           .then(() => {
             try {
@@ -661,5 +676,7 @@ const isHome = currentPath === "/";
     }
     navScrollTriggers.forEach((st) => st.kill());
     navScrollTriggers = [];
+
+    releaseBodyScrollLock();
   });
 </script>

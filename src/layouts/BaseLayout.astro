@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar.astro";
 import CustomCursor from "../components/CustomCursor.astro";
 import SplashScreen from "../components/SplashScreen.astro";
 import { PROFILE } from "../data/profile";
+import { SITE_URL } from "../site";
 import "../styles/global.css";
 
 interface Props {
@@ -20,10 +21,7 @@ const {
   currentPath = "/",
 } = Astro.props;
 
-const canonicalURL = new URL(
-  Astro.url.pathname,
-  Astro.site || "https://nabil-portfolio.dev",
-);
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || SITE_URL);
 
 const personSchema = {
   "@context": "https://schema.org",
@@ -31,6 +29,7 @@ const personSchema = {
   name: PROFILE.name,
   alternateName: PROFILE.nickname,
   jobTitle: PROFILE.role,
+  email: `mailto:${PROFILE.email}`,
   description: description,
   url: canonicalURL.toString(),
   sameAs: [
@@ -128,6 +127,14 @@ const personSchema = {
           // hidden only when JS runs and the user allows motion (see global.css).
           if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
             document.documentElement.classList.add("js-anim");
+
+            // Fail-safe: `js-anim` is what hides [data-reveal], and only a *successful*
+            // initScrollAnimations() clears it (GSAP then owns opacity through inline styles).
+            // If that bundle fails to load or throws, drop the class ourselves so the page
+            // degrades to fully visible content instead of staying blank forever.
+            window.setTimeout(function () {
+              document.documentElement.classList.remove("js-anim");
+            }, 4000);
           }
         } catch (e) {
           document.documentElement.classList.add("no-splash");

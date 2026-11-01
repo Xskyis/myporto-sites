@@ -36,7 +36,7 @@ const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 items-baseline">
           <!-- Number & Featured status -->
           <div class="md:col-span-2 flex items-center gap-3 text-xs font-mono text-[var(--text-muted)]">
-            <span>0{idx + 1}</span>
+            <span>{String(idx + 1).padStart(2, '0')}</span>
             {project.data.featured && (
               <span class="text-[10px] tracking-wider uppercase px-2 py-0.5 rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--accent-primary)] font-semibold">
                 Featured

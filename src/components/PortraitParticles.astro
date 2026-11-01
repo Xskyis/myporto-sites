@@ -117,6 +117,7 @@ const { class: className = '' } = Astro.props;
 <script>
   import type { PortraitHandle } from '../lib/three/portrait';
   import { detectWebGL } from '../lib/three/webgl-tier';
+  import { onPaletteChange } from '../lib/palette-events';
 
   type Controller = {
     handle: PortraitHandle | null;
@@ -287,10 +288,7 @@ const { class: className = '' } = Astro.props;
       signal.addEventListener('abort', () => st.kill());
 
       // --- palette -----------------------------------------------------------
-      window.addEventListener('palette-change', () => handle.syncPalette(true), { signal });
-      const mo = new MutationObserver(() => handle.syncPalette(true));
-      mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-palette', 'class'] });
-      signal.addEventListener('abort', () => mo.disconnect());
+      onPaletteChange(() => handle.syncPalette(true), signal);
     };
 
     // On first visit the portrait sits behind the splash curtain. Hold the three.js bundle and

@@ -54,14 +54,40 @@ export function initSplashScreen() {
     lenis.scrollTo(0, { immediate: true });
   }
 
-  // 2. Accessibility: prefers-reduced-motion replaces sequence with a quick 300ms fade
+  // 2. Modal focus management: `role="dialog" aria-modal="true"` promises keyboard users
+  // that focus stays inside the splash while it is up. Trap Tab while the curtain shows,
+  // then land focus on the page itself on exit (#main-content is tabindex="-1" with no
+  // visible ring). The astro:before-swap listener drops the trap if a swap somehow tears
+  // the splash away mid-sequence.
+  splashEl.setAttribute('tabindex', '-1');
+  splashEl.focus({ preventScroll: true });
+  const modalScope = new AbortController();
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      if (e.key !== 'Tab') return;
+      e.preventDefault();
+      splashEl.focus({ preventScroll: true });
+    },
+    { capture: true, signal: modalScope.signal },
+  );
+  document.addEventListener('astro:before-swap', () => modalScope.abort(), {
+    once: true,
+    signal: modalScope.signal,
+  });
+  const endModalFocus = () => {
+    modalScope.abort();
+    document.getElementById('main-content')?.focus({ preventScroll: true });
+  };
+
+  // 3. Accessibility: prefers-reduced-motion replaces sequence with a quick 300ms fade
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (prefersReduced) {
-    handleReducedMotion(splashEl);
+    handleReducedMotion(splashEl, endModalFocus);
     return;
   }
 
-  // 3. Full editorial sequence (~2.4s - 2.8s total)
+  // 4. Full editorial sequence (~2.4s - 2.8s total)
   let hasExited = false;
 
   // Stagger letter slide-up with masked overflow
@@ -105,6 +131,7 @@ export function initSplashScreen() {
 
         document.documentElement.classList.add('no-splash');
         if (splashEl) splashEl.style.display = 'none';
+        endModalFocus();
       },
     });
 
@@ -232,7 +259,7 @@ function trackRealLoading(
   });
 }
 
-function handleReducedMotion(splashEl: HTMLElement) {
+function handleReducedMotion(splashEl: HTMLElement, endModalFocus: () => void) {
   const chars = document.querySelectorAll<HTMLElement>('.splash-char');
   chars.forEach((c) => {
     c.style.transform = 'translateY(0%)';
@@ -261,6 +288,7 @@ function handleReducedMotion(splashEl: HTMLElement) {
 
       document.documentElement.classList.add('no-splash');
       splashEl.style.display = 'none';
+      endModalFocus();
 
       (window as any).__heroRevealed = true;
       window.dispatchEvent(new CustomEvent('splash:hero-reveal'));

@@ -153,7 +153,9 @@
       const interactive = target.closest('a, button, [role="button"], input, textarea, select, .project-card, .magnetic-btn');
       if (interactive) {
         isHovering = true;
-        ring.style.backgroundColor = 'rgba(128, 128, 128, 0.12)';
+        // Token-driven hover fill (mirrors --border-subtle's alpha idea) instead of a
+        // hardcoded rgba, so it adapts to mono light/dark and the poster palette.
+        ring.style.backgroundColor = 'color-mix(in srgb, var(--text-primary) 12%, transparent)';
         dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%) scale(0.6)`;
         startLoop();
       }

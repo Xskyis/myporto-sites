@@ -1,3 +1,5 @@
+import { PROFILE } from './profile';
+
 export interface SocialLink {
   name: string;
   url: string;
@@ -20,8 +22,8 @@ export const SOCIALS: SocialLink[] = [
   },
   {
     name: 'Email',
-    url: 'mailto:nabilafgareza12@gmail.com',
-    label: 'nabilafgareza12@gmail.com',
+    url: `mailto:${PROFILE.email}`,
+    label: PROFILE.email,
     icon: 'lucide:mail',
   },
 ];

@@ -21,6 +21,9 @@
   --font-body: 'Geist Variable', -apple-system, BlinkMacSystemFont, sans-serif;
   --cursor-color: #0A0A0A;
   --status-dot: #22C55E;
+  /* Preview swatch for the poster-color palette button in the Navbar — must stay red in
+     every mono state because it advertises what the *other* palette looks like. */
+  --swatch-color: #D82B2F;
   --grain-opacity: 0.03;
 }
 

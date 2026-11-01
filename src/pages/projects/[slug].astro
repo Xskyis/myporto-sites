@@ -7,13 +7,16 @@ import { getProjectCoverMeta } from '../../data/project-assets';
 
 export async function getStaticPaths() {
   const projects = await getCollection('projects');
-  return projects.map((project) => ({
+  // One fetch serves the whole route: the list order is also what defines "next project",
+  // so resolve the neighbour once here instead of collecting the same content again per page.
+  const sorted = [...projects].sort((a, b) => a.data.order - b.data.order);
+  return sorted.map((project, index) => ({
     params: { slug: project.id },
-    props: { project },
+    props: { project, nextProject: sorted[(index + 1) % sorted.length] },
   }));
 }
 
-const { project } = Astro.props;
+const { project, nextProject } = Astro.props;
 const { Content } = await render(project);
 const coverMeta = getProjectCoverMeta(project.data.cover);
 // Only advertise an AVIF source when one actually exists: a blanket `.webp → .avif` rename
@@ -21,12 +24,6 @@ const coverMeta = getProjectCoverMeta(project.data.cover);
 const cover = project.data.cover;
 const coverWebp = cover?.endsWith('.webp') ? cover : null;
 const coverAvif = coverMeta?.avif ?? (coverWebp ? coverWebp.replace(/\.webp$/, '.avif') : null);
-
-// Next project navigation
-const allProjects = await getCollection('projects');
-const sorted = allProjects.sort((a, b) => a.data.order - b.data.order);
-const currentIndex = sorted.findIndex((p) => p.id === project.id);
-const nextProject = sorted[(currentIndex + 1) % sorted.length];
 ---
 
 <BaseLayout
@@ -50,7 +47,7 @@ const nextProject = sorted[(currentIndex + 1) % sorted.length];
     <!-- Project Header -->
     <header class="pb-12 border-b-hairline">
       <div class="flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-[var(--text-muted)] mb-4" data-reveal>
-        <span>0{project.data.order} // CASE STUDY</span>
+        <span>{String(project.data.order).padStart(2, '0')} // CASE STUDY</span>
         <span>{project.data.year}</span>
       </div>
 
@@ -146,7 +143,7 @@ const nextProject = sorted[(currentIndex + 1) % sorted.length];
         class="group text-left sm:text-right flex items-center gap-4 hover:opacity-90 transition-opacity"
       >
         <div>
-          <span class="text-xs font-mono text-[var(--text-muted)] block">0{nextProject.data.order} // NEXT WORK</span>
+          <span class="text-xs font-mono text-[var(--text-muted)] block">{String(nextProject.data.order).padStart(2, '0')} // NEXT WORK</span>
           <span class="text-2xl md:text-3xl font-display font-medium text-[var(--text-primary)] group-hover:underline">
             {nextProject.data.title} &rarr;
           </span>

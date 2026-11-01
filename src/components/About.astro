@@ -10,6 +10,9 @@ for (let i = 0; i < CERTIFICATIONS.length; i += PAGE_SIZE) {
   certPages.push(CERTIFICATIONS.slice(i, i + PAGE_SIZE));
 }
 const totalCertPages = certPages.length;
+
+// The awards banner is data-driven; guard the index so an empty list can't break the build.
+const featuredAward = PROFILE.awards[0] ?? null;
 ---
 
 <section id="about" class="pt-12 sm:pt-14 md:pt-16 pb-16 md:pb-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto z-10 relative" aria-label="About Section">
@@ -60,6 +63,7 @@ const totalCertPages = certPages.length;
   </div>
 
   <!-- Honors & Awards Callout Banner -->
+  {featuredAward && (
   <div class="my-8 md:my-10 p-6 sm:p-8 rounded-2xl border border-hairline bg-[var(--bg-surface-soft)]/60 flex flex-col md:flex-row md:items-center justify-between gap-6" data-reveal="scale">
     <div class="flex items-start gap-4">
       <div class="w-12 h-12 rounded-full border border-hairline bg-[var(--bg-surface)] flex items-center justify-center shrink-0 text-[var(--accent-primary)]">
@@ -70,10 +74,10 @@ const totalCertPages = certPages.length;
           Honors &amp; Awards
         </div>
         <h3 class="text-xl md:text-2xl font-bold font-display text-[var(--text-primary)] mt-1">
-          {PROFILE.awards[0].title} — {PROFILE.awards[0].issuer}
+          {featuredAward.title} — {featuredAward.issuer}
         </h3>
         <p class="text-sm text-[var(--text-muted)] mt-1">
-          {PROFILE.awards[0].category} · {PROFILE.awards[0].date}. {PROFILE.awards[0].description}
+          {featuredAward.category} · {featuredAward.date}. {featuredAward.description}
         </p>
       </div>
     </div>
@@ -81,6 +85,7 @@ const totalCertPages = certPages.length;
       MALANG, EAST JAVA
     </div>
   </div>
+  )}
 
   <!-- Timeline Section -->
   <div class="pt-10 md:pt-12 pb-10 md:pb-12" id="timeline-container">
@@ -187,7 +192,6 @@ const totalCertPages = certPages.length;
         <div
           id="certs-viewport"
           class="relative overflow-hidden w-full border-y border-hairline"
-          data-total={CERTIFICATIONS.length}
           aria-label="Certificates list paginated"
         >
           <div
@@ -200,6 +204,7 @@ const totalCertPages = certPages.length;
                 class="w-full shrink-0 divide-y divide-hairline min-h-[385px]"
                 data-cert-page={pageIdx}
                 aria-hidden={pageIdx !== 0}
+                inert={pageIdx !== 0 || undefined}
               >
                 {page.map((cert, itemIdx) => {
                   const globalIdx = pageIdx * PAGE_SIZE + itemIdx;
@@ -321,7 +326,6 @@ const totalCertPages = certPages.length;
     const { signal } = certsAbortController;
 
     const track = document.getElementById('certs-track');
-    const viewport = document.getElementById('certs-viewport');
     const prevBtns = document.querySelectorAll<HTMLButtonElement>('.cert-prev-btn');
     const nextBtns = document.querySelectorAll<HTMLButtonElement>('.cert-next-btn');
     const pagePills = document.querySelectorAll<HTMLButtonElement>('.cert-page-pill');
@@ -332,7 +336,8 @@ const totalCertPages = certPages.length;
     if (!track || pageElements.length === 0) return;
 
     const totalPages = pageElements.length;
-    const totalItems = parseInt(viewport?.getAttribute('data-total') || '34', 10);
+    // Count the rendered rows so the range label can never drift from the actual data.
+    const totalItems = track.querySelectorAll('.cert-item').length;
     const pageSize = 5;
     let currentPage = 0;
 
@@ -394,9 +399,17 @@ const totalCertPages = certPages.length;
         }
       });
 
-      // 6. Accessibility aria-hidden
+      // 6. Accessibility: aria-hidden + inert. aria-hidden alone doesn't remove the
+      // Credential links from the tab order — `aria-hidden` over focusable content is a
+      // WCAG violation, so hidden pages are additionally made inert.
       pageElements.forEach((el, idx) => {
-        el.setAttribute('aria-hidden', String(idx !== currentPage));
+        const isHidden = idx !== currentPage;
+        el.setAttribute('aria-hidden', String(isHidden));
+        if (isHidden) {
+          el.setAttribute('inert', '');
+        } else {
+          el.removeAttribute('inert');
+        }
       });
     };
 

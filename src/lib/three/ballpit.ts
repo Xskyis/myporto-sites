@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { gsap } from 'gsap';
 import type { PaletteMode, MonoTone } from '../../data/palette';
+import { onPaletteChange } from '../palette-events';
 
 /**
  * Interactive ball pit for the footer.
@@ -430,19 +431,8 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
   };
   document.addEventListener('visibilitychange', onVisibilityChange);
 
-  // Palette switch event listener & MutationObserver
-  const onPaletteChange = () => {
-    updateBallPitColors();
-  };
-  window.addEventListener('palette-change', onPaletteChange);
-
-  let mutationObs: MutationObserver | null = new MutationObserver(() => {
-    updateBallPitColors();
-  });
-  mutationObs.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['data-palette', 'class'],
-  });
+  // Palette switch: shared wiring (event + attribute observer) from lib/palette-events.ts
+  const disposePaletteListener = onPaletteChange(() => updateBallPitColors());
 
   // Ensure initial color matches current active palette
   updateBallPitColors(true);
@@ -540,15 +530,16 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     canvas.removeEventListener('pointerleave', onPointerLeave);
     window.removeEventListener('resize', onResize);
     document.removeEventListener('visibilitychange', onVisibilityChange);
-    window.removeEventListener('palette-change', onPaletteChange);
-    if (mutationObs) {
-      mutationObs.disconnect();
-      mutationObs = null;
-    }
+    disposePaletteListener();
 
     sphereGeometry?.dispose();
     sphereMaterial?.dispose();
     threeRenderer?.dispose();
+    // Every visit to the footer builds a new renderer. Browsers cap the number of live WebGL
+    // contexts (~16) and hand back a *lost* context beyond that, which renders a blank canvas
+    // for the rest of the session. Hand the context back explicitly – same teardown order as
+    // portrait.ts's dispose().
+    threeRenderer?.forceContextLoss();
 
     // Palette tweens from the previous mount would otherwise keep writing through the
     // module-level `instancedMesh` reference into the next one.
