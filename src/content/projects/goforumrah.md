@@ -26,5 +26,3 @@ GoForUmrah was developed during my internship at **Illiyin Studio** (Nov 2023 â€
 - **JavaScript (ES6+)**: Dynamic UI states and interactive filtering.
 - **Tailwind CSS**: Responsive layouts and tokenized spacing.
 - **Git & GitHub**: Collaborative version management.
-
-> *Note: Production screenshot and live URL are subject to client release permissions [TODO: Confirm live URL and high-res screenshots].*

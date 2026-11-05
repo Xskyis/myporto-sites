@@ -488,3 +488,115 @@ html.no-splash #splash-screen {
 #splash-screen {
   clip-path: inset(0% 0% 0% 0%);
 }
+
+
+/* ---------------------------------------------------------------------- */
+/* Editorial Honors & Awards (Vertical Spotlight + Rail)                  */
+/* ---------------------------------------------------------------------- */
+
+.honor-badge-year {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.honor-row {
+  opacity: 0.4;
+  transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.honor-row:hover {
+  opacity: 0.72;
+}
+
+.honor-row[data-active="true"] {
+  opacity: 1;
+}
+
+.honor-row-shift {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.honor-row:hover .honor-row-shift {
+  transform: translateX(5px);
+}
+
+.honor-index {
+  color: var(--text-muted);
+}
+
+.honor-row[data-active="true"] .honor-index {
+  color: var(--accent-primary);
+}
+
+.honor-ghost-year {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--border-subtle);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.honor-row[data-active="true"] .honor-ghost-year {
+  opacity: 0.9;
+  transform: translateY(0);
+}
+
+.honor-details-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.honor-row[data-active="true"] .honor-details-grid {
+  grid-template-rows: 1fr;
+}
+
+.honor-details-inner {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.honor-row[data-active="true"] .honor-details-inner {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.06s,
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.06s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .honor-row,
+  .honor-row:hover {
+    opacity: 1 !important;
+    cursor: default;
+  }
+
+  .honor-row:hover .honor-row-shift {
+    transform: none;
+  }
+
+  .honor-details-grid {
+    grid-template-rows: 1fr !important;
+    transition: none !important;
+  }
+
+  .honor-details-inner {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .honor-ghost-year {
+    opacity: 0.8 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .honors-progress-line,
+  .honors-pause-btn {
+    display: none !important;
+  }
+}

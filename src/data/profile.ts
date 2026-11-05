@@ -18,13 +18,6 @@ export interface ProfileData {
     label: string;
     description: string;
   }[];
-  awards: {
-    title: string;
-    category: string;
-    issuer: string;
-    date: string;
-    description: string;
-  }[];
   languages: {
     name: string;
     proficiency: string;
@@ -68,15 +61,6 @@ export const PROFILE: ProfileData = {
       suffix: 'st',
       label: 'Place Award',
       description: 'HMTI Intercomp PKM GFT Category',
-    },
-  ],
-  awards: [
-    {
-      title: '1st Place Winner',
-      category: 'PKM GFT Category',
-      issuer: 'Malang State Polytechnic HMTI Intercomp (Polinema)',
-      date: 'Oct 2024',
-      description: 'Awarded first place for innovative written idea and scientific approach in tech development.',
     },
   ],
   languages: [

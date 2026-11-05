@@ -1,5 +1,6 @@
 ---
 import { PROFILE } from '../data/profile';
+import { HONORS } from '../data/honors';
 import { TIMELINE } from '../data/timeline';
 import { CERTIFICATIONS } from '../data/certifications';
 import { Icon } from 'astro-icon/components';
@@ -10,9 +11,6 @@ for (let i = 0; i < CERTIFICATIONS.length; i += PAGE_SIZE) {
   certPages.push(CERTIFICATIONS.slice(i, i + PAGE_SIZE));
 }
 const totalCertPages = certPages.length;
-
-// The awards banner is data-driven; guard the index so an empty list can't break the build.
-const featuredAward = PROFILE.awards[0] ?? null;
 ---
 
 <section id="about" class="pt-12 sm:pt-14 md:pt-16 pb-16 md:pb-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto z-10 relative" aria-label="About Section">
@@ -62,29 +60,91 @@ const featuredAward = PROFILE.awards[0] ?? null;
     </div>
   </div>
 
-  <!-- Honors & Awards Callout Banner -->
-  {featuredAward && (
-  <div class="my-8 md:my-10 p-6 sm:p-8 rounded-2xl border border-hairline bg-[var(--bg-surface-soft)]/60 flex flex-col md:flex-row md:items-center justify-between gap-6" data-reveal="scale">
-    <div class="flex items-start gap-4">
-      <div class="w-12 h-12 rounded-full border border-hairline bg-[var(--bg-surface)] flex items-center justify-center shrink-0 text-[var(--accent-primary)]">
-        <Icon name="lucide:trophy" class="w-6 h-6" />
-      </div>
-      <div>
-        <div class="text-xs font-mono uppercase tracking-widest text-[var(--accent-primary)] font-semibold">
+  <!-- Honors & Awards (Editorial Vertical Spotlight) -->
+  {HONORS.length > 0 && (
+    <div class="my-8 md:my-12" id="honors-block" data-reveal>
+      <div class="pb-6 sm:pb-8">
+        <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Recognition</span>
+        <h3 class="text-2xl md:text-3xl font-display font-medium text-[var(--text-primary)] mt-1">
           Honors &amp; Awards
-        </div>
-        <h3 class="text-xl md:text-2xl font-bold font-display text-[var(--text-primary)] mt-1">
-          {featuredAward.title} — {featuredAward.issuer}
         </h3>
-        <p class="text-sm text-[var(--text-muted)] mt-1">
-          {featuredAward.category} · {featuredAward.date}. {featuredAward.description}
-        </p>
+      </div>
+
+      <div class="border-y border-hairline divide-y divide-hairline">
+        {HONORS.map((honor, idx) => {
+          const isActive = idx === 0;
+          const indexLabel = String(idx + 1).padStart(2, '0');
+          return (
+            <article
+              id={`honor-panel-${idx}`}
+              role="button"
+              tabindex="0"
+              aria-expanded={isActive ? 'true' : 'false'}
+              data-honor-row={idx}
+              data-active={isActive ? 'true' : 'false'}
+              class="honor-row group relative py-6 md:py-8 px-4 sm:px-6 md:px-8 cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+            >
+              <div class="honor-row-shift">
+                <!-- Row Header: Index + Inline Trophy + Display Title + Ghost Year Numeral -->
+                <div class="flex items-baseline justify-between gap-4">
+                  <div class="flex items-baseline gap-3 sm:gap-4 min-w-0">
+                    <span class="honor-index inline-flex items-center gap-1.5 text-xs sm:text-[13px] font-mono tracking-wider shrink-0 transition-colors duration-300">
+                      <span>{indexLabel}</span>
+                      <Icon name="lucide:trophy" class="w-3.5 h-3.5" aria-hidden="true" />
+                    </span>
+                    <h4 class="text-xl sm:text-2xl md:text-3xl font-display font-semibold text-[var(--text-primary)] tracking-tight leading-snug">
+                      {honor.title}
+                    </h4>
+                  </div>
+
+                  <span
+                    class="honor-ghost-year hidden sm:block font-display text-3xl md:text-5xl font-bold leading-none tracking-tighter select-none pointer-events-none shrink-0"
+                    aria-hidden="true"
+                  >
+                    {honor.year}
+                  </span>
+                </div>
+
+                <!-- Expandable Meta & Description -->
+                <div
+                  class="honor-details-grid"
+                  aria-hidden={isActive ? 'false' : 'true'}
+                  inert={!isActive || undefined}
+                >
+                  <div class="overflow-hidden">
+                    <div class="honor-details-inner pl-0 sm:pl-11 md:pl-12 pt-3 md:pt-4">
+                      <p class="text-xs sm:text-[13px] font-mono text-[var(--text-primary)] leading-relaxed">
+                        <span>{honor.org}</span>
+                        <span class="mx-1.5 text-[var(--text-muted)]" aria-hidden="true">·</span>
+                        <span>{honor.category}</span>
+                        <span class="mx-1.5 text-[var(--text-muted)]" aria-hidden="true">·</span>
+                        <span>{honor.month} {honor.year}</span>
+                        <span class="mx-1.5 text-[var(--text-muted)]" aria-hidden="true">·</span>
+                        <span>{honor.location}</span>
+                      </p>
+                      <p class="text-[15px] md:text-base text-[var(--text-muted)] leading-relaxed mt-2 max-w-2xl">
+                        {honor.description}
+                      </p>
+                      {honor.link && (
+                        <a
+                          href={honor.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="mt-3 inline-flex items-center gap-1.5 text-xs font-mono text-[var(--accent-primary)] hover:underline focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+                        >
+                          <span>View Recognition</span>
+                          <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5" aria-hidden="true" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </div>
-    <div class="shrink-0 font-mono text-xs text-[var(--text-muted)]">
-      MALANG, EAST JAVA
-    </div>
-  </div>
   )}
 
   <!-- Timeline Section -->
@@ -97,7 +157,7 @@ const featuredAward = PROFILE.awards[0] ?? null;
     </div>
 
     <!-- Timeline items with scroll-driven line -->
-    <div class="relative border-l border-hairline  border-hairline">
+    <div class="relative border-l border-hairline">
       <!-- Animated vertical progress line overlay -->
       <div id="timeline-progress-line" class="absolute left-[-1px] top-0 w-[2px] h-full bg-[var(--accent-primary)] origin-top scale-y-0" aria-hidden="true"></div>
 
@@ -290,33 +350,13 @@ const featuredAward = PROFILE.awards[0] ?? null;
           ))}
         </div>
       </div>
-
-      <!-- Socials Quick Access -->
-      <!-- <div class="p-6 rounded-xl border border-hairline bg-[var(--bg-surface-soft)]">
-        <span class="text-xs font-mono uppercase tracking-wider text-[var(--text-muted)]">Direct Channels</span>
-        <div class="flex flex-col gap-3 mt-4 text-sm font-mono">
-          {SOCIALS.map((soc) => (
-            <a
-              href={soc.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="flex items-center justify-between text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors group"
-            >
-              <span class="flex items-center gap-2">
-                <Icon name={soc.icon} class="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)] transition-colors" />
-                <span>{soc.name}</span>
-              </span>
-              <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
-            </a>
-          ))}
-        </div>
-      </div> -->
     </div>
   </div>
 </section>
 
 <script>
   let certsAbortController: AbortController | null = null;
+  let honorsCleanup: (() => void) | null = null;
 
   function setupCertsPagination() {
     if (certsAbortController) {
@@ -336,28 +376,23 @@ const featuredAward = PROFILE.awards[0] ?? null;
     if (!track || pageElements.length === 0) return;
 
     const totalPages = pageElements.length;
-    // Count the rendered rows so the range label can never drift from the actual data.
     const totalItems = track.querySelectorAll('.cert-item').length;
     const pageSize = 5;
     let currentPage = 0;
 
     const updateUI = () => {
-      // 1. Move track horizontally (hardware-accelerated translateX)
       track.style.transform = `translateX(-${currentPage * 100}%)`;
 
-      // 2. Update page current indicator
       if (pageCurrent) {
         pageCurrent.textContent = String(currentPage + 1).padStart(2, '0');
       }
 
-      // 3. Update range text
       if (pageRange) {
         const start = currentPage * pageSize + 1;
         const end = Math.min((currentPage + 1) * pageSize, totalItems);
         pageRange.textContent = `Showing ${String(start).padStart(2, '0')}–${String(end).padStart(2, '0')} of ${totalItems} credentials`;
       }
 
-      // 4. Update Prev / Next buttons disabled state
       prevBtns.forEach((btn) => {
         btn.disabled = currentPage === 0;
       });
@@ -365,7 +400,6 @@ const featuredAward = PROFILE.awards[0] ?? null;
         btn.disabled = currentPage === totalPages - 1;
       });
 
-      // 5. Update Page Pills styling
       pagePills.forEach((pill, idx) => {
         const isCurrent = idx === currentPage;
         if (isCurrent) {
@@ -399,9 +433,6 @@ const featuredAward = PROFILE.awards[0] ?? null;
         }
       });
 
-      // 6. Accessibility: aria-hidden + inert. aria-hidden alone doesn't remove the
-      // Credential links from the tab order — `aria-hidden` over focusable content is a
-      // WCAG violation, so hidden pages are additionally made inert.
       pageElements.forEach((el, idx) => {
         const isHidden = idx !== currentPage;
         el.setAttribute('aria-hidden', String(isHidden));
@@ -419,7 +450,6 @@ const featuredAward = PROFILE.awards[0] ?? null;
       updateUI();
     };
 
-    // Attach click listeners to Prev / Next
     prevBtns.forEach((btn) => {
       btn.addEventListener('click', () => goToPage(currentPage - 1), { signal });
     });
@@ -427,7 +457,6 @@ const featuredAward = PROFILE.awards[0] ?? null;
       btn.addEventListener('click', () => goToPage(currentPage + 1), { signal });
     });
 
-    // Attach click listeners to Page Pills
     pagePills.forEach((pill) => {
       pill.addEventListener(
         'click',
@@ -439,7 +468,6 @@ const featuredAward = PROFILE.awards[0] ?? null;
       );
     });
 
-    // Touch swipe support (left / right)
     let touchStartX = 0;
     let touchStartY = 0;
     track.addEventListener(
@@ -458,7 +486,6 @@ const featuredAward = PROFILE.awards[0] ?? null;
         const touchEndY = e.changedTouches[0].clientY;
         const dx = touchEndX - touchStartX;
         const dy = touchEndY - touchStartY;
-        // only trigger horizontal swipe if horizontal movement is larger than vertical
         if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
           if (dx < 0) {
             goToPage(currentPage + 1);
@@ -470,15 +497,247 @@ const featuredAward = PROFILE.awards[0] ?? null;
       { passive: true, signal }
     );
 
-    // Initial update
     updateUI();
   }
 
-  document.addEventListener('astro:page-load', setupCertsPagination);
+  function setupHonorsSpotlight(): (() => void) | null {
+    const block = document.getElementById('honors-block');
+    if (!block) return null;
+
+    const rows = Array.from(block.querySelectorAll<HTMLElement>('[data-honor-row]'));
+    if (rows.length === 0) return null;
+
+    const abort = new AbortController();
+    const { signal } = abort;
+    const total = rows.length;
+    const AUTO_ADVANCE_MS = 4500;
+
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let isReducedMotion = reducedMotionQuery.matches;
+
+    let activeIndex = 0;
+    let elapsedMs = 0;
+    let lastTickTime: number | null = null;
+    let rafId: number | null = null;
+
+    let isInView = false;
+    let isHovered = false;
+    let isFocusedWithin = false;
+
+    const updateActiveState = () => {
+      rows.forEach((row, idx) => {
+        const isActive = idx === activeIndex;
+        row.setAttribute('data-active', String(isActive));
+        row.setAttribute('aria-expanded', String(isReducedMotion ? true : isActive));
+        const details = row.querySelector<HTMLElement>('.honor-details-grid');
+        if (!details) return;
+
+        if (isReducedMotion) {
+          details.setAttribute('aria-hidden', 'false');
+          details.removeAttribute('inert');
+        } else {
+          details.setAttribute('aria-hidden', String(!isActive));
+          if (isActive) {
+            details.removeAttribute('inert');
+          } else {
+            details.setAttribute('inert', '');
+          }
+        }
+      });
+    };
+
+    const canRunTimer = () =>
+      !isReducedMotion &&
+      total > 1 &&
+      isInView &&
+      !document.hidden &&
+      !isHovered &&
+      !isFocusedWithin;
+
+    const stopTimerLoop = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      lastTickTime = null;
+    };
+
+    const tick = (now: number) => {
+      if (!canRunTimer()) {
+        stopTimerLoop();
+        return;
+      }
+
+      if (lastTickTime === null) {
+        lastTickTime = now;
+      }
+      const delta = Math.min(now - lastTickTime, 100);
+      lastTickTime = now;
+      elapsedMs += delta;
+
+      if (elapsedMs >= AUTO_ADVANCE_MS) {
+        elapsedMs = 0;
+        activeIndex = (activeIndex + 1) % total;
+        updateActiveState();
+      }
+
+      rafId = requestAnimationFrame(tick);
+    };
+
+    const syncTimerLoop = () => {
+      if (canRunTimer()) {
+        if (rafId === null) {
+          lastTickTime = null;
+          rafId = requestAnimationFrame(tick);
+        }
+      } else {
+        stopTimerLoop();
+      }
+    };
+
+    const selectHonor = (nextIdx: number, focusRow = false) => {
+      const normalized = ((nextIdx % total) + total) % total;
+      activeIndex = normalized;
+      elapsedMs = 0;
+      updateActiveState();
+      if (focusRow) {
+        rows[normalized]?.focus();
+      }
+      syncTimerLoop();
+    };
+
+    // Click/tap and keyboard interaction on rows
+    rows.forEach((row, idx) => {
+      row.addEventListener(
+        'click',
+        (e: MouseEvent) => {
+          const target = e.target as HTMLElement | null;
+          if (target?.closest('a, button')) return;
+          selectHonor(idx, false);
+        },
+        { signal }
+      );
+
+      row.addEventListener(
+        'keydown',
+        (e: KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectHonor(idx, false);
+          } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            selectHonor(activeIndex + 1, true);
+          } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+            e.preventDefault();
+            selectHonor(activeIndex - 1, true);
+          }
+        },
+        { signal }
+      );
+    });
+
+    // Hover pause (desktop fine pointer)
+    block.addEventListener(
+      'pointerenter',
+      (e: PointerEvent) => {
+        if (e.pointerType === 'mouse') {
+          isHovered = true;
+          syncTimerLoop();
+        }
+      },
+      { signal }
+    );
+
+    block.addEventListener(
+      'pointerleave',
+      (e: PointerEvent) => {
+        if (e.pointerType === 'mouse') {
+          isHovered = false;
+          syncTimerLoop();
+        }
+      },
+      { signal }
+    );
+
+    // Keyboard focus pause within the block
+    block.addEventListener(
+      'focusin',
+      () => {
+        isFocusedWithin = true;
+        syncTimerLoop();
+      },
+      { signal }
+    );
+
+    block.addEventListener(
+      'focusout',
+      (e: FocusEvent) => {
+        const nextFocused = e.relatedTarget as Node | null;
+        if (!nextFocused || !block.contains(nextFocused)) {
+          isFocusedWithin = false;
+          syncTimerLoop();
+        }
+      },
+      { signal }
+    );
+
+    // Tab visibility pause
+    document.addEventListener(
+      'visibilitychange',
+      () => {
+        syncTimerLoop();
+      },
+      { signal }
+    );
+
+    // Reduced-motion dynamic change listener
+    reducedMotionQuery.addEventListener(
+      'change',
+      (e) => {
+        isReducedMotion = e.matches;
+        if (isReducedMotion) {
+          elapsedMs = 0;
+        }
+        updateActiveState();
+        syncTimerLoop();
+      },
+      { signal }
+    );
+
+    // IntersectionObserver: only run timer while Honors block is visible in viewport
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        isInView = entry.isIntersecting;
+        syncTimerLoop();
+      },
+      { threshold: 0.25 }
+    );
+    io.observe(block);
+
+    updateActiveState();
+    syncTimerLoop();
+
+    return () => {
+      stopTimerLoop();
+      io.disconnect();
+      abort.abort();
+    };
+  }
+
+  document.addEventListener('astro:page-load', () => {
+    setupCertsPagination();
+    honorsCleanup?.();
+    honorsCleanup = setupHonorsSpotlight();
+  });
+
   document.addEventListener('astro:before-swap', () => {
     if (certsAbortController) {
       certsAbortController.abort();
       certsAbortController = null;
+    }
+    if (honorsCleanup) {
+      honorsCleanup();
+      honorsCleanup = null;
     }
   });
 </script>
