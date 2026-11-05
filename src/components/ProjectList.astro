@@ -1,205 +1,306 @@
 ---
 import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
+import { getProjectCoverMeta } from '../data/project-assets';
 
 const allProjects = await getCollection('projects');
-const sortedProjects = allProjects.sort((a, b) => a.data.order - b.data.order);
+const projects = allProjects
+  .sort((a, b) => a.data.order - b.data.order)
+  .map((project, idx) => {
+    const { title, shortTitle, tagline, stackShort, year, cover, tags, subtitle } = project.data;
+    const resolvedStack = (Array.isArray(stackShort) && stackShort.length > 0)
+      ? stackShort.join(' / ')
+      : (Array.isArray(tags) ? tags.slice(0, 3).join(' / ') : '');
+    const resolvedTagline = tagline || subtitle || '';
+    return {
+      id: project.id,
+      index: String(idx + 1).padStart(2, '0'),
+      title,
+      listTitle: shortTitle ?? title,
+      tagline: resolvedTagline,
+      stack: resolvedStack,
+      year,
+      cover,
+      meta: getProjectCoverMeta(cover),
+    };
+  });
 ---
 
-<section id="projects" class="py-16 md:py-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative" aria-label="Projects Section">
+<section
+  id="projects"
+  class="py-16 md:py-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative"
+  aria-labelledby="projects-heading"
+>
   <!-- Section Header -->
   <div class="flex items-center justify-between pb-6 sm:pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]" data-reveal>
     <div class="flex items-center gap-3">
       <span class="text-sm font-semibold text-[var(--text-primary)]">02</span>
     </div>
-    <span> SELECTED WORKS ({sortedProjects.length})</span>
+    <span>SELECTED WORKS</span>
   </div>
 
-  <!-- Heading Intro -->
-  <div class="pt-8 sm:pt-10 md:pt-12 pb-8 sm:pb-10 md:pb-12 max-w-3xl">
-    <h2 class="fluid-subheading font-medium text-[var(--text-primary)] leading-tight" data-reveal="words">
-      A curated collection of client platforms, academic architectures, and exploratory experiments.
-    </h2>
-  </div>
-
-  <!-- Editorial Project List -->
-  <div class="divide-y divide-hairline border-y border-hairline relative" id="project-list-container">
-    {sortedProjects.map((project, idx) => (
-      <a
-        href={`/projects/${project.id}`}
-        class="project-row group block py-8 md:py-12 px-6 sm:px-8 md:px-10 transition-all duration-300 hover:bg-[var(--bg-surface-soft)]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
-        data-cover={project.data.cover || ''}
-        data-preview={project.data.cover ? project.data.cover.replace('/projects/', '/projects/previews/') : ''}
-        data-title={project.data.title}
-        data-reveal
-      >
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 items-baseline">
-          <!-- Number & Featured status -->
-          <div class="md:col-span-2 flex items-center gap-3 text-xs font-mono text-[var(--text-muted)]">
-            <span>{String(idx + 1).padStart(2, '0')}</span>
-            {project.data.featured && (
-              <span class="text-[10px] tracking-wider uppercase px-2 py-0.5 rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--accent-primary)] font-semibold">
-                Featured
-              </span>
-            )}
-          </div>
-
-          <!-- Project Title & Subtitle -->
-          <div class="md:col-span-6">
-            <h3 class="text-2xl md:text-4xl lg:text-5xl font-display font-medium text-[var(--text-primary)] transition-transform duration-300 group-hover:translate-x-2">
-              {project.data.title}
-            </h3>
-            {project.data.subtitle && (
-              <p class="text-sm font-mono text-[var(--text-muted)] mt-1 transition-transform duration-300 group-hover:translate-x-2">
-                {project.data.subtitle}
-              </p>
-            )}
-          </div>
-
-          <!-- Role & Year -->
-          <div class="md:col-span-3 text-xs font-mono text-[var(--text-muted)] space-y-1">
-            <div class="text-[var(--text-primary)] font-medium">
-              {project.data.role}
-            </div>
-            <div>{project.data.year}</div>
-            <div class="text-[var(--text-muted)] opacity-80 pt-1 line-clamp-1">
-              {project.data.tags.slice(0, 3).join(' · ')}
-            </div>
-          </div>
-
-          <!-- Action Arrow -->
-          <div class="md:col-span-1 flex justify-end">
-            <div class="w-10 h-10 rounded-full border border-hairline flex items-center justify-center text-[var(--text-primary)] group-hover:bg-[var(--accent-primary)] group-hover:text-[var(--accent-contrast)] group-hover:border-transparent transition-all duration-300">
-              <Icon name="lucide:arrow-up-right" class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </div>
-          </div>
-        </div>
-      </a>
-    ))}
-  </div>
-
-  <!-- Floating Cursor Hover Preview for Desktop -->
-  <div
-    id="project-preview-modal"
-    class="pointer-events-none fixed top-0 left-0 z-40 hidden md:block w-80 h-52 rounded-xl overflow-hidden border border-hairline bg-[var(--bg-surface)] shadow-2xl opacity-0 transition-opacity duration-300 will-change-transform"
-    aria-hidden="true"
+  <!-- Heading -->
+  <h2
+    id="projects-heading"
+    class="fluid-subheading font-medium text-[var(--text-primary)] pt-8 sm:pt-10 md:pt-12 pb-8 md:pb-10"
+    data-reveal
   >
-    <img
-      id="project-preview-img"
-      src=""
-      alt="Project Preview"
-      width="320"
-      height="208"
-      loading="lazy"
-      decoding="async"
-      class="w-full h-full object-cover transition-transform duration-500 scale-105"
-    />
-  </div>
+    Selected Work
+  </h2>
 
-  <!-- Bottom Archive Note -->
-  <div class="pt-8 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-[var(--text-muted)]" data-reveal>
-    <span>CLICK ANY PROJECT FOR ARCHITECTURAL WRITEUP &amp; SOURCE REPOS</span>
-    <a
-      href="https://github.com/Xskyis?tab=repositories"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="hover:text-[var(--text-primary)] hover-underline-anim inline-flex items-center gap-1.5"
-    >
-      <span>Explore all 57 repositories on GitHub</span>
-      <Icon name="lucide:external-link" class="w-3.5 h-3.5" />
-    </a>
+  <div class="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-12 xl:gap-16">
+    <!-- List column -->
+    <div data-reveal>
+      <ul id="project-list" class="project-list border-y border-hairline divide-y divide-hairline" data-engaged="false">
+        {projects.map((p, idx) => (
+          <li>
+            <a
+              href={`/projects/${p.id}`}
+              class="project-row group relative flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4 xl:gap-6 py-6 md:py-8 px-4 sm:px-6 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[var(--border-focus)]"
+              data-project-index={idx}
+              data-active={idx === 0 ? 'true' : 'false'}
+              aria-label={`${p.title}, ${p.tagline}, ${p.year}`}
+            >
+              <!-- Thumbnail (below 1024px only; desktop uses the preview panel) -->
+              <div
+                class="lg:hidden shrink-0 w-28 sm:w-[120px] aspect-[16/10] rounded-md overflow-hidden border border-hairline bg-[var(--bg-surface-soft)]"
+                aria-hidden="true"
+              >
+                {p.meta ? (
+                  <picture>
+                    <source srcset={p.meta.previewAvif} type="image/avif" />
+                    <img
+                      src={p.meta.previewWebp}
+                      alt=""
+                      width="160"
+                      height="100"
+                      loading={idx === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      class="w-full h-full object-cover"
+                    />
+                  </picture>
+                ) : p.cover ? (
+                  <img src={p.cover} alt="" width="160" height="100" loading={idx === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-full object-cover" />
+                ) : (
+                  <div class="w-full h-full flex items-center justify-center font-mono text-xs text-[var(--text-muted)]">{p.index}</div>
+                )}
+              </div>
+
+              <!-- Index (sm and up) -->
+              <span class="hidden sm:block w-6 shrink-0 font-mono text-xs text-[var(--text-muted)]" aria-hidden="true">{p.index}</span>
+
+              <!-- Title + descriptor -->
+              <div class="flex-1 min-w-0 pr-2" aria-hidden="true">
+                <span class="sm:hidden block font-mono text-xs text-[var(--text-muted)] mb-1.5">{p.index}</span>
+                <h3 class="project-title font-display font-medium text-[clamp(1.5rem,2.2vw,2.35rem)] leading-[1.08] tracking-tight text-[var(--text-primary)]">
+                  {p.listTitle}
+                </h3>
+                <p class="mt-1.5 text-sm md:text-[15px] text-[var(--text-muted)]">{p.tagline}</p>
+                <p class="md:hidden mt-2 font-mono text-xs text-[var(--text-muted)]">
+                  <span class="text-[var(--text-primary)]">{p.year}</span>
+                  <span class="mx-1">·</span>
+                  <span>{p.stack}</span>
+                </p>
+              </div>
+
+              <!-- Meta (md and up) -->
+              <div class="hidden md:block shrink-0 text-right font-mono text-xs lg:text-[13px] leading-relaxed text-[var(--text-muted)]" aria-hidden="true">
+                <div class="text-[var(--text-primary)]">{p.year}</div>
+                <div class="whitespace-nowrap">{p.stack}</div>
+              </div>
+
+              <!-- Arrow -->
+              <span
+                class="project-arrow absolute top-6 right-4 sm:static shrink-0 w-9 h-9 rounded-full border border-hairline flex items-center justify-center text-[var(--text-primary)]"
+                aria-hidden="true"
+              >
+                <Icon name="lucide:arrow-right" class="project-arrow-icon w-4 h-4" />
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <div class="pt-6 px-4 md:px-8 flex justify-end">
+        <a
+          href="https://github.com/Xskyis?tab=repositories"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="hover-underline-anim inline-flex items-center gap-1.5 font-mono text-xs sm:text-[13px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+        >
+          <span>More on GitHub</span>
+          <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5" aria-hidden="true" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Sticky preview panel (desktop only, decorative: the rows carry the same info) -->
+    <div class="hidden lg:block" aria-hidden="true">
+      <div class="sticky top-28">
+        <div class="relative aspect-[16/10] rounded-2xl border border-hairline overflow-hidden bg-[var(--bg-surface-soft)]">
+          {projects.map((p, idx) => (
+            <div class="preview-layer absolute inset-0" data-preview-index={idx} data-active={idx === 0 ? 'true' : 'false'}>
+              {p.meta ? (
+                <picture>
+                  <source
+                    type="image/avif"
+                    srcset={`${p.meta.previewAvif} 640w, ${p.meta.avif} ${p.meta.width}w`}
+                    sizes="(min-width: 1280px) 460px, 38vw"
+                  />
+                  <img
+                    src={p.meta.previewWebp}
+                    srcset={`${p.meta.previewWebp} 640w, ${p.cover} ${p.meta.width}w`}
+                    sizes="(min-width: 1280px) 460px, 38vw"
+                    alt=""
+                    width="800"
+                    height="500"
+                    loading={idx === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
+                    class="w-full h-full object-cover object-top"
+                  />
+                </picture>
+              ) : p.cover ? (
+                <img src={p.cover} alt="" width="800" height="500" loading={idx === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-full object-cover object-top" />
+              ) : (
+                <div class="w-full h-full flex items-center justify-center font-display text-5xl text-[var(--text-muted)]">{p.index}</div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
+<style>
+  .project-row,
+  .project-title,
+  .project-arrow,
+  .project-arrow :global(svg) {
+    transition:
+      opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 0.3s ease,
+      color 0.3s ease,
+      border-color 0.3s ease;
+  }
+
+  /* Dim the rest only while the list is being explored (pointer or keyboard). */
+  .project-list[data-engaged='true'] .project-row:not([data-active='true']) {
+    opacity: 0.45;
+  }
+
+  .project-list[data-engaged='true'] .project-row[data-active='true'] .project-title {
+    transform: translateX(7px);
+  }
+
+  .project-list[data-engaged='true'] .project-row[data-active='true'] .project-arrow {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--accent-contrast);
+  }
+
+  .project-list[data-engaged='true'] .project-row[data-active='true'] .project-arrow :global(svg) {
+    transform: rotate(-45deg);
+  }
+
+  .preview-layer {
+    opacity: 0;
+    transform: scale(1.035);
+    transition:
+      opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .preview-layer[data-active='true'] {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-row,
+    .project-title,
+    .project-arrow,
+    .project-arrow :global(svg),
+    .preview-layer {
+      transition: none;
+    }
+
+    .preview-layer,
+    .project-list[data-engaged='true'] .project-row[data-active='true'] .project-title {
+      transform: none;
+    }
+  }
+</style>
+
 <script>
-  let hoverCleanup: (() => void) | null = null;
+  let cleanup: (() => void) | null = null;
 
-  function setupProjectHover(): (() => void) | null {
-    const isTouch = window.matchMedia('(pointer: coarse)').matches;
-    const previewModal = document.getElementById('project-preview-modal');
-    const previewImg = document.getElementById('project-preview-img') as HTMLImageElement | null;
-    const rows = document.querySelectorAll<HTMLElement>('.project-row');
+  function setup(): (() => void) | null {
+    const list = document.getElementById('project-list');
+    if (!list) return null;
 
-    if (isTouch || !previewModal || !previewImg) return null;
+    const rows = Array.from(list.querySelectorAll<HTMLElement>('[data-project-index]'));
+    const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-preview-index]'));
+    if (rows.length === 0) return null;
 
     const abort = new AbortController();
     const { signal } = abort;
 
-    let targetX = 0;
-    let targetY = 0;
-    let currentX = 0;
-    let currentY = 0;
-    let hasPosition = false;
-    let rafId: number | null = null;
-
-    window.addEventListener('pointermove', (e) => {
-      targetX = e.clientX + 30;
-      targetY = e.clientY + 20;
-      if (!hasPosition) {
-        currentX = targetX;
-        currentY = targetY;
-        hasPosition = true;
-        previewModal.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
-      }
-    }, { passive: true, signal });
-
-    // The follow loop only runs while a row is hovered. It used to tick forever, which
-    // leaked one requestAnimationFrame chain (plus its listeners) per navigation.
-    const updatePosition = () => {
-      currentX += (targetX - currentX) * 0.15;
-      currentY += (targetY - currentY) * 0.15;
-      previewModal.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
-      rafId = requestAnimationFrame(updatePosition);
+    const setActive = (index: number) => {
+      rows.forEach((row, i) => row.setAttribute('data-active', String(i === index)));
+      layers.forEach((layer, i) => layer.setAttribute('data-active', String(i === index)));
     };
 
-    const startLoop = () => {
-      if (rafId === null) rafId = requestAnimationFrame(updatePosition);
-    };
+    const setEngaged = (engaged: boolean) => list.setAttribute('data-engaged', String(engaged));
 
-    const stopLoop = () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      rafId = null;
-    };
-
-    rows.forEach((row) => {
-      row.addEventListener('mouseenter', () => {
-        const cover = row.getAttribute('data-preview') || row.getAttribute('data-cover');
-        if (!cover) return;
-        previewImg.src = cover;
-        if (!hasPosition && targetX !== 0) {
-          currentX = targetX;
-          currentY = targetY;
-          hasPosition = true;
-          previewModal.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
-        }
-        previewModal.classList.remove('opacity-0');
-        previewModal.classList.add('opacity-100');
-        startLoop();
-      }, { signal });
-
-      row.addEventListener('mouseleave', () => {
-        previewModal.classList.add('opacity-0');
-        previewModal.classList.remove('opacity-100');
-        stopLoop();
-      }, { signal });
+    rows.forEach((row, i) => {
+      // Mouse/pen only: on touch a tap navigates straight to the detail page.
+      row.addEventListener(
+        'pointerenter',
+        (e) => {
+          if (e.pointerType === 'touch') return;
+          setActive(i);
+          setEngaged(true);
+        },
+        { signal }
+      );
+      row.addEventListener(
+        'focus',
+        () => {
+          setActive(i);
+          if (row.matches(':focus-visible')) setEngaged(true);
+        },
+        { signal }
+      );
     });
+
+    // Keep the last active project in the panel, but release the dimming.
+    list.addEventListener('pointerleave', () => {
+      if (!list.querySelector(':focus-visible')) setEngaged(false);
+    }, { signal });
+    list.addEventListener(
+      'focusout',
+      (e) => {
+        const next = e.relatedTarget as Node | null;
+        if (!next || !list.contains(next)) setEngaged(false);
+      },
+      { signal }
+    );
 
     return () => {
       abort.abort();
-      stopLoop();
-      previewModal.classList.add('opacity-0');
-      previewModal.classList.remove('opacity-100');
+      setEngaged(false);
     };
   }
 
-  function initHover() {
-    hoverCleanup?.();
-    hoverCleanup = setupProjectHover();
-  }
+  document.addEventListener('astro:page-load', () => {
+    cleanup?.();
+    cleanup = setup();
+  });
 
-  document.addEventListener('astro:page-load', initHover);
   document.addEventListener('astro:before-swap', () => {
-    hoverCleanup?.();
-    hoverCleanup = null;
+    cleanup?.();
+    cleanup = null;
   });
 </script>

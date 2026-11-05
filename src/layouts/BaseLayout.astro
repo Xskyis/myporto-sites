@@ -91,54 +91,67 @@ const personSchema = {
          after client-side navigation. -->
     <script is:inline data-astro-rerun>
       (function () {
-        try {
-          const savedPalette = localStorage.getItem("theme-palette") || "mono";
-          document.documentElement.setAttribute("data-palette", savedPalette);
+        function applyThemeAndState(targetHtml) {
+          try {
+            const savedPalette = localStorage.getItem("theme-palette") || "mono";
+            targetHtml.setAttribute("data-palette", savedPalette);
 
-          if (savedPalette === "mono") {
             const savedTone = localStorage.getItem("theme-tone");
             const prefersDark = window.matchMedia(
               "(prefers-color-scheme: dark)",
             ).matches;
             if (savedTone === "dark" || (!savedTone && prefersDark)) {
-              document.documentElement.classList.add("dark");
+              targetHtml.classList.add("dark");
             } else {
-              document.documentElement.classList.remove("dark");
+              targetHtml.classList.remove("dark");
             }
+
+            const pathname = window.location.pathname;
+            const isHome =
+              pathname === "/" || pathname === "" || pathname === "/index.html";
+            const params = new URLSearchParams(window.location.search);
+            const forceSplash = params.get("splash") === "1";
+            let splashShown = false;
+            try {
+              splashShown = sessionStorage.getItem("splash_shown") === "true";
+            } catch (e) {}
+
+            if (!isHome || (splashShown && !forceSplash)) {
+              targetHtml.classList.add("no-splash");
+            }
+
+            if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+              targetHtml.classList.add("js-anim");
+            }
+          } catch (e) {
+            targetHtml.classList.add("no-splash");
+            console.warn("Theme/Splash init exception:", e);
           }
+        }
 
-          // Pre-paint splash condition:
-          // Show only on homepage ('/' or ''), once per session, unless overridden with ?splash=1
-          const pathname = window.location.pathname;
-          const isHome =
-            pathname === "/" || pathname === "" || pathname === "/index.html";
-          const params = new URLSearchParams(window.location.search);
-          const forceSplash = params.get("splash") === "1";
-          let splashShown = false;
-          try {
-            splashShown = sessionStorage.getItem("splash_shown") === "true";
-          } catch (e) {}
+        applyThemeAndState(document.documentElement);
 
-          if (!isHome || (splashShown && !forceSplash)) {
-            document.documentElement.classList.add("no-splash");
-          }
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          window.setTimeout(function () {
+            document.documentElement.classList.remove("js-anim");
+          }, 4000);
+        }
 
-          // Pre-paint flag for the scroll-reveal system: [data-reveal] elements start
-          // hidden only when JS runs and the user allows motion (see global.css).
-          if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-            document.documentElement.classList.add("js-anim");
-
-            // Fail-safe: `js-anim` is what hides [data-reveal], and only a *successful*
-            // initScrollAnimations() clears it (GSAP then owns opacity through inline styles).
-            // If that bundle fails to load or throws, drop the class ourselves so the page
-            // degrades to fully visible content instead of staying blank forever.
-            window.setTimeout(function () {
-              document.documentElement.classList.remove("js-anim");
-            }, 4000);
-          }
-        } catch (e) {
-          document.documentElement.classList.add("no-splash");
-          console.warn("Theme/Splash init exception:", e);
+        // Stamp theme & cursor classes onto incoming document BEFORE ClientRouter swaps the DOM
+        // or captures the ::view-transition-new(root) snapshot, eliminating white flashes in
+        // dark / color modes when navigating between home and project detail pages.
+        if (!window.__themeBeforeSwapBound) {
+          window.__themeBeforeSwapBound = true;
+          document.addEventListener("astro:before-swap", function (ev) {
+            if (!ev || !ev.newDocument) return;
+            var currentHtml = document.documentElement;
+            var newHtml = ev.newDocument.documentElement;
+            applyThemeAndState(newHtml);
+            newHtml.classList.add("no-splash");
+            if (currentHtml.classList.contains("has-custom-cursor")) {
+              newHtml.classList.add("has-custom-cursor");
+            }
+          });
         }
       })();
     </script>

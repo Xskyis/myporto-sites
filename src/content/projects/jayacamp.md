@@ -8,6 +8,8 @@ role: "Fullstack / Frontend Developer"
 cover: "/projects/jycmp.webp"
 featured: true
 order: 2
+tagline: "Outdoor gear rental system"
+stackShort: ["Laravel", "Filament", "MySQL"]
 ---
 
 ## Project Overview

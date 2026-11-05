@@ -86,9 +86,31 @@ body {
   min-height: 100dvh;
   overflow-x: clip;
   max-width: 100%;
-  transition: background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Navbar Palette Switcher Pills - driven directly by html[data-palette] so the active
+   theme is always highlighted immediately (even before JS hydration) and never leaves
+   stale classes when switching between Mono (light/dark) and Color. */
+.palette-btn {
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: var(--text-muted);
+}
+
+.palette-btn:hover {
+  color: var(--text-primary);
+}
+
+html:not([data-palette="color"]) #btn-palette-mono,
+html[data-palette="color"] #btn-palette-color {
+  background-color: var(--bg-surface);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+html[data-palette="color"] #btn-tone-toggle {
+  display: none !important;
 }
 
 /* Custom Cursor Desktop Reset - hide the OS cursor only while the custom cursor is
@@ -173,6 +195,10 @@ html[data-palette="color"] .fluid-subheading {
 }
 
 /* View Transition circular clip animation for theme toggling */
+::view-transition {
+  background-color: var(--bg-primary);
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
@@ -434,13 +460,6 @@ html.js-anim [data-reveal] {
   font-weight: 500;
 }
 
-/* Reduced motion: stop the decorative marquee instead of letting it run forever */
-@media (prefers-reduced-motion: reduce) {
-  .animate-marquee {
-    animation: none;
-  }
-}
-
 /* Custom Underline Hover */
 .hover-underline-anim {
   position: relative;
@@ -489,15 +508,9 @@ html.no-splash #splash-screen {
   clip-path: inset(0% 0% 0% 0%);
 }
 
-
 /* ---------------------------------------------------------------------- */
-/* Editorial Honors & Awards (Vertical Spotlight + Rail)                  */
+/* Editorial Honors & Awards (Vertical Spotlight)                         */
 /* ---------------------------------------------------------------------- */
-
-.honor-badge-year {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-}
 
 .honor-row {
   opacity: 0.4;
@@ -594,9 +607,158 @@ html.no-splash #splash-screen {
     transform: none !important;
     transition: none !important;
   }
+}
 
-  .honors-progress-line,
-  .honors-pause-btn {
-    display: none !important;
+/* ---------------------------------------------------------------------- */
+/* Curated Certificates List & "View all" Dialog                          */
+/* ---------------------------------------------------------------------- */
+
+.cert-curated-row {
+  transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.certs-curated-list:hover .cert-curated-row {
+  opacity: 0.5;
+}
+
+.certs-curated-list .cert-curated-row:hover,
+.certs-curated-list .cert-curated-row:focus-within {
+  opacity: 1;
+}
+
+.cert-curated-title {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cert-curated-row:hover .cert-curated-title,
+.cert-curated-row:focus-within .cert-curated-title {
+  transform: translateX(5px);
+}
+
+html.certs-modal-open,
+html.certs-modal-open body {
+  overflow: hidden;
+}
+
+#certs-dialog-backdrop {
+  background-color: color-mix(in srgb, var(--bg-primary) 75%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.certs-dialog[open] #certs-dialog-backdrop {
+  animation: certsBackdropIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.certs-dialog[open] .certs-dialog-panel {
+  animation: certsDialogIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.certs-dialog[data-closing="true"] #certs-dialog-backdrop {
+  animation: certsBackdropOut 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.certs-dialog[data-closing="true"] .certs-dialog-panel {
+  animation: certsDialogOut 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.certs-dialog-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) transparent;
+}
+
+.certs-dialog-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.certs-dialog-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.certs-dialog-scroll::-webkit-scrollbar-thumb {
+  background-color: var(--border-subtle);
+  border-radius: 9999px;
+}
+
+@keyframes certsDialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes certsDialogOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes certsBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes certsBackdropOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .certs-curated-list:hover .cert-curated-row {
+    opacity: 1;
+  }
+
+  .cert-curated-row:hover .cert-curated-title,
+  .cert-curated-row:focus-within .cert-curated-title {
+    transform: none;
+  }
+
+  .certs-dialog[open] #certs-dialog-backdrop,
+  .certs-dialog[open] .certs-dialog-panel,
+  .certs-dialog[data-closing="true"] #certs-dialog-backdrop,
+  .certs-dialog[data-closing="true"] .certs-dialog-panel {
+    animation: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Technical Stack Proficiency Dots                                       */
+/* ---------------------------------------------------------------------- */
+
+.tech-dot {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 9999px;
+}
+
+.tech-dot--daily {
+  background-color: currentColor;
+  border: 1px solid currentColor;
+}
+
+.tech-dot--comfortable {
+  border: 1px solid currentColor;
+  background-image: linear-gradient(90deg, currentColor 50%, transparent 50%);
+}
+
+.tech-dot--learning {
+  border: 1px solid currentColor;
+  background-color: transparent;
 }

@@ -9,6 +9,9 @@ repoUrl: "https://github.com/Xskyis/Slicing-Web-Detroit-Radiant"
 cover: "/projects/DetroitRadiant.webp"
 featured: false
 order: 4
+shortTitle: "Detroit Radiant"
+tagline: "Industrial UI slicing"
+stackShort: ["HTML", "CSS", "JavaScript"]
 ---
 
 ## Project Overview

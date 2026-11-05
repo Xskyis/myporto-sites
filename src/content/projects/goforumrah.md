@@ -9,6 +9,8 @@ liveUrl: ""
 cover: "/projects/GFU.webp"
 featured: true
 order: 3
+tagline: "Umrah travel platform"
+stackShort: ["Next.js", "Tailwind", "Figma"]
 ---
 
 ## Project Overview

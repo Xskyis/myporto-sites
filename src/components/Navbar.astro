@@ -32,10 +32,6 @@ const isHome = currentPath === "/";
       class="nav-scroll-trigger group flex items-center text-lg font-bold tracking-tight text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)] rounded-sm"
       aria-label="Achmad Nabil Afgareza - Home"
     >
-      <!-- <span class="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-mono font-medium tracking-normal">
-        
-      </span> -->
-      <!-- miring 24 derajat -->
       <span
         class="font-display tracking-normal text-xl md:text-2xl xl:pl-8 -rotate-3"
       >
@@ -128,7 +124,7 @@ const isHome = currentPath === "/";
         <button
           type="button"
           id="btn-palette-color"
-          class="palette-btn px-3 py-1 rounded-full text-xs font-mono tracking-wider flex items-center gap-1.5 transition-all duration-300 text-[var(--text-muted)] hover:text-[var(--text-primary)] focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+          class="palette-btn px-3 py-1 rounded-full text-xs font-mono tracking-wider flex items-center gap-1.5 transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
           aria-pressed="false"
           aria-label="Switch to Poster Color Palette (Marine Blue + Red + Cream)"
         >
@@ -236,10 +232,6 @@ const isHome = currentPath === "/";
   let navAbortController: AbortController | null = null;
   let navScrollTriggers: ScrollTrigger[] = [];
 
-  // The mobile menu locks scrolling with an inline style on <body>. Astro replaces <body> on
-  // every swap, so the lock usually disappears with it – but release it on both ends of a
-  // navigation anyway, so no path (a cancelled swap, a persisted body, a bfcache restore) can
-  // leave the next page scroll-locked.
   const releaseBodyScrollLock = () => {
     document.body.style.overflow = "";
   };
@@ -247,7 +239,6 @@ const isHome = currentPath === "/";
   function setupNavbar() {
     releaseBodyScrollLock();
 
-    // 0. Clean up previous listeners and triggers to prevent duplicate callbacks
     if (navAbortController) {
       navAbortController.abort();
     }
@@ -451,8 +442,6 @@ const isHome = currentPath === "/";
       navScrollTriggers.push(st);
     }
 
-    // 4. URL hash on load/navigation is handled centrally by installNavigationScroll() in lenis.ts
-
     // 5. Theme Palette & Tone Controls
     const updateButtonsUI = () => {
       const currentPalette = html.getAttribute("data-palette") || "mono";
@@ -461,34 +450,6 @@ const isHome = currentPath === "/";
       if (btnMono && btnColor) {
         btnMono.setAttribute("aria-pressed", isMono ? "true" : "false");
         btnColor.setAttribute("aria-pressed", !isMono ? "true" : "false");
-
-        if (isMono) {
-          btnMono.classList.add(
-            "bg-[var(--bg-primary)]",
-            "text-[var(--text-primary)]",
-            "shadow-xs",
-          );
-          btnMono.classList.remove("text-[var(--text-muted)]");
-          btnColor.classList.remove(
-            "bg-[var(--bg-primary)]",
-            "text-[var(--text-primary)]",
-            "shadow-xs",
-          );
-          btnColor.classList.add("text-[var(--text-muted)]");
-        } else {
-          btnColor.classList.add(
-            "bg-[var(--bg-surface)]",
-            "text-[var(--text-primary)]",
-            "shadow-xs",
-          );
-          btnColor.classList.remove("text-[var(--text-muted)]");
-          btnMono.classList.remove(
-            "bg-[var(--bg-primary)]",
-            "text-[var(--text-primary)]",
-            "shadow-xs",
-          );
-          btnMono.classList.add("text-[var(--text-muted)]");
-        }
       }
 
       if (btnTone) {
@@ -527,9 +488,6 @@ const isHome = currentPath === "/";
       newPalette: "mono" | "color",
       event?: MouseEvent,
     ) => {
-      // `startViewTransition` is typed inconsistently across lib.dom versions; declare the
-      // shape we need locally instead of sprinkling @ts-ignore. The runtime check below
-      // still guards browsers without the API.
       const doc = document as Document & {
         startViewTransition?: (update: () => void) => { ready: Promise<void> };
       };
@@ -639,7 +597,6 @@ const isHome = currentPath === "/";
         openIcon?.classList.add("hidden");
         closeIcon?.classList.remove("hidden");
         document.body.style.overflow = "hidden";
-        // Lenis drives window.scrollTo directly, so `overflow: hidden` alone won't stop it
         getLenis()?.stop();
         header?.classList.add("border-b-hairline");
         header?.classList.remove("border-b-transparent");

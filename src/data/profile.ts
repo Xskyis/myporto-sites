@@ -46,7 +46,7 @@ export const PROFILE: ProfileData = {
   stats: [
     {
       value: 57,
-      suffix: '',
+      suffix: '+',
       label: 'GitHub Repositories',
       description: 'Continuous open exploration & experimentation',
     },

@@ -39,7 +39,6 @@ export function initScrollAnimations(): Cleanup {
     setupTimelineLine();
     setupCounters();
     setupParallax();
-    setupVelocityMarquee(cleanups, signal);
     setupMagneticButtons(signal);
   });
 
@@ -342,97 +341,7 @@ function setupParallax() {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  8. Scroll-velocity marquee ribbon                                         */
-/*     Direction follows scroll direction, speed & skew follow velocity.      */
-/* -------------------------------------------------------------------------- */
-
-function setupVelocityMarquee(cleanups: Cleanup[], signal: AbortSignal) {
-  const ribbon = document.querySelector<HTMLElement>('[data-marquee]');
-  const track = ribbon?.querySelector<HTMLElement>('[data-marquee-track]');
-  if (!ribbon || !track) return;
-
-  // Hand control from the CSS keyframe animation to GSAP
-  track.classList.remove('animate-marquee');
-
-  const BASE_SPEED = 2.4; // % of track width per second (track is 2x content, so -50% = one loop)
-  const MAX_BOOST = 14;
-  const wrap = gsap.utils.wrap(-50, 0);
-  const clampBoost = gsap.utils.clamp(0, MAX_BOOST);
-  const clampSkew = gsap.utils.clamp(-10, 10);
-
-  let position = 0;
-  let boost = 0;
-  let skew = 0;
-  let direction = 1; // 1 = leftwards (scrolling down), -1 = rightwards (scrolling up)
-  let hoverFactor = 1;
-  let isTickerActive = false;
-
-  const velocityWatcher = ScrollTrigger.create({
-    onUpdate: (self) => {
-      const velocity = self.getVelocity();
-      if (Math.abs(velocity) > 40) direction = velocity > 0 ? 1 : -1;
-      boost = Math.max(boost, clampBoost(Math.abs(velocity) / 110));
-      skew = clampSkew(-velocity / 260);
-    },
-  });
-
-  const tick = (_time: number, deltaTime: number) => {
-    const dt = Math.min(deltaTime, 64) / 1000;
-    boost += (0 - boost) * 0.06;
-    skew += (0 - skew) * 0.1;
-    position = wrap(position - direction * (BASE_SPEED * hoverFactor + boost) * dt);
-    gsap.set(track, { xPercent: position, skewX: skew });
-  };
-
-  const startTicker = () => {
-    if (!isTickerActive) {
-      isTickerActive = true;
-      gsap.ticker.add(tick);
-    }
-  };
-
-  const stopTicker = () => {
-    if (isTickerActive) {
-      isTickerActive = false;
-      gsap.ticker.remove(tick);
-    }
-  };
-
-  // Only run the ticker while the ribbon is in or near the viewport
-  const io = new IntersectionObserver(
-    ([entry]) => {
-      if (entry.isIntersecting && !document.hidden) {
-        startTicker();
-      } else {
-        stopTicker();
-      }
-    },
-    { rootMargin: '120px 0px' }
-  );
-  io.observe(ribbon);
-  signal.addEventListener('abort', () => io.disconnect());
-
-  const onVisChange = () => {
-    if (document.hidden) {
-      stopTicker();
-    }
-  };
-  document.addEventListener('visibilitychange', onVisChange, { signal });
-
-  ribbon.addEventListener('pointerenter', () => (hoverFactor = 0.25), { signal });
-  ribbon.addEventListener('pointerleave', () => (hoverFactor = 1), { signal });
-
-  cleanups.push(() => {
-    stopTicker();
-    io.disconnect();
-    velocityWatcher.kill();
-    gsap.set(track, { clearProps: 'transform' });
-    track.classList.add('animate-marquee');
-  });
-}
-
-/* -------------------------------------------------------------------------- */
-/*  9. Magnetic buttons (pointer: fine only)                                  */
+/*  8. Magnetic buttons (pointer: fine only)                                  */
 /* -------------------------------------------------------------------------- */
 
 function setupMagneticButtons(signal: AbortSignal) {
@@ -488,7 +397,7 @@ function setupMagneticButtons(signal: AbortSignal) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*  10. Keep ScrollTrigger positions accurate after late layout shifts        */
+/*  9. Keep ScrollTrigger positions accurate after late layout shifts         */
 /* -------------------------------------------------------------------------- */
 
 function scheduleRefresh(signal: AbortSignal) {

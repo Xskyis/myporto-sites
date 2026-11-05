@@ -9,6 +9,8 @@ repoUrl: "https://github.com/Xskyis/SKN-Superapp"
 cover: "/projects/SKN.webp"
 featured: true
 order: 1
+tagline: "HRIS with AI face attendance"
+stackShort: ["Laravel", "Livewire", "FastAPI"]
 ---
 
 ## Project Overview

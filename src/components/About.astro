@@ -2,24 +2,52 @@
 import { PROFILE } from '../data/profile';
 import { HONORS } from '../data/honors';
 import { TIMELINE } from '../data/timeline';
-import { CERTIFICATIONS } from '../data/certifications';
+import { CERTIFICATIONS, parseCertDateKey, type CertificationCategory } from '../data/certifications';
 import { Icon } from 'astro-icon/components';
 
-const PAGE_SIZE = 5;
-const certPages: (typeof CERTIFICATIONS)[] = [];
-for (let i = 0; i < CERTIFICATIONS.length; i += PAGE_SIZE) {
-  certPages.push(CERTIFICATIONS.slice(i, i + PAGE_SIZE));
+const CATEGORY_RELEVANCE: Record<CertificationCategory, number> = {
+  web: 10,
+  other: 20,
+  cloud: 30,
+  ai: 40,
+};
+
+const featuredCerts = CERTIFICATIONS.filter((cert) => cert.featured)
+  .sort((a, b) => {
+    const relA = a.relevance ?? CATEGORY_RELEVANCE[a.category ?? 'other'] ?? 50;
+    const relB = b.relevance ?? CATEGORY_RELEVANCE[b.category ?? 'other'] ?? 50;
+    if (relA !== relB) return relA - relB;
+    return parseCertDateKey(b.issueDate) - parseCertDateKey(a.issueDate);
+  })
+  .slice(0, 8);
+
+const allCertsSorted = [...CERTIFICATIONS].sort(
+  (a, b) => parseCertDateKey(b.issueDate) - parseCertDateKey(a.issueDate)
+);
+
+const totalCertsCount = CERTIFICATIONS.length;
+
+const filterCategories: { id: 'all' | CertificationCategory; label: string; count: number }[] = [
+  { id: 'all', label: 'All', count: totalCertsCount },
+  { id: 'web', label: 'Web', count: CERTIFICATIONS.filter((c) => (c.category ?? 'other') === 'web').length },
+  { id: 'cloud', label: 'Cloud', count: CERTIFICATIONS.filter((c) => (c.category ?? 'other') === 'cloud').length },
+  { id: 'ai', label: 'AI', count: CERTIFICATIONS.filter((c) => (c.category ?? 'other') === 'ai').length },
+  { id: 'other', label: 'Other', count: CERTIFICATIONS.filter((c) => (c.category ?? 'other') === 'other').length },
+];
+
+function resolveCertUrl(url?: string): string {
+  if (url && !url.includes('TODO')) return url;
+  return url || 'https://www.linkedin.com/in/nabilfgrza/details/certifications/';
 }
-const totalCertPages = certPages.length;
 ---
 
-<section id="about" class="pt-12 sm:pt-14 md:pt-16 pb-16 md:pb-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto z-10 relative" aria-label="About Section">
+<section id="about" class="py-16 md:py-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative" aria-label="About Section">
   <!-- Section Header -->
   <div class="flex items-center justify-between pb-6 sm:pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]" data-reveal>
     <div class="flex items-center gap-3">
       <span class="text-sm font-semibold text-[var(--text-primary)]">01</span>
     </div>
-    <span>ABOUT &amp; TRAJECTORY</span>
+    <span>About Me</span>
   </div>
 
   <!-- Top Grid: Bio & Animated Counters -->
@@ -209,295 +237,401 @@ const totalCertPages = certPages.length;
   </div>
 
   <!-- Certifications & Languages Grid -->
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-10 md:pt-12 border-t-hairline">
-    <!-- Certifications (Horizontal Paginated Slider) -->
-    <div class="lg:col-span-8 flex flex-col justify-between" data-reveal>
-      <div>
-        <div class="pb-6 flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Verified Credentials</span>
-            <h3 class="text-2xl font-display font-medium text-[var(--text-primary)] mt-1">
-              Certificates &amp; Skill Badges ({CERTIFICATIONS.length})
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 pt-10 md:pt-12 border-t-hairline items-start">
+    <!-- Certifications (Curated Editorial List) -->
+    <div class="lg:col-span-8" data-reveal>
+      <div class="pb-6">
+        <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Verified Credentials</span>
+        <h3 class="text-2xl md:text-3xl font-display font-medium text-[var(--text-primary)] mt-1">
+          Certificates
+        </h3>
+      </div>
+
+      <div class="certs-curated-list border-y border-hairline divide-y divide-hairline">
+        {featuredCerts.map((cert, idx) => {
+          const indexLabel = String(idx + 1).padStart(2, '0');
+          return (
+            <div class="cert-curated-row py-4 sm:py-5 px-4 sm:px-6 md:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-6">
+              <div class="flex items-baseline gap-3 sm:gap-4 min-w-0">
+                <span class="text-xs sm:text-[13px] font-mono text-[var(--text-muted)] shrink-0">
+                  {indexLabel}
+                </span>
+                <div class="min-w-0">
+                  <h4 class="cert-curated-title text-sm sm:text-base font-medium text-[var(--text-primary)] leading-snug">
+                    {cert.title}
+                  </h4>
+                  <p class="text-xs sm:text-[13px] text-[var(--text-muted)] mt-0.5 leading-relaxed">
+                    <span>{cert.issuer}</span>
+                    <span class="mx-1.5" aria-hidden="true">·</span>
+                    <span>{cert.issueDate}</span>
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href={resolveCertUrl(cert.credentialUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="pl-7 sm:pl-0 shrink-0 self-start sm:self-center inline-flex items-center gap-1 text-xs sm:text-[13px] font-mono text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+                aria-label={`Credential for ${cert.title}`}
+              >
+                <span class="hover-underline-anim">Credential</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+          );
+        })}
+      </div>
+
+      <!-- View all button -->
+      <div class="pt-6">
+        <button
+          type="button"
+          id="open-certs-modal-btn"
+          aria-haspopup="dialog"
+          aria-controls="certs-dialog"
+          class="inline-flex items-center gap-2 text-xs sm:text-[13px] font-mono text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] py-1"
+        >
+          <span class="hover-underline-anim">View all {totalCertsCount} certificates</span>
+          <span aria-hidden="true">↗</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Languages -->
+    <div class="lg:col-span-4" data-reveal>
+      <div class="pb-6">
+        <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Communication</span>
+        <h3 class="text-2xl md:text-3xl font-display font-medium text-[var(--text-primary)] mt-1">
+          Languages
+        </h3>
+      </div>
+
+      <div class="space-y-4">
+        {PROFILE.languages.map((lang) => (
+          <div class="p-4 rounded-xl border border-hairline bg-[var(--bg-surface)]">
+            <div class="flex justify-between items-center text-sm font-semibold text-[var(--text-primary)]">
+              <span>{lang.name}</span>
+              <span class="text-xs font-mono font-normal text-[var(--text-muted)]">{lang.nativeName}</span>
+            </div>
+            <p class="text-xs text-[var(--text-muted)] mt-1">{lang.proficiency}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- All Certificates Modal (<dialog>) -->
+  <dialog
+    id="certs-dialog"
+    aria-labelledby="certs-dialog-title"
+    aria-modal="true"
+    class="certs-dialog fixed inset-0 z-[9990] w-screen h-dvh max-w-none max-h-none m-0 p-0 bg-transparent text-[var(--text-primary)] overflow-hidden"
+    data-lenis-prevent
+  >
+    <div
+      id="certs-dialog-backdrop"
+      class="w-full h-full flex flex-col justify-end sm:items-center sm:justify-center sm:px-6 sm:py-12 md:py-16"
+    >
+      <div class="certs-dialog-panel w-full sm:w-[min(90vw,54rem)] max-h-[82dvh] sm:max-h-[75vh] flex flex-col bg-[var(--bg-primary)] text-[var(--text-primary)] border-t sm:border border-hairline rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
+        <!-- Sticky Dialog Header & Filter Bar -->
+        <div class="px-5 sm:px-8 pt-5 sm:pt-7 pb-4 border-b border-hairline bg-[var(--bg-primary)] shrink-0">
+          <div class="flex items-center justify-between gap-4">
+            <h3 id="certs-dialog-title" class="text-xl sm:text-2xl font-display font-medium text-[var(--text-primary)]">
+              All certificates <span class="font-mono text-sm sm:text-base font-normal text-[var(--text-muted)]">({totalCertsCount})</span>
             </h3>
+
+            <button
+              type="button"
+              id="close-certs-modal-btn"
+              class="w-9 h-9 rounded-full border border-hairline bg-[var(--bg-surface)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+              aria-label="Close certificates dialog"
+            >
+              <Icon name="lucide:x" class="w-4 h-4" aria-hidden="true" />
+            </button>
           </div>
 
-          <!-- Top Navigation Controls -->
-          <div class="flex items-center gap-3">
-            <span class="text-xs font-mono text-[var(--text-muted)] tracking-wider">
-              PAGE <span id="cert-page-current" class="text-[var(--text-primary)] font-semibold">01</span> / {String(totalCertPages).padStart(2, '0')}
-            </span>
-            <div class="flex items-center gap-1.5">
-              <button
-                type="button"
-                id="cert-prev-btn"
-                class="cert-prev-btn w-8 h-8 rounded-full border border-hairline bg-[var(--bg-surface)] flex items-center justify-center text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-all disabled:opacity-30 disabled:pointer-events-none focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] shadow-xs"
-                aria-label="Previous page of certificates"
-                disabled
-              >
-                <Icon name="lucide:arrow-left" class="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                id="cert-next-btn"
-                class="cert-next-btn w-8 h-8 rounded-full border border-hairline bg-[var(--bg-surface)] flex items-center justify-center text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-all disabled:opacity-30 disabled:pointer-events-none focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] shadow-xs"
-                aria-label="Next page of certificates"
-              >
-                <Icon name="lucide:arrow-right" class="w-3.5 h-3.5" />
-              </button>
-            </div>
+          <!-- Instant Category Filter Chips -->
+          <div class="flex flex-wrap items-center gap-2 mt-4" role="group" aria-label="Filter certificates by category">
+            {filterCategories.map((cat, idx) => {
+              const isDefault = idx === 0;
+              return (
+                <button
+                  type="button"
+                  data-cert-filter={cat.id}
+                  aria-pressed={isDefault ? 'true' : 'false'}
+                  class={`cert-filter-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono border transition-colors duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] ${
+                    isDefault
+                      ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)] font-medium'
+                      : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-hairline hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]'
+                  }`}
+                >
+                  <span>{cat.label}</span>
+                  <span class="opacity-70">({cat.count})</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <!-- Horizontal Slide Viewport & Track -->
+        <!-- Scrollable 2-Column Certificate List -->
         <div
-          id="certs-viewport"
-          class="relative overflow-hidden w-full border-y border-hairline"
-          aria-label="Certificates list paginated"
+          class="certs-dialog-scroll px-5 sm:px-8 py-4 sm:py-6 overflow-y-auto overscroll-contain flex-1"
+          data-lenis-prevent
         >
-          <div
-            id="certs-track"
-            class="flex w-full will-change-transform transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-            style="transform: translateX(0%);"
-          >
-            {certPages.map((page, pageIdx) => (
+          <div id="certs-dialog-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+            {allCertsSorted.map((cert) => (
               <div
-                class="w-full shrink-0 divide-y divide-hairline min-h-[385px]"
-                data-cert-page={pageIdx}
-                aria-hidden={pageIdx !== 0}
-                inert={pageIdx !== 0 || undefined}
+                data-cert-item
+                data-cert-category={cert.category ?? 'other'}
+                class="py-3.5 sm:py-4 border-b border-hairline flex items-start justify-between gap-4"
               >
-                {page.map((cert, itemIdx) => {
-                  const globalIdx = pageIdx * PAGE_SIZE + itemIdx;
-                  return (
-                    <div
-                      class="py-4 sm:py-5 px-3 sm:px-6 md:px-8 cert-item hover:bg-[var(--bg-surface-soft)]/50 transition-all duration-300"
-                    >
-                      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <div class="flex items-start gap-3">
-                          <span class="text-xs font-mono text-[var(--text-muted)] pt-0.5">
-                            {String(globalIdx + 1).padStart(2, '0')}
-                          </span>
-                          <div>
-                            <h4 class="text-sm sm:text-base font-semibold text-[var(--text-primary)] line-clamp-1">
-                              {cert.title}
-                            </h4>
-                            <p class="text-xs text-[var(--text-muted)] mt-0.5">
-                              {cert.issuer} · Issued {cert.issueDate} {cert.expiryDate ? `(Valid until ${cert.expiryDate})` : ''}
-                            </p>
-                          </div>
-                        </div>
+                <div class="min-w-0">
+                  <h4 class="text-sm sm:text-[15px] font-medium text-[var(--text-primary)] leading-snug">
+                    {cert.title}
+                  </h4>
+                  <p class="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
+                    <span>{cert.issuer}</span>
+                    <span class="mx-1.5" aria-hidden="true">·</span>
+                    <span>{cert.issueDate}</span>
+                  </p>
+                </div>
 
-                        <a
-                          href={cert.credentialUrl && !cert.credentialUrl.includes('TODO') ? cert.credentialUrl : (cert.credentialUrl || 'https://www.linkedin.com/in/nabilfgrza/details/certifications/')}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="shrink-0 self-start sm:self-center inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-hairline bg-[var(--bg-surface)] hover:bg-[var(--accent-primary)] hover:text-[var(--accent-contrast)] hover:border-[var(--accent-primary)] text-xs font-mono text-[var(--text-primary)] transition-all duration-200 group/cert-btn focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] shadow-xs"
-                          aria-label={`View certificate for ${cert.title}`}
-                        >
-                          <span>Credential</span>
-                          <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5 opacity-60 group-hover/cert-btn:opacity-100 group-hover/cert-btn:translate-x-0.5 group-hover/cert-btn:-translate-y-0.5 transition-transform duration-200" />
-                        </a>
-                      </div>
-                    </div>
-                  );
-                })}
+                <a
+                  href={resolveCertUrl(cert.credentialUrl)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="shrink-0 inline-flex items-center gap-1 text-xs font-mono text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200 pt-0.5 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+                  aria-label={`Credential for ${cert.title}`}
+                >
+                  <span class="hover-underline-anim">Credential</span>
+                  <span aria-hidden="true">↗</span>
+                </a>
               </div>
             ))}
           </div>
         </div>
       </div>
-
-      <!-- Bottom Pagination Controls (Indicator & Numeric Pills) -->
-      <div class="pt-6 flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
-        <span id="cert-page-range" class="text-[var(--text-muted)]">
-          Showing 01–05 of {CERTIFICATIONS.length} credentials
-        </span>
-
-        <!-- Page Pills -->
-        <div class="flex items-center gap-1.5" role="navigation" aria-label="Certificate Pages">
-          {certPages.map((_, pIdx) => (
-            <button
-              type="button"
-              class={`cert-page-pill w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-mono text-xs border transition-all duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] ${pIdx === 0 ? 'bg-[var(--accent-primary)] text-[var(--accent-contrast)] border-[var(--accent-primary)] font-semibold shadow-xs' : 'border-hairline bg-[var(--bg-surface)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)]'}`}
-              data-page-index={pIdx}
-              aria-label={`Go to page ${pIdx + 1}`}
-              aria-current={pIdx === 0 ? 'page' : undefined}
-            >
-              {String(pIdx + 1).padStart(2, '0')}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
-
-    <!-- Languages & Direct Links -->
-    <div class="lg:col-span-4 flex flex-col justify-between gap-8" data-reveal>
-      <div>
-        <span class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)]">Communication</span>
-        <h3 class="text-2xl font-display font-medium text-[var(--text-primary)] mt-1 mb-6">
-          Languages
-        </h3>
-
-        <div class="space-y-4">
-          {PROFILE.languages.map((lang) => (
-            <div class="p-4 rounded-xl border border-hairline bg-[var(--bg-surface)]">
-              <div class="flex justify-between items-center text-sm font-semibold text-[var(--text-primary)]">
-                <span>{lang.name}</span>
-                <span class="text-xs font-mono font-normal text-[var(--text-muted)]">{lang.nativeName}</span>
-              </div>
-              <p class="text-xs text-[var(--text-muted)] mt-1">{lang.proficiency}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
+  </dialog>
 </section>
 
 <script>
-  let certsAbortController: AbortController | null = null;
+  import { getLenis } from '../lib/scroll/lenis';
+
+  let certsModalCleanup: (() => void) | null = null;
   let honorsCleanup: (() => void) | null = null;
 
-  function setupCertsPagination() {
-    if (certsAbortController) {
-      certsAbortController.abort();
+  function setupCertsModal(): (() => void) | null {
+    const dialog = document.getElementById('certs-dialog') as HTMLDialogElement | null;
+    const openBtn = document.getElementById('open-certs-modal-btn') as HTMLButtonElement | null;
+    const closeBtn = document.getElementById('close-certs-modal-btn') as HTMLButtonElement | null;
+    if (!dialog || !openBtn || !closeBtn) return null;
+
+    const abort = new AbortController();
+    const { signal } = abort;
+
+    // Move dialog to document.body so it escapes <main class="z-10"> and <section class="z-10">,
+    // sitting cleanly above #main-header (z-50) while remaining below CustomCursor (z-[100001]).
+    const originalParent = dialog.parentElement;
+    if (dialog.parentElement !== document.body) {
+      document.body.appendChild(dialog);
     }
-    certsAbortController = new AbortController();
-    const { signal } = certsAbortController;
 
-    const track = document.getElementById('certs-track');
-    const prevBtns = document.querySelectorAll<HTMLButtonElement>('.cert-prev-btn');
-    const nextBtns = document.querySelectorAll<HTMLButtonElement>('.cert-next-btn');
-    const pagePills = document.querySelectorAll<HTMLButtonElement>('.cert-page-pill');
-    const pageCurrent = document.getElementById('cert-page-current');
-    const pageRange = document.getElementById('cert-page-range');
-    const pageElements = document.querySelectorAll<HTMLElement>('[data-cert-page]');
+    const backdrop = document.getElementById('certs-dialog-backdrop');
+    const filterBtns = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-cert-filter]'));
+    const certItems = Array.from(dialog.querySelectorAll<HTMLElement>('[data-cert-item]'));
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-    if (!track || pageElements.length === 0) return;
+    let closeTimer: number | null = null;
+    let isClosing = false;
 
-    const totalPages = pageElements.length;
-    const totalItems = track.querySelectorAll('.cert-item').length;
-    const pageSize = 5;
-    let currentPage = 0;
+    const lockScroll = () => {
+      document.documentElement.classList.add('certs-modal-open');
+      getLenis()?.stop();
+    };
 
-    const updateUI = () => {
-      track.style.transform = `translateX(-${currentPage * 100}%)`;
+    const unlockScroll = () => {
+      document.documentElement.classList.remove('certs-modal-open');
+      getLenis()?.start();
+    };
 
-      if (pageCurrent) {
-        pageCurrent.textContent = String(currentPage + 1).padStart(2, '0');
-      }
-
-      if (pageRange) {
-        const start = currentPage * pageSize + 1;
-        const end = Math.min((currentPage + 1) * pageSize, totalItems);
-        pageRange.textContent = `Showing ${String(start).padStart(2, '0')}–${String(end).padStart(2, '0')} of ${totalItems} credentials`;
-      }
-
-      prevBtns.forEach((btn) => {
-        btn.disabled = currentPage === 0;
-      });
-      nextBtns.forEach((btn) => {
-        btn.disabled = currentPage === totalPages - 1;
-      });
-
-      pagePills.forEach((pill, idx) => {
-        const isCurrent = idx === currentPage;
-        if (isCurrent) {
-          pill.setAttribute('aria-current', 'page');
-          pill.classList.add(
-            'bg-[var(--accent-primary)]',
-            'text-[var(--accent-contrast)]',
-            'border-[var(--accent-primary)]',
-            'font-semibold',
-            'shadow-xs'
+    const applyFilter = (category: string) => {
+      filterBtns.forEach((btn) => {
+        const isActive = btn.getAttribute('data-cert-filter') === category;
+        btn.setAttribute('aria-pressed', String(isActive));
+        if (isActive) {
+          btn.classList.add(
+            'bg-[var(--text-primary)]',
+            'text-[var(--bg-primary)]',
+            'border-[var(--text-primary)]',
+            'font-medium'
           );
-          pill.classList.remove(
-            'border-hairline',
+          btn.classList.remove(
             'bg-[var(--bg-surface)]',
-            'text-[var(--text-muted)]'
+            'text-[var(--text-muted)]',
+            'border-hairline'
           );
         } else {
-          pill.removeAttribute('aria-current');
-          pill.classList.remove(
-            'bg-[var(--accent-primary)]',
-            'text-[var(--accent-contrast)]',
-            'border-[var(--accent-primary)]',
-            'font-semibold',
-            'shadow-xs'
+          btn.classList.remove(
+            'bg-[var(--text-primary)]',
+            'text-[var(--bg-primary)]',
+            'border-[var(--text-primary)]',
+            'font-medium'
           );
-          pill.classList.add(
-            'border-hairline',
+          btn.classList.add(
             'bg-[var(--bg-surface)]',
-            'text-[var(--text-muted)]'
+            'text-[var(--text-muted)]',
+            'border-hairline'
           );
         }
       });
 
-      pageElements.forEach((el, idx) => {
-        const isHidden = idx !== currentPage;
-        el.setAttribute('aria-hidden', String(isHidden));
-        if (isHidden) {
-          el.setAttribute('inert', '');
+      certItems.forEach((item) => {
+        const itemCat = item.getAttribute('data-cert-category') || 'other';
+        const matches = category === 'all' || itemCat === category;
+        if (matches) {
+          item.removeAttribute('hidden');
+          item.classList.add('flex');
+          item.classList.remove('hidden');
         } else {
-          el.removeAttribute('inert');
+          item.setAttribute('hidden', '');
+          item.classList.add('hidden');
+          item.classList.remove('flex');
         }
       });
     };
 
-    const goToPage = (page: number) => {
-      if (page < 0 || page >= totalPages) return;
-      currentPage = page;
-      updateUI();
+    const openModal = () => {
+      if (dialog.open) return;
+      if (closeTimer !== null) {
+        window.clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+      isClosing = false;
+      dialog.removeAttribute('data-closing');
+      // Use dialog.show() instead of showModal() so the modal stays in the standard
+      // stacking context (z-[9990]) rather than the browser's #top-layer, allowing the
+      // custom cursor (z-[100001]+) to remain visible above the dialog.
+      dialog.show();
+      lockScroll();
+      closeBtn.focus();
     };
 
-    prevBtns.forEach((btn) => {
-      btn.addEventListener('click', () => goToPage(currentPage - 1), { signal });
-    });
-    nextBtns.forEach((btn) => {
-      btn.addEventListener('click', () => goToPage(currentPage + 1), { signal });
-    });
+    const finishClose = (restoreFocus: boolean) => {
+      if (closeTimer !== null) {
+        window.clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+      isClosing = false;
+      dialog.removeAttribute('data-closing');
+      if (dialog.open) {
+        dialog.close();
+      }
+      unlockScroll();
+      if (restoreFocus) {
+        openBtn.focus();
+      }
+    };
 
-    pagePills.forEach((pill) => {
-      pill.addEventListener(
+    const closeModal = (restoreFocus = true) => {
+      if (!dialog.open || isClosing) return;
+      if (reducedMotionQuery.matches) {
+        finishClose(restoreFocus);
+        return;
+      }
+      isClosing = true;
+      dialog.setAttribute('data-closing', 'true');
+      closeTimer = window.setTimeout(() => {
+        finishClose(restoreFocus);
+      }, 280);
+    };
+
+    openBtn.addEventListener('click', () => openModal(), { signal });
+    closeBtn.addEventListener('click', () => closeModal(true), { signal });
+
+    // Click on backdrop to close
+    dialog.addEventListener(
+      'click',
+      (e: MouseEvent) => {
+        if (e.target === dialog || e.target === backdrop) {
+          closeModal(true);
+        }
+      },
+      { signal }
+    );
+
+    // ESC key cancel handling
+    dialog.addEventListener(
+      'cancel',
+      (e: Event) => {
+        e.preventDefault();
+        closeModal(true);
+      },
+      { signal }
+    );
+
+    // Global keydown for Escape and Tab focus trap while dialog is open
+    window.addEventListener(
+      'keydown',
+      (e: KeyboardEvent) => {
+        if (!dialog.open) return;
+
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closeModal(true);
+          return;
+        }
+        if (e.key !== 'Tab') return;
+
+        const focusables = Array.from(
+          dialog.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((el) => !el.closest('[hidden]') && el.offsetParent !== null);
+
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+          e.preventDefault();
+          first.focus();
+        }
+      },
+      { signal }
+    );
+
+    // Filter chip clicks
+    filterBtns.forEach((btn) => {
+      btn.addEventListener(
         'click',
         () => {
-          const pIdx = parseInt(pill.getAttribute('data-page-index') || '0', 10);
-          goToPage(pIdx);
+          const category = btn.getAttribute('data-cert-filter') || 'all';
+          applyFilter(category);
         },
         { signal }
       );
     });
 
-    let touchStartX = 0;
-    let touchStartY = 0;
-    track.addEventListener(
-      'touchstart',
-      (e: TouchEvent) => {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-      },
-      { passive: true, signal }
-    );
-
-    track.addEventListener(
-      'touchend',
-      (e: TouchEvent) => {
-        const touchEndX = e.changedTouches[0].clientX;
-        const touchEndY = e.changedTouches[0].clientY;
-        const dx = touchEndX - touchStartX;
-        const dy = touchEndY - touchStartY;
-        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-          if (dx < 0) {
-            goToPage(currentPage + 1);
-          } else {
-            goToPage(currentPage - 1);
-          }
-        }
-      },
-      { passive: true, signal }
-    );
-
-    updateUI();
+    return () => {
+      if (closeTimer !== null) {
+        window.clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+      if (dialog.open) {
+        dialog.close();
+      }
+      dialog.removeAttribute('data-closing');
+      if (originalParent && dialog.parentElement === document.body) {
+        originalParent.appendChild(dialog);
+      }
+      unlockScroll();
+      abort.abort();
+    };
   }
 
   function setupHonorsSpotlight(): (() => void) | null {
@@ -725,15 +859,16 @@ const totalCertPages = certPages.length;
   }
 
   document.addEventListener('astro:page-load', () => {
-    setupCertsPagination();
+    certsModalCleanup?.();
+    certsModalCleanup = setupCertsModal();
     honorsCleanup?.();
     honorsCleanup = setupHonorsSpotlight();
   });
 
   document.addEventListener('astro:before-swap', () => {
-    if (certsAbortController) {
-      certsAbortController.abort();
-      certsAbortController = null;
+    if (certsModalCleanup) {
+      certsModalCleanup();
+      certsModalCleanup = null;
     }
     if (honorsCleanup) {
       honorsCleanup();

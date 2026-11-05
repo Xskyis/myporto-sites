@@ -1,17 +1,31 @@
 ---
-import { TECH_STACK, TECH_CATEGORIES } from "../data/techstack";
+import { TECH_STACK, TECH_CATEGORIES, type TechCategory, type TechLevel } from "../data/techstack";
 import { Icon } from "astro-icon/components";
 
 const groupedTech = TECH_CATEGORIES.map((cat) => ({
   category: cat,
   items: TECH_STACK.filter((t) => t.category === cat),
 }));
+
+const CATEGORY_SPAN_CLASSES: Record<TechCategory, string> = {
+  Frontend: "sm:col-span-2 lg:col-span-8",
+  Backend: "sm:col-span-1 lg:col-span-4",
+  Database: "sm:col-span-1 lg:col-span-4",
+  Mobile: "sm:col-span-1 lg:col-span-4",
+  "Tools & Cloud": "sm:col-span-1 lg:col-span-4",
+};
+
+const LEVEL_DOT_CLASS: Record<TechLevel, string> = {
+  "Daily use": "tech-dot--daily",
+  Comfortable: "tech-dot--comfortable",
+  Learning: "tech-dot--learning",
+};
 ---
 
 <section
   id="tech-stack"
-  class="pt-16 md:pt-20 pb-0 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative"
-  aria-label="Tech Stack Section"
+  class="py-16 md:py-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative"
+  aria-labelledby="tech-stack-heading"
 >
   <!-- Section Header -->
   <div
@@ -24,143 +38,83 @@ const groupedTech = TECH_CATEGORIES.map((cat) => ({
     <span>TECHNICAL CAPABILITIES</span>
   </div>
 
-  <!-- Heading Intro -->
-  <div class="pt-8 sm:pt-10 md:pt-12 pb-8 sm:pb-10 md:pb-12 max-w-3xl">
+  <!-- Heading + Single Proficiency Legend -->
+  <div
+    class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-8 sm:pt-10 md:pt-12 pb-8 md:pb-10"
+    data-reveal
+  >
     <h2
-      class="fluid-subheading font-medium text-[var(--text-primary)] leading-tight"
-      data-reveal="words"
+      id="tech-stack-heading"
+      class="fluid-subheading font-medium text-[var(--text-primary)]"
     >
-      Engineered for performance, semantic clarity, and fluid client
-      interactions.
+      Technical Stack
     </h2>
-    <p
-      class="text-sm md:text-base font-light text-[var(--text-muted)] mt-4 max-w-xl"
-      data-reveal
+
+    <!-- Legend -->
+    <div
+      class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-mono text-[var(--text-muted)]"
+      aria-label="Proficiency level legend"
     >
-      Classified qualitatively rather than by arbitrary percentages.
-      Prioritizing modern React, Next.js, and TypeScript ecosystems.
-    </p>
+      <span class="inline-flex items-center gap-2">
+        <span class="tech-dot tech-dot--daily text-[var(--text-primary)]" aria-hidden="true"></span>
+        <span>Daily use</span>
+      </span>
+      <span class="inline-flex items-center gap-2">
+        <span class="tech-dot tech-dot--comfortable text-[var(--text-primary)]" aria-hidden="true"></span>
+        <span>Comfortable</span>
+      </span>
+      <span class="inline-flex items-center gap-2">
+        <span class="tech-dot tech-dot--learning text-[var(--text-primary)]" aria-hidden="true"></span>
+        <span>Learning</span>
+      </span>
+    </div>
   </div>
 
-  <!-- Spotlight Prioritized Top Skills Grid -->
-  <!-- <div class="mb-20" data-reveal>
-    <div
-      class="text-xs font-mono uppercase tracking-widest text-[var(--text-muted)] mb-6"
-    >
-      Core Focus
-    </div>
-
-    <div
-      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-      data-stagger-container
-    >
-      {
-        prioritizedTech.map((item) => (
+  <!-- Compact Dense Category Grid -->
+  <div
+    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 grid-flow-row-dense gap-x-8 gap-y-8 md:gap-y-10"
+    data-stagger-container
+  >
+    {
+      groupedTech.map((group) => {
+        const countLabel = String(group.items.length).padStart(2, "0");
+        const spanClass = CATEGORY_SPAN_CLASSES[group.category];
+        return (
           <div
-            class="p-8 rounded-2xl border border-hairline bg-[var(--bg-surface)] hover:border-[var(--text-primary)] transition-all duration-300 group flex flex-col justify-between"
+            class={`${spanClass} border-t-hairline pt-5 md:pt-6 flex flex-col gap-4`}
             data-stagger-item
           >
-            <div class="flex items-start justify-between">
-              <div class="w-12 h-12 rounded-xl border border-hairline bg-[var(--bg-surface-soft)] flex items-center justify-center text-[var(--text-primary)] group-hover:scale-110 transition-transform duration-300">
-                <Icon name={item.icon} class="w-6 h-6 text-current" />
-              </div>
-
-              <span class="text-[10px] font-mono uppercase tracking-wider px-2.5 py-1 rounded-full border border-hairline bg-[var(--bg-surface-soft)] text-[var(--text-primary)] font-medium">
-                {item.level}
-              </span>
-            </div>
-
-            <div class="mt-8">
-              <h3 class="text-2xl font-display font-semibold text-[var(--text-primary)]">
-                {item.name}
+            <div class="flex items-baseline justify-between gap-2">
+              <h3 class="text-lg md:text-xl font-display font-medium text-[var(--text-primary)]">
+                {group.category}
+                <span class="ml-1.5 font-mono text-xs font-normal text-[var(--text-muted)]">
+                  ({countLabel})
+                </span>
               </h3>
-              <p class="text-xs text-[var(--text-muted)] mt-2 font-mono leading-relaxed">
-                {item.notes}
-              </p>
             </div>
-          </div>
-        ))
-      }
-    </div>
-  </div> -->
 
-  <!-- Categorized Skills Grid: each group reveals as it enters, chips cascade in -->
-  <div class="space-y-8 md:space-y-10">
-    {
-      groupedTech.map((group) => (
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start border-t-hairline pt-10">
-          <div class="md:col-span-3" data-reveal>
-            <h3 class="text-xl font-display font-medium text-[var(--text-primary)]">
-              {group.category}
-            </h3>
-            <span class="text-xs font-mono text-[var(--text-muted)]">
-              {group.items.length} Technologies
-            </span>
+            <ul class="flex flex-wrap gap-2 sm:gap-2.5" role="list">
+              {group.items.map((item) => {
+                const dotClass = LEVEL_DOT_CLASS[item.level];
+                const levelLower = item.level.toLowerCase();
+                return (
+                  <li>
+                    <span
+                      class="tech-chip inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] hover:border-[var(--text-primary)] transition-colors duration-200 text-[13px] sm:text-sm font-medium select-none"
+                      aria-label={`${item.name}, ${levelLower}`}
+                      title={`${item.name} — ${item.level}`}
+                    >
+                      <Icon name={item.icon} class="w-4 h-4 text-current shrink-0" aria-hidden="true" />
+                      <span>{item.name}</span>
+                      <span class={`tech-dot ${dotClass} ml-0.5 shrink-0`} aria-hidden="true" />
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
-
-          <div class="md:col-span-9 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" data-stagger-container>
-            {group.items.map((item) => (
-              <div
-                class="p-4 rounded-xl border border-hairline bg-[var(--bg-surface)]/70 hover:bg-[var(--bg-surface)] hover:border-[var(--text-primary)] transition-all duration-200 flex items-center gap-3 group"
-                data-stagger-item
-              >
-                <div class="w-8 h-8 rounded-lg border border-hairline bg-[var(--bg-surface-soft)] flex items-center justify-center text-[var(--text-primary)] shrink-0">
-                  <Icon name={item.icon} class="w-4 h-4 text-current" />
-                </div>
-
-                <div class="overflow-hidden">
-                  <h4 class="text-sm font-semibold text-[var(--text-primary)] truncate">
-                    {item.name}
-                  </h4>
-                  <span class="text-[10px] font-mono text-[var(--text-muted)] block">
-                    {item.level}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))
+        );
+      })
     }
-  </div>
-
-  <!-- Full-Width Marquee Velocity Ribbon: direction & speed follow the user's scroll (see animations.ts) -->
-  <div
-    class="relative left-1/2 -translate-x-1/2 w-screen max-w-[100vw] mt-10 md:mt-14 overflow-hidden border-y-hairline border-x-0 border-l-0 border-r-0 bg-[var(--bg-surface)]/60 py-6 sm:py-8 select-none backdrop-blur-xs"
-    style="border-left: none !important; border-right: none !important;"
-    aria-hidden="true"
-    data-marquee
-  >
-    <div
-      class="flex whitespace-nowrap animate-marquee hover:[animation-play-state:paused] will-change-transform"
-      data-marquee-track
-    >
-      {
-        [...Array(2)].map(() => (
-          <div class="flex items-center gap-8 sm:gap-12 md:gap-16 px-4 sm:px-6 md:px-8 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-medium tracking-tight text-[var(--text-primary)]">
-            <span>NEXT.JS</span>
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--accent-primary)] shrink-0 opacity-80" />
-            <span>REACT</span>
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--accent-primary)] shrink-0 opacity-80" />
-            <span>TYPESCRIPT</span>
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--accent-primary)] shrink-0 opacity-80" />
-            <span>TAILWIND CSS</span>
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--accent-primary)] shrink-0 opacity-80" />
-            <span>ASTRO</span>
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--accent-primary)] shrink-0 opacity-80" />
-            <span>FLUTTER</span>
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--accent-primary)] shrink-0 opacity-80" />
-            <span>LARAVEL</span>
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--accent-primary)] shrink-0 opacity-80" />
-            <span>THREE.JS</span>
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--accent-primary)] shrink-0 opacity-80" />
-            <span>GSAP</span>
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--accent-primary)] shrink-0 opacity-80" />
-            <span>AI ANNOTATION</span>
-            <span class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[var(--accent-primary)] shrink-0 opacity-80" />
-          </div>
-        ))
-      }
-    </div>
   </div>
 </section>

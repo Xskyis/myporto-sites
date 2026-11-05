@@ -150,7 +150,7 @@
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
-      const interactive = target.closest('a, button, [role="button"], [role="tab"], input, textarea, select, .project-card, .honor-row, .magnetic-btn');
+      const interactive = target.closest('a, button, [role="button"], [role="tab"], input, textarea, select, .project-card, .project-row, .honor-row, .magnetic-btn');
       if (interactive) {
         isHovering = true;
         // Token-driven hover fill (mirrors --border-subtle's alpha idea) instead of a
@@ -164,7 +164,7 @@
     const handleMouseOut = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
-      const interactive = target.closest('a, button, [role="button"], [role="tab"], input, textarea, select, .project-card, .honor-row, .magnetic-btn');
+      const interactive = target.closest('a, button, [role="button"], [role="tab"], input, textarea, select, .project-card, .project-row, .honor-row, .magnetic-btn');
       if (interactive) {
         isHovering = false;
         ring.style.backgroundColor = 'transparent';

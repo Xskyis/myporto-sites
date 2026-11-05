@@ -13,8 +13,8 @@ export interface TechItem {
 export const TECH_CATEGORIES: TechCategory[] = [
   'Frontend',
   'Backend',
-  'Mobile',
   'Database',
+  'Mobile',
   'Tools & Cloud',
 ];
 

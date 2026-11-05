@@ -9,6 +9,8 @@ repoUrl: "https://github.com/Xskyis/Wheather-App"
 cover: "/projects/weather.webp"
 featured: false
 order: 5
+tagline: "Real-time forecast app"
+stackShort: ["React", "OpenWeather API"]
 ---
 
 ## Project Overview
