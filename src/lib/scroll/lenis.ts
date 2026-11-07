@@ -4,21 +4,18 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Mobile browsers resize the viewport when the address bar collapses; ignore those so
-// scroll-linked animations don't jump mid-scroll.
-ScrollTrigger.config({ ignoreMobileResize: true });
+ScrollTrigger.config({
+  ignoreMobileResize: true,
+});
 
 let lenisInstance: Lenis | null = null;
 
 /**
- * Scroll offset so anchored sections land just below the fixed header. The header is h-20
- * (80px today); targets are tucked 5px behind its bottom edge so the hairline border seam is
- * absorbed by the section's own padding. Measured at call time so a future header height
- * change can't silently desync the landing position.
+ * Scroll offset so anchored sections land just below the fixed header.
+ * Uses CSS var --header-height for zero-DOM-read performance.
  */
 function headerOffset(): number {
-  const height = document.getElementById('main-header')?.offsetHeight ?? 80;
-  return -(height - 5);
+  return -(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-height') || '80px') - 5);
 }
 
 export function initLenis(): Lenis | null {
@@ -158,21 +155,24 @@ function getHashTarget(): HTMLElement | null {
   }
 }
 
-/** Re-land the anchored element just below the fixed header, without a visible second jump. */
+/** Re-land the anchored element just below the fixed header after layout settles. */
 function applyHeaderOffset(target: HTMLElement) {
-  // Two frames: the browser's own fragment scroll is applied during the next layout pass,
-  // so correcting one frame later guarantees we land after it rather than under it.
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if (!target.isConnected) return;
-      const top = target.getBoundingClientRect().top + window.scrollY + headerOffset();
-      if (lenisInstance) {
-        lenisInstance.scrollTo(top, { immediate: true, force: true });
-      } else {
-        window.scrollTo({ top, left: 0, behavior: 'instant' });
-      }
-      ScrollTrigger.update();
-    });
+    const offset = headerOffset();
+    if (lenisInstance && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      lenisInstance.scrollTo(target, {
+        offset,
+        immediate: true,
+        force: true,
+      });
+    } else {
+      const top = target.getBoundingClientRect().top + window.scrollY + offset;
+      window.scrollTo({
+        top,
+        left: 0,
+        behavior: 'instant',
+      });
+    }
   });
 }
 
@@ -213,7 +213,7 @@ export function scrollToTarget(
   } else {
     // No Lenis (reduced motion or init failure): apply the header offset ourselves, otherwise
     // the section top lands under the fixed navbar.
-    const top = targetEl.getBoundingClientRect().top + window.scrollY + offset;
+    const top = targetEl.offsetTop + offset;
     window.scrollTo({ top, left: 0, behavior: prefersReduced ? 'auto' : 'smooth' });
     setTimeout(() => {
       options?.onComplete?.();

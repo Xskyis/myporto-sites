@@ -86,7 +86,7 @@ const coverAvif = coverMeta?.avif ?? (coverWebp ? coverWebp.replace(/\.webp$/, '
             href={project.data.liveUrl}
             target="_blank"
             rel="noopener noreferrer"
-            class="magnetic-btn px-6 py-3 rounded-full bg-[var(--accent-primary)] text-[var(--accent-contrast)] text-xs font-mono tracking-wider flex items-center gap-2 shadow-md hover:opacity-90 transition-all"
+            class="magnetic-btn px-6 py-3 rounded-full bg-[var(--accent-primary)] text-[var(--accent-contrast)] text-xs font-mono tracking-wider flex items-center gap-2 shadow-md hover:opacity-90 transition-opacity duration-300"
           >
             <Icon name="lucide:external-link" class="w-3.5 h-3.5" />
             <span>Launch Live Platform</span>
@@ -98,7 +98,7 @@ const coverAvif = coverMeta?.avif ?? (coverWebp ? coverWebp.replace(/\.webp$/, '
             href={project.data.repoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            class="magnetic-btn px-6 py-3 rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] text-xs font-mono tracking-wider hover:border-[var(--text-primary)] flex items-center gap-2 transition-all"
+            class="magnetic-btn px-6 py-3 rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] text-xs font-mono tracking-wider hover:border-[var(--text-primary)] flex items-center gap-2 transition-colors duration-300"
           >
             <Icon name="simple-icons:github" class="w-3.5 h-3.5" />
             <span>View Source Code</span>

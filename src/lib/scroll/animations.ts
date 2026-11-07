@@ -1,6 +1,7 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
+import { onPaletteChange } from '../palette-events';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -250,19 +251,19 @@ function setupTimelineLine() {
       ease: 'none',
       scrollTrigger: {
         trigger: container,
-        start: 'top 70%',
-        end: 'bottom 80%',
+        start: 'top 75%',
+        end: 'bottom 75%',
         scrub: true,
       },
     }
   );
 
-  // Dynamic node dot lighting: lights up as the vertical scrub line touches each node
+  // Dynamic node dot lighting: lights up at the exact viewport line (75%) as the scrub line crosses it
   const dots = container.querySelectorAll<HTMLElement>('.timeline-node-dot');
   dots.forEach((dot) => {
     ScrollTrigger.create({
       trigger: dot,
-      start: 'top 75%',
+      start: 'center 75%',
       toggleActions: 'play reverse play reverse',
       onEnter: () => {
         gsap.to(dot, {
@@ -409,6 +410,11 @@ function scheduleRefresh(signal: AbortSignal) {
   if (document.fonts?.ready) {
     document.fonts.ready.then(refresh).catch(() => {});
   }
+
+  // Switching between mono (Geist) and poster color (Instrument Serif) shifts display font metrics
+  onPaletteChange(() => {
+    requestAnimationFrame(refresh);
+  }, signal);
 
   // Images without explicit dimensions (project covers) push content down as they load
   document.querySelectorAll<HTMLImageElement>('#main-content img').forEach((img) => {

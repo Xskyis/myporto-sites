@@ -46,6 +46,8 @@ let sphereMaterial: THREE.MeshStandardMaterial | null = null;
 let balls: Ball[] = [];
 let ballColors: THREE.Color[] = [];
 let totalBalls = 90;
+let paletteTween: gsap.core.Tween | null = null;
+let isColorTweening = false;
 
 // Mouse / Touch Force Field
 const mouse = {
@@ -116,34 +118,47 @@ export function updateBallPitColors(immediate = false) {
   const targetPalette = getActiveBallPalette();
   const count = Math.min(totalBalls, ballColors.length);
 
-  for (let i = 0; i < count; i++) {
-    const targetColor = targetPalette[i % targetPalette.length];
-    if (immediate) {
-      ballColors[i].copy(targetColor);
+  paletteTween?.kill();
+  paletteTween = null;
+
+  if (immediate) {
+    isColorTweening = false;
+    for (let i = 0; i < count; i++) {
+      ballColors[i].copy(targetPalette[i % targetPalette.length]);
       instancedMesh.setColorAt(i, ballColors[i]);
-    } else {
-      gsap.to(ballColors[i], {
-        r: targetColor.r,
-        g: targetColor.g,
-        b: targetColor.b,
-        duration: 0.6,
-        ease: 'power2.out',
-        overwrite: 'auto',
-        onUpdate: () => {
-          if (instancedMesh) {
-            instancedMesh.setColorAt(i, ballColors[i]);
-            if (instancedMesh.instanceColor) {
-              instancedMesh.instanceColor.needsUpdate = true;
-            }
-          }
-        },
-      });
     }
+    if (instancedMesh.instanceColor) {
+      instancedMesh.instanceColor.needsUpdate = true;
+    }
+    resumeLoop?.();
+    return;
   }
 
-  if (instancedMesh.instanceColor) {
-    instancedMesh.instanceColor.needsUpdate = true;
-  }
+  const startColors = ballColors.slice(0, count).map((c) => c.clone());
+  const proxy = { t: 0 };
+  isColorTweening = true;
+  resumeLoop?.();
+
+  paletteTween = gsap.to(proxy, {
+    t: 1,
+    duration: 0.6,
+    ease: 'power2.out',
+    onUpdate: () => {
+      if (!instancedMesh) return;
+      for (let i = 0; i < count; i++) {
+        ballColors[i].lerpColors(startColors[i], targetPalette[i % targetPalette.length], proxy.t);
+        instancedMesh.setColorAt(i, ballColors[i]);
+      }
+      if (instancedMesh.instanceColor) {
+        instancedMesh.instanceColor.needsUpdate = true;
+      }
+      resumeLoop?.();
+    },
+    onComplete: () => {
+      isColorTweening = false;
+      paletteTween = null;
+    },
+  });
 }
 
 /**
@@ -342,9 +357,24 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     instancedMesh.instanceColor.needsUpdate = true;
   }
 
-  // 3. Pointer Interaction (Force Field & Impulse)
+  // 3. Pointer Interaction (Force Field & Impulse) with cached bounding rect
+  let cachedRect = canvas.getBoundingClientRect();
+  let rectDirty = false;
+  const markRectDirty = () => {
+    rectDirty = true;
+  };
+  const getCanvasRect = () => {
+    if (rectDirty) {
+      cachedRect = canvas.getBoundingClientRect();
+      rectDirty = false;
+    }
+    return cachedRect;
+  };
+
+  let idleFrames = 0;
+
   const onPointerMove = (e: PointerEvent) => {
-    const canvasRect = canvas.getBoundingClientRect();
+    const canvasRect = getCanvasRect();
     const clientX = e.clientX - canvasRect.left;
     const clientY = e.clientY - canvasRect.top;
 
@@ -357,6 +387,8 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
       mouse.targetWorldX = (clientX / canvasRect.width) * frustumW - frustumW / 2;
       mouse.targetWorldY = -((clientY / canvasRect.height) * frustumH - frustumH / 2);
       mouse.isActive = true;
+      idleFrames = 0;
+      resumeLoop?.();
     } else {
       mouse.isActive = false;
     }
@@ -369,7 +401,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
       return;
     }
 
-    const canvasRect = canvas.getBoundingClientRect();
+    const canvasRect = getCanvasRect();
     const clientX = e.clientX - canvasRect.left;
     const clientY = e.clientY - canvasRect.top;
 
@@ -390,6 +422,8 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
       ball.vx += (dx / (dist || 1)) * force + (Math.random() - 0.5) * 4;
       ball.vy += (dy / (dist || 1)) * force + Math.random() * 8 + 4;
     }
+    idleFrames = 0;
+    resumeLoop?.();
   };
 
   const onPointerLeave = () => {
@@ -400,12 +434,15 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
 
   window.addEventListener('pointermove', onPointerMove, { passive: true });
   window.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('scroll', markRectDirty, { passive: true });
   canvas.addEventListener('pointerleave', onPointerLeave);
 
   // Resize handler
   const onResize = () => {
     if (!threeRenderer || !threeCamera) return;
     const r = container.getBoundingClientRect();
+    cachedRect = canvas.getBoundingClientRect();
+    rectDirty = false;
     const w = r.width || window.innerWidth;
     const h = r.height || Math.max(350, window.innerHeight * 0.55);
 
@@ -421,13 +458,19 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     threeCamera.top = frustumH / 2;
     threeCamera.bottom = -frustumH / 2;
     threeCamera.updateProjectionMatrix();
+
+    idleFrames = 0;
+    resumeLoop?.();
   };
-  window.addEventListener('resize', onResize);
+  window.addEventListener('resize', onResize, { passive: true });
 
   // Visibility handler
   const onVisibilityChange = () => {
     isTabActive = !document.hidden;
-    if (isTabActive && isVisible) resumeLoop?.();
+    if (isTabActive && isVisible) {
+      idleFrames = 0;
+      resumeLoop?.();
+    }
   };
   document.addEventListener('visibilitychange', onVisibilityChange);
 
@@ -437,7 +480,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
   // Ensure initial color matches current active palette
   updateBallPitColors(true);
 
-  // 4. Render loop (fixed-step physics, render on every frame)
+  // 4. Render loop (fixed-step physics, pauses automatically once balls settle at rest)
   isVisible = true;
   const dummyMatrixUpdate = new THREE.Matrix4();
   const dummyScale = new THREE.Vector3();
@@ -485,6 +528,10 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     if (steps === MAX_SUBSTEPS) accumulator = 0; // drop the backlog after a long stall
 
     // Safety: keep runaway balls inside the pit instead of letting them vanish
+    let maxSpeedSq = 0;
+    let allInside = true;
+    const topBound = frustumH / 2;
+
     for (const ball of balls) {
       if (
         ball.y < -frustumH / 2 - 1 ||
@@ -496,6 +543,9 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
         ball.vx = 0;
         ball.vy = -2;
       }
+      if (ball.y > topBound) allInside = false;
+      const speedSq = ball.vx * ball.vx + ball.vy * ball.vy;
+      if (speedSq > maxSpeedSq) maxSpeedSq = speedSq;
     }
 
     // Sync the instanced mesh (spheres are untextured, so rotation is invisible → identity)
@@ -509,6 +559,20 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
 
     instancedMesh!.instanceMatrix.needsUpdate = true;
     threeRenderer.render(threeScene, threeCamera);
+
+    // Sleep check: pause the rAF loop when all balls have settled at rest and no interaction/tween is active
+    if (!mouse.isActive && !isColorTweening && allInside && maxSpeedSq < 0.0025) {
+      idleFrames++;
+      if (idleFrames > 35) {
+        for (const ball of balls) {
+          ball.vx = 0;
+          ball.vy = 0;
+        }
+        return;
+      }
+    } else {
+      idleFrames = 0;
+    }
 
     animFrameId = requestAnimationFrame(animate);
   };
@@ -527,6 +591,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     resumeLoop = null;
     window.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerdown', onPointerDown);
+    window.removeEventListener('scroll', markRectDirty);
     canvas.removeEventListener('pointerleave', onPointerLeave);
     window.removeEventListener('resize', onResize);
     document.removeEventListener('visibilitychange', onVisibilityChange);
@@ -543,6 +608,9 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
 
     // Palette tweens from the previous mount would otherwise keep writing through the
     // module-level `instancedMesh` reference into the next one.
+    paletteTween?.kill();
+    paletteTween = null;
+    isColorTweening = false;
     gsap.killTweensOf(ballColors);
 
     instancedMesh = null;

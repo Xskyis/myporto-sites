@@ -244,9 +244,20 @@ const { class: className = '' } = Astro.props;
       // --- pointer → repulsion + tilt ----------------------------------------
       // The canvas is pointer-events:none; listen on the whole hero so the cloud reacts
       // even when the cursor is over text, and keep touch purely passive (never blocks scroll).
+      let cachedRect = canvas.getBoundingClientRect();
+      let rectDirty = false;
+      const markRectDirty = () => {
+        rectDirty = true;
+      };
+      window.addEventListener('scroll', markRectDirty, { passive: true, signal });
+      window.addEventListener('resize', markRectDirty, { passive: true, signal });
+
       const toCanvas = (clientX: number, clientY: number) => {
-        const r = canvas.getBoundingClientRect();
-        return { x: clientX - r.left, y: clientY - r.top };
+        if (rectDirty) {
+          cachedRect = canvas.getBoundingClientRect();
+          rectDirty = false;
+        }
+        return { x: clientX - cachedRect.left, y: clientY - cachedRect.top };
       };
       if (!isTouch) {
         hero.addEventListener(

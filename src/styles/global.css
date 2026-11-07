@@ -1,10 +1,48 @@
 @import '@fontsource-variable/geist';
 @import '@fontsource/instrument-serif';
 @import '@fontsource/instrument-serif/400-italic.css';
+@import 'tailwindcss';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border-subtle, currentColor);
+  }
+}
+
+@theme inline {
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-surface: var(--bg-surface);
+  --color-bg-soft: var(--bg-surface-soft);
+  --color-fg-primary: var(--text-primary);
+  --color-fg-muted: var(--text-muted);
+  --color-border-subtle: var(--border-subtle);
+  --color-accent: var(--accent-primary);
+  --color-accent-contrast: var(--accent-contrast);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --animate-pulse-subtle: pulseSubtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @keyframes pulseSubtle {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(0.92);
+    }
+  }
+}
 
 :root {
   /* Default Monochrome Light */
@@ -152,32 +190,35 @@ html[data-palette="color"] .fluid-subheading {
   font-style: italic;
 }
 
-/* Hairline borders */
-.border-hairline {
-  border-color: var(--border-subtle);
-}
+/* Hairline borders (inside @layer utilities so hover/active utility classes can override cleanly) */
+@layer utilities {
+  .border-hairline {
+    border-color: var(--border-subtle);
+  }
 
-.border-b-hairline {
-  border-bottom-width: 1px;
-  border-bottom-color: var(--border-subtle);
-}
+  .border-b-hairline {
+    border-bottom-width: 1px;
+    border-bottom-color: var(--border-subtle);
+  }
 
-.border-t-hairline {
-  border-top-width: 1px;
-  border-top-color: var(--border-subtle);
-}
+  .border-t-hairline {
+    border-top-width: 1px;
+    border-top-color: var(--border-subtle);
+  }
 
-.border-y-hairline {
-  border-top-width: 1px;
-  border-bottom-width: 1px;
-  border-left-width: 0 !important;
-  border-right-width: 0 !important;
-  border-top-color: var(--border-subtle);
-  border-bottom-color: var(--border-subtle);
-}
+  .border-y-hairline {
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 0 !important;
+    border-right-width: 0 !important;
+    border-top-color: var(--border-subtle);
+    border-bottom-color: var(--border-subtle);
+  }
 
-.divide-hairline > :not([hidden]) ~ :not([hidden]) {
-  border-color: var(--border-subtle);
+  .divide-hairline > :not(:last-child),
+  .divide-hairline > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--border-subtle);
+  }
 }
 
 /* Subtle Film Grain Overlay */
@@ -213,9 +254,9 @@ html[data-palette="color"] .fluid-subheading {
   z-index: 9999;
 }
 
-/* Magnetic Button helper (transform is driven by GSAP; a CSS transition would fight it) */
+/* Magnetic Button helper (transform is driven by GSAP; never transition `transform` via CSS) */
 .magnetic-btn {
-  will-change: transform;
+  transition-property: color, background-color, border-color, box-shadow, opacity !important;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -240,10 +281,6 @@ html.js-anim [data-reveal] {
   padding: 0.12em 0.04em 0.2em;
   margin: -0.12em -0.04em -0.2em;
   vertical-align: top;
-}
-
-.split-word {
-  will-change: transform;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -463,6 +500,9 @@ html.js-anim [data-reveal] {
 /* Custom Underline Hover */
 .hover-underline-anim {
   position: relative;
+}
+
+.hover-underline-anim:not(.flex):not(.inline-flex) {
   display: inline-block;
 }
 

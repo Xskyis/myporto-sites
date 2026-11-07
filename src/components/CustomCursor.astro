@@ -42,20 +42,27 @@
     let isMouseDown = false;
     let isRunning = false;
     let animFrameId: number | null = null;
+    let lastTime = 0;
+    let currentInteractive: Element | null = null;
 
     const getScale = () => {
       if (isMouseDown) return isHovering ? 1.3 : 0.85;
       return isHovering ? 1.6 : 1;
     };
 
-    const updateRing = () => {
+    const updateRing = (now: number) => {
       if (!isRunning) return;
+
+      const dt = lastTime ? Math.min((now - lastTime) / 1000, 0.05) : 1 / 60;
+      lastTime = now;
 
       const dx = mouseX - ringX;
       const dy = mouseY - ringY;
 
-      ringX += dx * 0.22;
-      ringY += dy * 0.22;
+      // Frame-rate independent lerp (~0.22 per frame at 60Hz, identical feel at 120Hz/144Hz)
+      const k = 1 - Math.pow(0.0000005, dt);
+      ringX += dx * k;
+      ringY += dy * k;
 
       const scale = getScale();
       ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%) scale(${scale})`;
@@ -76,12 +83,14 @@
       if (document.hidden) return;
       if (!isRunning) {
         isRunning = true;
+        lastTime = 0;
         animFrameId = requestAnimationFrame(updateRing);
       }
     };
 
     const stopLoop = () => {
       isRunning = false;
+      lastTime = 0;
       if (animFrameId !== null) {
         cancelAnimationFrame(animFrameId);
         animFrameId = null;
@@ -146,12 +155,16 @@
       }
     };
 
-    // Interactive element hover detection
+    // Interactive element hover detection (deduplicated across child nodes)
+    const INTERACTIVE_SELECTOR =
+      'a, button, [role="button"], [role="tab"], input, textarea, select, .project-card, .project-row, .honor-row, .magnetic-btn';
+
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
       if (!target) return;
-      const interactive = target.closest('a, button, [role="button"], [role="tab"], input, textarea, select, .project-card, .project-row, .honor-row, .magnetic-btn');
-      if (interactive) {
+      const interactive = target.closest(INTERACTIVE_SELECTOR);
+      if (interactive && interactive !== currentInteractive) {
+        currentInteractive = interactive;
         isHovering = true;
         // Token-driven hover fill (mirrors --border-subtle's alpha idea) instead of a
         // hardcoded rgba, so it adapts to mono light/dark and the poster palette.
@@ -162,15 +175,14 @@
     };
 
     const handleMouseOut = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-      const interactive = target.closest('a, button, [role="button"], [role="tab"], input, textarea, select, .project-card, .project-row, .honor-row, .magnetic-btn');
-      if (interactive) {
-        isHovering = false;
-        ring.style.backgroundColor = 'transparent';
-        dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%) scale(1)`;
-        startLoop();
-      }
+      if (!currentInteractive) return;
+      const related = e.relatedTarget as Node | null;
+      if (related && currentInteractive.contains(related)) return;
+      currentInteractive = null;
+      isHovering = false;
+      ring.style.backgroundColor = 'transparent';
+      dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%) scale(1)`;
+      startLoop();
     };
 
     window.addEventListener('pointermove', onPointerMove, { passive: true });

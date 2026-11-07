@@ -17,7 +17,8 @@ const isHome = currentPath === "/";
   <!-- Thin reading progress bar -->
   <div
     id="scroll-progress-bar"
-    class="absolute top-0 left-0 w-full h-[2px] bg-[var(--accent-primary)] origin-left scale-x-0"
+    class="absolute top-0 left-0 w-full h-[2px] bg-[var(--accent-primary)] origin-left"
+    style="transform: scaleX(0);"
     aria-hidden="true"
   >
   </div>
@@ -267,13 +268,16 @@ const isHome = currentPath === "/";
     ).matches;
 
     // 0.1 Dynamic Navbar Border on Scroll (Remove border when on top)
+    let hasBorder = false;
     const updateHeaderScrollBorder = () => {
       const isScrolled = window.scrollY > 15;
       const isMenuOpen = mobileMenu
         ? !mobileMenu.classList.contains("hidden")
         : false;
-      if (header) {
-        if (isScrolled || isMenuOpen) {
+      const shouldShowBorder = isScrolled || isMenuOpen;
+      if (header && shouldShowBorder !== hasBorder) {
+        hasBorder = shouldShowBorder;
+        if (shouldShowBorder) {
           header.classList.add("border-b-hairline");
           header.classList.remove("border-b-transparent");
         } else {
@@ -484,27 +488,9 @@ const isHome = currentPath === "/";
     updateButtonsUI();
     updateToneUI();
 
-    const switchPalette = (
-      newPalette: "mono" | "color",
-      event?: MouseEvent,
-    ) => {
+    const runThemeViewTransition = (apply: () => void, event?: MouseEvent) => {
       const doc = document as Document & {
         startViewTransition?: (update: () => void) => { ready: Promise<void> };
-      };
-
-      const current = html.getAttribute("data-palette") || "mono";
-      if (current === newPalette) return;
-
-      const apply = () => {
-        html.setAttribute("data-palette", newPalette);
-        localStorage.setItem("theme-palette", newPalette);
-        updateButtonsUI();
-        updateToneUI();
-        window.dispatchEvent(
-          new CustomEvent("palette-change", {
-            detail: { palette: newPalette },
-          }),
-        );
       };
 
       if (!doc.startViewTransition || isReduced) {
@@ -545,6 +531,28 @@ const isHome = currentPath === "/";
       }
     };
 
+    const switchPalette = (
+      newPalette: "mono" | "color",
+      event?: MouseEvent,
+    ) => {
+      const current = html.getAttribute("data-palette") || "mono";
+      if (current === newPalette) return;
+
+      const apply = () => {
+        html.setAttribute("data-palette", newPalette);
+        localStorage.setItem("theme-palette", newPalette);
+        updateButtonsUI();
+        updateToneUI();
+        window.dispatchEvent(
+          new CustomEvent("palette-change", {
+            detail: { palette: newPalette },
+          }),
+        );
+      };
+
+      runThemeViewTransition(apply, event);
+    };
+
     btnMono?.addEventListener("click", (e) => switchPalette("mono", e), {
       signal,
     });
@@ -552,28 +560,32 @@ const isHome = currentPath === "/";
       signal,
     });
 
-    // Single source of truth for dark/light toggle
+    // Single source of truth for dark/light toggle (with matching circular View Transition)
     btnTone?.addEventListener(
       "click",
       (e) => {
         e.preventDefault();
         e.stopPropagation();
 
-        const currentPalette = html.getAttribute("data-palette") || "mono";
-        if (currentPalette !== "mono") {
-          html.setAttribute("data-palette", "mono");
-          localStorage.setItem("theme-palette", "mono");
-          updateButtonsUI();
-        }
+        const apply = () => {
+          const currentPalette = html.getAttribute("data-palette") || "mono";
+          if (currentPalette !== "mono") {
+            html.setAttribute("data-palette", "mono");
+            localStorage.setItem("theme-palette", "mono");
+            updateButtonsUI();
+          }
 
-        const isDark = html.classList.toggle("dark");
-        localStorage.setItem("theme-tone", isDark ? "dark" : "light");
-        updateToneUI();
-        window.dispatchEvent(
-          new CustomEvent("palette-change", {
-            detail: { tone: isDark ? "dark" : "light" },
-          }),
-        );
+          const isDark = html.classList.toggle("dark");
+          localStorage.setItem("theme-tone", isDark ? "dark" : "light");
+          updateToneUI();
+          window.dispatchEvent(
+            new CustomEvent("palette-change", {
+              detail: { tone: isDark ? "dark" : "light" },
+            }),
+          );
+        };
+
+        runThemeViewTransition(apply, e);
       },
       { signal },
     );

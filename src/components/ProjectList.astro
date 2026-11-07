@@ -50,14 +50,24 @@ const projects = allProjects
 
   <div class="lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-12 xl:gap-16">
     <!-- List column -->
-    <div data-reveal>
-      <ul id="project-list" class="project-list border-y border-hairline divide-y divide-hairline" data-engaged="false">
+    <div>
+      <ul
+        id="project-list"
+        class="project-list border-y border-hairline divide-y divide-hairline"
+        data-engaged="false"
+        data-stagger-container
+      >
         {projects.map((p, idx) => (
-          <li>
+          <li data-stagger-item>
             <a
               href={`/projects/${p.id}`}
               class="project-row group relative flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4 xl:gap-6 py-6 md:py-8 px-4 sm:px-6 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[var(--border-focus)]"
               data-project-index={idx}
+              data-project-id={p.id}
+              data-project-number={p.index}
+              data-project-title={p.listTitle}
+              data-project-stack={p.stack}
+              data-project-year={p.year}
               data-active={idx === 0 ? 'true' : 'false'}
               aria-label={`${p.title}, ${p.tagline}, ${p.year}`}
             >
@@ -87,11 +97,11 @@ const projects = allProjects
               </div>
 
               <!-- Index (sm and up) -->
-              <span class="hidden sm:block w-6 shrink-0 font-mono text-xs text-[var(--text-muted)]" aria-hidden="true">{p.index}</span>
+              <span class="project-index hidden sm:block w-6 shrink-0 font-mono text-xs text-[var(--text-muted)]" aria-hidden="true">{p.index}</span>
 
               <!-- Title + descriptor -->
               <div class="flex-1 min-w-0 pr-2" aria-hidden="true">
-                <span class="sm:hidden block font-mono text-xs text-[var(--text-muted)] mb-1.5">{p.index}</span>
+                <span class="project-index sm:hidden block font-mono text-xs text-[var(--text-muted)] mb-1.5">{p.index}</span>
                 <h3 class="project-title font-display font-medium text-[clamp(1.5rem,2.2vw,2.35rem)] leading-[1.08] tracking-tight text-[var(--text-primary)]">
                   {p.listTitle}
                 </h3>
@@ -121,52 +131,93 @@ const projects = allProjects
         ))}
       </ul>
 
-      <div class="pt-6 px-4 md:px-8 flex justify-end">
+      <div class="pt-6 px-4 sm:px-6 flex justify-end" data-reveal="fade">
         <a
           href="https://github.com/Xskyis?tab=repositories"
           target="_blank"
           rel="noopener noreferrer"
-          class="hover-underline-anim inline-flex items-center gap-1.5 font-mono text-xs sm:text-[13px] text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+          class="group inline-flex items-center gap-2 py-1.5 px-3.5 rounded-full border border-hairline bg-[var(--bg-surface)] font-mono text-xs sm:text-[13px] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
         >
-          <span>More on GitHub</span>
-          <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5" aria-hidden="true" />
+          <Icon name="simple-icons:github" class="w-3.5 h-3.5 text-[var(--text-primary)] shrink-0" aria-hidden="true" />
+          <span class="hover-underline-anim">More on GitHub</span>
+          <Icon
+            name="lucide:arrow-up-right"
+            class="w-3.5 h-3.5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            aria-hidden="true"
+          />
         </a>
       </div>
     </div>
 
     <!-- Sticky preview panel (desktop only, decorative: the rows carry the same info) -->
-    <div class="hidden lg:block" aria-hidden="true">
+    <div class="hidden lg:block" aria-hidden="true" data-reveal="scale">
       <div class="sticky top-28">
-        <div class="relative aspect-[16/10] rounded-2xl border border-hairline overflow-hidden bg-[var(--bg-surface-soft)]">
-          {projects.map((p, idx) => (
-            <div class="preview-layer absolute inset-0" data-preview-index={idx} data-active={idx === 0 ? 'true' : 'false'}>
-              {p.meta ? (
-                <picture>
-                  <source
-                    type="image/avif"
-                    srcset={`${p.meta.previewAvif} 640w, ${p.meta.avif} ${p.meta.width}w`}
-                    sizes="(min-width: 1280px) 460px, 38vw"
-                  />
-                  <img
-                    src={p.meta.previewWebp}
-                    srcset={`${p.meta.previewWebp} 640w, ${p.cover} ${p.meta.width}w`}
-                    sizes="(min-width: 1280px) 460px, 38vw"
-                    alt=""
-                    width="800"
-                    height="500"
-                    loading={idx === 0 ? 'eager' : 'lazy'}
-                    decoding="async"
-                    class="w-full h-full object-cover object-top"
-                  />
-                </picture>
-              ) : p.cover ? (
-                <img src={p.cover} alt="" width="800" height="500" loading={idx === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-full object-cover object-top" />
-              ) : (
-                <div class="w-full h-full flex items-center justify-center font-display text-5xl text-[var(--text-muted)]">{p.index}</div>
-              )}
+        <a
+          id="preview-card-link"
+          href={projects[0] ? `/projects/${projects[0].id}` : '#projects'}
+          tabindex="-1"
+          class="group/preview block rounded-2xl border border-hairline overflow-hidden bg-[var(--bg-surface)] shadow-sm transition-colors duration-300 hover:border-[var(--text-primary)]"
+        >
+          <!-- Editorial preview top bar -->
+          <div class="px-4 py-2.5 border-b border-hairline bg-[var(--bg-surface-soft)]/60 flex items-center justify-between font-mono text-[11px] text-[var(--text-muted)]">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]"></span>
+              <span>
+                <span id="preview-index" class="text-[var(--text-primary)] font-semibold">{projects[0]?.index ?? '01'}</span>
+                <span class="opacity-50"> / {String(projects.length).padStart(2, '0')}</span>
+              </span>
             </div>
-          ))}
-        </div>
+            <span id="preview-year" class="uppercase tracking-wider">{projects[0]?.year ?? ''}</span>
+          </div>
+
+          <!-- Layered cover viewport -->
+          <div class="relative aspect-[16/10] overflow-hidden bg-[var(--bg-surface-soft)]">
+            {projects.map((p, idx) => (
+              <div class="preview-layer absolute inset-0 bg-[var(--bg-surface-soft)]" data-preview-index={idx} data-active={idx === 0 ? 'true' : 'false'}>
+                {p.meta ? (
+                  <picture>
+                    <source
+                      type="image/avif"
+                      srcset={`${p.meta.previewAvif} 640w, ${p.meta.avif} ${p.meta.width}w`}
+                      sizes="(min-width: 1280px) 460px, 38vw"
+                    />
+                    <img
+                      src={p.meta.previewWebp}
+                      srcset={`${p.meta.previewWebp} 640w, ${p.cover} ${p.meta.width}w`}
+                      sizes="(min-width: 1280px) 460px, 38vw"
+                      alt=""
+                      width="800"
+                      height="500"
+                      loading={idx === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      class="w-full h-full object-cover object-top"
+                    />
+                  </picture>
+                ) : p.cover ? (
+                  <img src={p.cover} alt="" width="800" height="500" loading={idx === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-full object-cover object-top" />
+                ) : (
+                  <div class="w-full h-full flex items-center justify-center font-display text-5xl text-[var(--text-muted)]">{p.index}</div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <!-- Editorial preview caption footer -->
+          <div class="px-4 py-3 border-t border-hairline bg-[var(--bg-surface)] flex items-center justify-between gap-4">
+            <div class="min-w-0">
+              <div id="preview-title" class="font-display font-medium text-sm text-[var(--text-primary)] truncate">
+                {projects[0]?.listTitle ?? ''}
+              </div>
+              <div id="preview-stack" class="font-mono text-[11px] text-[var(--text-muted)] truncate mt-0.5">
+                {projects[0]?.stack ?? ''}
+              </div>
+            </div>
+            <span class="shrink-0 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-[var(--text-primary)] group-hover/preview:text-[var(--accent-primary)] transition-colors">
+              <span>Case study</span>
+              <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5 transition-transform duration-200 group-hover/preview:translate-x-0.5 group-hover/preview:-translate-y-0.5" />
+            </span>
+          </div>
+        </a>
       </div>
     </div>
   </div>
@@ -174,6 +225,7 @@ const projects = allProjects
 
 <style>
   .project-row,
+  .project-index,
   .project-title,
   .project-arrow,
   .project-arrow :global(svg) {
@@ -185,9 +237,27 @@ const projects = allProjects
       border-color 0.3s ease;
   }
 
-  /* Dim the rest only while the list is being explored (pointer or keyboard). */
+  /* Always keep a subtle connection between the active row and the sticky preview panel */
+  .project-row[data-active='true'] .project-index {
+    color: var(--accent-primary);
+    font-weight: 600;
+  }
+
+  .project-row[data-active='true'] .project-arrow {
+    border-color: var(--text-primary);
+  }
+
+  .project-row[data-active='true'] .project-arrow :global(svg) {
+    transform: rotate(-45deg);
+  }
+
+  /* Dim the rest and elevate the active row while the list is being explored (pointer or keyboard). */
   .project-list[data-engaged='true'] .project-row:not([data-active='true']) {
     opacity: 0.45;
+  }
+
+  .project-list[data-engaged='true'] .project-row[data-active='true'] {
+    background-color: color-mix(in srgb, var(--bg-surface-soft) 60%, transparent);
   }
 
   .project-list[data-engaged='true'] .project-row[data-active='true'] .project-title {
@@ -198,10 +268,6 @@ const projects = allProjects
     background-color: var(--accent-primary);
     border-color: var(--accent-primary);
     color: var(--accent-contrast);
-  }
-
-  .project-list[data-engaged='true'] .project-row[data-active='true'] .project-arrow :global(svg) {
-    transform: rotate(-45deg);
   }
 
   .preview-layer {
@@ -219,6 +285,7 @@ const projects = allProjects
 
   @media (prefers-reduced-motion: reduce) {
     .project-row,
+    .project-index,
     .project-title,
     .project-arrow,
     .project-arrow :global(svg),
@@ -242,6 +309,11 @@ const projects = allProjects
 
     const rows = Array.from(list.querySelectorAll<HTMLElement>('[data-project-index]'));
     const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-preview-index]'));
+    const previewLink = document.getElementById('preview-card-link') as HTMLAnchorElement | null;
+    const previewIndex = document.getElementById('preview-index');
+    const previewYear = document.getElementById('preview-year');
+    const previewTitle = document.getElementById('preview-title');
+    const previewStack = document.getElementById('preview-stack');
     if (rows.length === 0) return null;
 
     const abort = new AbortController();
@@ -250,6 +322,15 @@ const projects = allProjects
     const setActive = (index: number) => {
       rows.forEach((row, i) => row.setAttribute('data-active', String(i === index)));
       layers.forEach((layer, i) => layer.setAttribute('data-active', String(i === index)));
+
+      const activeRow = rows[index];
+      if (!activeRow) return;
+      const id = activeRow.dataset.projectId;
+      if (previewLink && id) previewLink.href = `/projects/${id}`;
+      if (previewIndex) previewIndex.textContent = activeRow.dataset.projectNumber ?? '';
+      if (previewYear) previewYear.textContent = activeRow.dataset.projectYear ?? '';
+      if (previewTitle) previewTitle.textContent = activeRow.dataset.projectTitle ?? '';
+      if (previewStack) previewStack.textContent = activeRow.dataset.projectStack ?? '';
     };
 
     const setEngaged = (engaged: boolean) => list.setAttribute('data-engaged', String(engaged));

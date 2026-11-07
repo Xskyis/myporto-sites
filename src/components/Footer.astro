@@ -47,27 +47,39 @@ import { Icon } from "astro-icon/components";
       </p>
 
       <!-- CTAs: Email, Copy Email, View CV & Download Link with Generous Tactile Padding -->
-      <div class="mt-8 sm:mt-10 flex flex-wrap items-center gap-4" data-reveal>
+      <div class="mt-8 sm:mt-10 flex flex-wrap items-center gap-3.5 sm:gap-4" data-reveal>
         <!-- Main Email Button -->
         <a
           href={`mailto:${PROFILE.email}`}
-          class="magnetic-btn inline-flex items-center gap-3 px-6 sm:px-8 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full bg-[var(--bg-surface)] border border-hairline text-[var(--text-primary)] hover:border-[var(--text-primary)] font-medium text-sm tracking-wide shadow-xs hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+          class="magnetic-btn group inline-flex items-center gap-2.5 px-6 sm:px-7 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full bg-[var(--bg-surface)] border border-hairline text-[var(--text-primary)] hover:border-[var(--text-primary)] font-medium text-sm tracking-wide shadow-xs hover:shadow-md transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
         >
-          <Icon name="lucide:mail" class="w-4 h-4 text-[var(--text-muted)]" />
+          <Icon name="lucide:mail" class="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors shrink-0" aria-hidden="true" />
           <span>{PROFILE.email}</span>
+          <Icon
+            name="lucide:arrow-up-right"
+            class="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 shrink-0"
+            aria-hidden="true"
+          />
         </a>
 
         <!-- Copy Email Button -->
         <button
           type="button"
           id="copy-email-btn"
-          class="magnetic-btn inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--text-primary)] text-xs font-mono tracking-wider transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+          class="magnetic-btn group inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--text-primary)] text-xs font-mono tracking-wider shadow-xs hover:shadow-md transition-colors duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
           aria-label="Copy email address to clipboard"
         >
           <Icon
             name="lucide:copy"
-            class="w-3.5 h-3.5 text-[var(--text-muted)]"
+            class="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors shrink-0"
             id="copy-icon"
+            aria-hidden="true"
+          />
+          <Icon
+            name="lucide:check"
+            class="w-3.5 h-3.5 text-[var(--status-dot)] hidden shrink-0"
+            id="copy-check-icon"
+            aria-hidden="true"
           />
           <span id="copy-text">Copy email</span>
         </button>
@@ -77,13 +89,14 @@ import { Icon } from "astro-icon/components";
           href="/cv/CV_Achmad_Nabil_Afgareza_ATS.pdf"
           target="_blank"
           rel="noopener noreferrer"
-          class="magnetic-btn inline-flex items-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full bg-[var(--accent-primary)] text-[var(--accent-contrast)] font-medium text-sm tracking-wide shadow-lg hover:opacity-95 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)] group"
+          class="magnetic-btn group inline-flex items-center gap-2.5 px-7 sm:px-8 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full bg-[var(--accent-primary)] text-[var(--accent-contrast)] font-medium text-sm tracking-wide shadow-lg hover:opacity-95 transition-opacity duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
         >
-          <Icon name="lucide:file-text" class="w-4 h-4" />
+          <Icon name="lucide:file-text" class="w-4 h-4 shrink-0" aria-hidden="true" />
           <span>View CV</span>
           <Icon
             name="lucide:arrow-up-right"
-            class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all"
+            class="w-3.5 h-3.5 opacity-75 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0"
+            aria-hidden="true"
           />
         </a>
 
@@ -91,12 +104,13 @@ import { Icon } from "astro-icon/components";
         <a
           href="/cv/CV_Achmad_Nabil_Afgareza_ATS.pdf"
           download="CV_Achmad_Nabil_Afgareza_ATS.pdf"
-          class="magnetic-btn inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--text-primary)] text-xs font-mono tracking-wider shadow-xs hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+          class="magnetic-btn group inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--text-primary)] text-xs font-mono tracking-wider shadow-xs hover:shadow-md transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
           title="Download curriculum vitae PDF directly"
         >
           <Icon
             name="lucide:download"
-            class="w-3.5 h-3.5 text-[var(--text-muted)]"
+            class="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-transform duration-200 group-hover:translate-y-0.5 shrink-0"
+            aria-hidden="true"
           />
           <span>Download PDF</span>
         </a>
@@ -109,19 +123,25 @@ import { Icon } from "astro-icon/components";
       data-reveal
     >
       <div
-        class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-xs font-mono text-[var(--text-muted)]"
+        class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs font-mono text-[var(--text-muted)]"
       >
-        <div class="flex flex-wrap items-center gap-6">
+        <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
           {
             SOCIALS.map((soc) => (
               <a
                 href={soc.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="hover:text-[var(--text-primary)] hover-underline-anim flex items-center gap-1.5 transition-colors"
+                aria-label={`${soc.name}: ${soc.label}`}
+                class="group inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-hairline bg-[var(--bg-surface-soft)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)] hover:bg-[var(--bg-surface-soft)] transition-colors duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
               >
-                <span>{soc.name}</span>
-                <Icon name="lucide:arrow-up-right" class="w-3 h-3 opacity-60" />
+                <Icon name={soc.icon} class="w-3.5 h-3.5 text-[var(--text-primary)] shrink-0" aria-hidden="true" />
+                <span class="hover-underline-anim">{soc.name}</span>
+                <Icon
+                  name="lucide:arrow-up-right"
+                  class="w-3 h-3 opacity-60 group-hover:opacity-100 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 shrink-0"
+                  aria-hidden="true"
+                />
               </a>
             ))
           }
@@ -131,22 +151,30 @@ import { Icon } from "astro-icon/components";
         <a
           href="#hero"
           id="back-to-top-btn"
-          class="nav-scroll-trigger magnetic-btn flex items-center gap-2 hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] py-2"
+          class="nav-scroll-trigger magnetic-btn group inline-flex items-center gap-2 px-4 py-2 rounded-full border border-hairline bg-[var(--bg-surface-soft)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
           aria-label="Back to top of page"
         >
           <span>BACK TO TOP</span>
-          <Icon name="lucide:arrow-up" class="w-3.5 h-3.5" />
+          <Icon
+            name="lucide:arrow-up"
+            class="w-3.5 h-3.5 text-[var(--text-primary)] transition-transform duration-200 group-hover:-translate-y-0.5 shrink-0"
+            aria-hidden="true"
+          />
         </a>
       </div>
 
       <!-- Colophon / Copyright -->
       <div
-        class="pt-4 border-t-hairline text-[11px] font-mono text-[var(--text-muted)]/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+        class="pt-4 border-t-hairline text-[11px] font-mono text-[var(--text-muted)]/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
       >
         <p>
-          &copy; {new Date().getFullYear()}
-          {PROFILE.name}.
+          &copy; {new Date().getFullYear()}{' '}{PROFILE.name}. All rights reserved.
         </p>
+
+        <div class="inline-flex items-center gap-1.5 text-[var(--text-muted)]/80">
+          <Icon name="lucide:map-pin" class="w-3 h-3 opacity-75 shrink-0" aria-hidden="true" />
+          <span>{PROFILE.location}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -166,6 +194,8 @@ import { Icon } from "astro-icon/components";
 
     const copyBtn = document.getElementById("copy-email-btn");
     const copyText = document.getElementById("copy-text");
+    const copyIcon = document.getElementById("copy-icon");
+    const copyCheckIcon = document.getElementById("copy-check-icon");
     if (!copyBtn || !copyText) return;
 
     let resetTimer: number | undefined;
@@ -176,6 +206,8 @@ import { Icon } from "astro-icon/components";
         try {
           await navigator.clipboard.writeText(PROFILE.email);
           copyText.textContent = "Copied to clipboard!";
+          copyIcon?.classList.add("hidden");
+          copyCheckIcon?.classList.remove("hidden");
           copyBtn.classList.add(
             "border-[var(--status-dot)]",
             "text-[var(--status-dot)]",
@@ -184,6 +216,8 @@ import { Icon } from "astro-icon/components";
           window.clearTimeout(resetTimer);
           resetTimer = window.setTimeout(() => {
             copyText.textContent = "Copy email";
+            copyIcon?.classList.remove("hidden");
+            copyCheckIcon?.classList.add("hidden");
             copyBtn.classList.remove(
               "border-[var(--status-dot)]",
               "text-[var(--status-dot)]",

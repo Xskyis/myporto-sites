@@ -15,10 +15,22 @@ export function onPaletteChange(
   callback: () => void,
   signal?: AbortSignal,
 ): () => void {
-  window.addEventListener('palette-change', callback, { signal });
+  const html = document.documentElement;
+  const readStateKey = () =>
+    `${html.getAttribute('data-palette') || 'mono'}:${html.classList.contains('dark') ? 'dark' : 'light'}`;
 
-  const observer = new MutationObserver(callback);
-  observer.observe(document.documentElement, {
+  let lastKey = readStateKey();
+  const handleTrigger = () => {
+    const nextKey = readStateKey();
+    if (nextKey === lastKey) return;
+    lastKey = nextKey;
+    callback();
+  };
+
+  window.addEventListener('palette-change', handleTrigger, { signal });
+
+  const observer = new MutationObserver(handleTrigger);
+  observer.observe(html, {
     attributes: true,
     attributeFilter: ['data-palette', 'class'],
   });
@@ -27,7 +39,7 @@ export function onPaletteChange(
   }
 
   return () => {
-    window.removeEventListener('palette-change', callback);
+    window.removeEventListener('palette-change', handleTrigger);
     observer.disconnect();
   };
 }
