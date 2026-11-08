@@ -54,6 +54,7 @@ let ballColors: THREE.Color[] = [];
 let totalBalls = 90;
 let paletteTween: gsap.core.Tween | null = null;
 let isColorTweening = false;
+let idleFrames = 0;
 
 // Mouse / Touch Force Field
 const mouse = {
@@ -86,6 +87,32 @@ export function setBallPitVisible(visible: boolean) {
   isVisible = visible;
   // The loop stops itself when it has nothing to draw; restart it on re-entry.
   if (visible) resumeLoop?.();
+}
+
+/**
+ * Applies a gentle upward "wake" impulse to the balls when the user
+ * scrolls rapidly into the footer or scrolls with velocity over the footer.
+ */
+export function applyScrollWake(velocity: number) {
+  if (!balls.length || !isVisible || !isTabActive) return;
+  const speed = Math.min(Math.abs(velocity), 15);
+  // Ignore tiny crawling scrolls
+  if (speed < 0.6) return;
+
+  const tossStrength = Math.min(speed * 0.85, 12);
+  const direction = velocity > 0 ? 1 : -1;
+
+  for (let i = 0; i < balls.length; i++) {
+    // Affect ~35% of balls so it looks like a natural physical ripple
+    if (Math.random() < 0.35) {
+      const ball = balls[i];
+      ball.vy += Math.random() * tossStrength + 2.5;
+      ball.vx += (Math.random() - 0.5) * tossStrength * 0.4 + direction * 0.4;
+    }
+  }
+
+  idleFrames = 0;
+  resumeLoop?.();
 }
 
 // Palette definitions for balls
@@ -383,7 +410,7 @@ export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void
     return cachedRect;
   };
 
-  let idleFrames = 0;
+  idleFrames = 0;
 
   const onPointerMove = (e: PointerEvent) => {
     const canvasRect = getCanvasRect();

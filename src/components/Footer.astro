@@ -18,14 +18,14 @@ import { Icon } from "astro-icon/components";
     class="relative z-20 w-full max-w-7xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 pt-16 md:pt-20 pb-16 md:pb-20 flex flex-col"
   >
     <!-- Section Header -->
-    <div
-      class="flex items-center justify-between pb-6 sm:pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]"
-      data-reveal
-    >
-      <div class="flex items-center gap-3">
-        <span class="text-sm font-semibold text-[var(--text-primary)]">04</span>
+    <div class="relative pb-6 sm:pb-8 text-xs font-mono text-[var(--text-muted)]">
+      <div class="flex items-center justify-between" data-reveal>
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-semibold text-[var(--text-primary)]">04</span>
+        </div>
+        <span>CONTACT</span>
       </div>
-      <span>CONTACT</span>
+      <div class="hairline-sweep absolute bottom-0 left-0 right-0 h-[1px] bg-[var(--border-subtle)] origin-left" data-hairline-sweep aria-hidden="true"></div>
     </div>
 
     <!-- Giant Callout Headline -->

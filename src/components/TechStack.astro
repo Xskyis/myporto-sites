@@ -28,14 +28,14 @@ const LEVEL_DOT_CLASS: Record<TechLevel, string> = {
   aria-labelledby="tech-stack-heading"
 >
   <!-- Section Header -->
-  <div
-    class="flex items-center justify-between pb-6 sm:pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]"
-    data-reveal
-  >
-    <div class="flex items-center gap-3">
-      <span class="text-sm font-semibold text-[var(--text-primary)]">03</span>
+  <div class="relative pb-6 sm:pb-8 text-xs font-mono text-[var(--text-muted)]">
+    <div class="flex items-center justify-between" data-reveal>
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-semibold text-[var(--text-primary)]">03</span>
+      </div>
+      <span>TECHNICAL CAPABILITIES</span>
     </div>
-    <span>TECHNICAL CAPABILITIES</span>
+    <div class="hairline-sweep absolute bottom-0 left-0 right-0 h-[1px] bg-[var(--border-subtle)] origin-left" data-hairline-sweep aria-hidden="true"></div>
   </div>
 
   <!-- Heading + Single Proficiency Legend -->

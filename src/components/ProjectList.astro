@@ -32,11 +32,14 @@ const projects = allProjects
   aria-labelledby="projects-heading"
 >
   <!-- Section Header -->
-  <div class="flex items-center justify-between pb-6 sm:pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]" data-reveal>
-    <div class="flex items-center gap-3">
-      <span class="text-sm font-semibold text-[var(--text-primary)]">02</span>
+  <div class="relative pb-6 sm:pb-8 text-xs font-mono text-[var(--text-muted)]">
+    <div class="flex items-center justify-between" data-reveal>
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-semibold text-[var(--text-primary)]">02</span>
+      </div>
+      <span>SELECTED WORKS</span>
     </div>
-    <span>SELECTED WORKS</span>
+    <div class="hairline-sweep absolute bottom-0 left-0 right-0 h-[1px] bg-[var(--border-subtle)] origin-left" data-hairline-sweep aria-hidden="true"></div>
   </div>
 
   <!-- Heading -->
@@ -315,6 +318,9 @@ const projects = allProjects
     const abort = new AbortController();
     const { signal } = abort;
 
+    let isPointerOverList = false;
+    let scrollTriggers: Array<{ kill: () => void }> = [];
+
     const setActive = (index: number) => {
       rows.forEach((row, i) => row.setAttribute('data-active', String(i === index)));
       layers.forEach((layer, i) => layer.setAttribute('data-active', String(i === index)));
@@ -331,12 +337,39 @@ const projects = allProjects
 
     const setEngaged = (engaged: boolean) => list.setAttribute('data-engaged', String(engaged));
 
+    // Editorial Scroll Auto-Sync: On desktop, as user scrolls past projects,
+    // the sticky preview transitions to whichever row crosses the optical reading line (52%),
+    // giving an effortless magazine-scrub feel. Hovering always takes priority.
+    const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+    const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (isDesktop && !isReduced) {
+      import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => {
+        if (signal.aborted) return;
+        rows.forEach((row, i) => {
+          const st = ScrollTrigger.create({
+            trigger: row,
+            start: 'top 52%',
+            end: 'bottom 52%',
+            onEnter: () => {
+              if (!isPointerOverList) setActive(i);
+            },
+            onEnterBack: () => {
+              if (!isPointerOverList) setActive(i);
+            },
+          });
+          scrollTriggers.push(st);
+        });
+      });
+    }
+
     rows.forEach((row, i) => {
       // Mouse/pen only: on touch a tap navigates straight to the detail page.
       row.addEventListener(
         'pointerenter',
         (e) => {
           if (e.pointerType === 'touch') return;
+          isPointerOverList = true;
           setActive(i);
           setEngaged(true);
         },
@@ -345,6 +378,7 @@ const projects = allProjects
       row.addEventListener(
         'focus',
         () => {
+          isPointerOverList = true;
           setActive(i);
           if (row.matches(':focus-visible')) setEngaged(true);
         },
@@ -353,20 +387,30 @@ const projects = allProjects
     });
 
     // Keep the last active project in the panel, but release the dimming.
-    list.addEventListener('pointerleave', () => {
-      if (!list.querySelector(':focus-visible')) setEngaged(false);
-    }, { signal });
+    list.addEventListener(
+      'pointerleave',
+      () => {
+        isPointerOverList = false;
+        if (!list.querySelector(':focus-visible')) setEngaged(false);
+      },
+      { signal }
+    );
     list.addEventListener(
       'focusout',
       (e) => {
         const next = e.relatedTarget as Node | null;
-        if (!next || !list.contains(next)) setEngaged(false);
+        if (!next || !list.contains(next)) {
+          isPointerOverList = false;
+          setEngaged(false);
+        }
       },
       { signal }
     );
 
     return () => {
       abort.abort();
+      scrollTriggers.forEach((st) => st.kill());
+      scrollTriggers = [];
       setEngaged(false);
     };
   }

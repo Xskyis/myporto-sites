@@ -38,6 +38,8 @@ export function initScrollAnimations(): Cleanup {
     setupProgressBar(cleanups);
     setupHero(signal);
     setupScrollReveals();
+    setupHairlineSweeps();
+    setupBioIllumination();
     setupStaggers();
     setupTimelineLine();
     setupCounters();
@@ -254,6 +256,72 @@ function setupStaggers() {
         },
       }
     );
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/*  4b. Blueprint hairline sweeps (architectural drafting line reveal)        */
+/* -------------------------------------------------------------------------- */
+
+function setupHairlineSweeps() {
+  const lines = document.querySelectorAll<HTMLElement>('[data-hairline-sweep]');
+  lines.forEach((line) => {
+    gsap.fromTo(
+      line,
+      { scaleX: 0 },
+      {
+        scaleX: 1,
+        transformOrigin: 'left center',
+        duration: 0.95,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: line,
+          start: 'top 92%',
+          toggleActions: 'play none none none',
+        },
+      }
+    );
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/*  4c. Kinetic reading illumination (editorial bio scrub)                    */
+/* -------------------------------------------------------------------------- */
+
+function setupBioIllumination() {
+  const container = document.querySelector<HTMLElement>('[data-reading-illuminate]');
+  if (!container) return;
+
+  const paragraphs = Array.from(container.querySelectorAll<HTMLElement>('p'));
+  if (paragraphs.length === 0) return;
+
+  paragraphs.forEach((p, idx) => {
+    const isLast = idx === paragraphs.length - 1;
+    const split = SplitText.create(p, {
+      type: 'words',
+      wordsClass: 'reading-word',
+      aria: 'auto',
+    });
+
+    // Dimmed initial state
+    gsap.set(split.words, {
+      opacity: 0.28,
+      willChange: 'opacity, color',
+    });
+
+    // Scrubbed illumination following reading line
+    gsap.to(split.words, {
+      opacity: 1,
+      color: isLast ? 'var(--text-primary)' : 'inherit',
+      stagger: 0.02,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: p,
+        start: 'top 84%',
+        end: 'bottom 48%',
+        scrub: 0.35,
+      },
+    });
   });
 }
 

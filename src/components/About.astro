@@ -43,11 +43,14 @@ function resolveCertUrl(url?: string): string {
 
 <section id="about" class="py-16 md:py-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative" aria-label="About Section">
   <!-- Section Header -->
-  <div class="flex items-center justify-between pb-6 sm:pb-8 border-b-hairline text-xs font-mono text-[var(--text-muted)]" data-reveal>
-    <div class="flex items-center gap-3">
-      <span class="text-sm font-semibold text-[var(--text-primary)]">01</span>
+  <div class="relative pb-6 sm:pb-8 text-xs font-mono text-[var(--text-muted)]">
+    <div class="flex items-center justify-between" data-reveal>
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-semibold text-[var(--text-primary)]">01</span>
+      </div>
+      <span>ABOUT &amp; TRAJECTORY</span>
     </div>
-    <span>ABOUT &amp; TRAJECTORY</span>
+    <div class="hairline-sweep absolute bottom-0 left-0 right-0 h-[1px] bg-[var(--border-subtle)] origin-left" data-hairline-sweep aria-hidden="true"></div>
   </div>
 
   <!-- Top Grid: Bio & Animated Counters -->
@@ -59,16 +62,18 @@ function resolveCertUrl(url?: string): string {
     </div>
 
     <div class="lg:col-span-8 flex flex-col gap-10">
-      <!-- Bio paragraphs -->
-      <div class="space-y-6 text-base md:text-xl font-light text-[var(--text-muted)] leading-relaxed" data-reveal>
+      <!-- Bio paragraphs with kinetic reading illumination -->
+      <div class="space-y-6 text-base md:text-xl font-light text-[var(--text-muted)] leading-relaxed" data-reading-illuminate>
         {PROFILE.bio.map((paragraph) => (
           <p class="last:text-[var(--text-primary)] last:font-normal">{paragraph}</p>
         ))}
       </div>
 
       <!-- Animated Stat Counters -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6 border-t-hairline" data-stagger-container>
-        {PROFILE.stats.map((stat) => (
+      <div class="relative pt-6">
+        <div class="hairline-sweep absolute top-0 left-0 right-0 h-[1px] bg-[var(--border-subtle)] origin-left" data-hairline-sweep aria-hidden="true"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6" data-stagger-container>
+          {PROFILE.stats.map((stat) => (
           <div class="p-6 rounded-xl border border-hairline bg-[var(--bg-surface)] flex flex-col justify-between" data-stagger-item>
             <div>
               <div class="text-4xl md:text-5xl font-display font-bold text-[var(--text-primary)] tracking-tight">
@@ -84,6 +89,7 @@ function resolveCertUrl(url?: string): string {
             </p>
           </div>
         ))}
+        </div>
       </div>
     </div>
   </div>

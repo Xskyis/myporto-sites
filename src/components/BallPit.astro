@@ -37,6 +37,8 @@
   let teardownPit: (() => void) | null = null;
   let observer: IntersectionObserver | null = null;
   let initializing = false;
+  let lenisOff: (() => void) | null = null;
+  let lastWakeTime = 0;
 
   function showFallback(canvas: HTMLCanvasElement | null, fallback: HTMLElement | null) {
     if (canvas) canvas.style.display = 'none';
@@ -87,7 +89,34 @@
             const { setBallPitVisible } = await import('../lib/three/ballpit');
             setBallPitVisible(true);
           }
+
+          // Wire scroll wake reaction while footer is in view
+          try {
+            const { getLenis } = await import('../lib/scroll/lenis');
+            const { applyScrollWake } = await import('../lib/three/ballpit');
+            const lenis = getLenis();
+            if (lenis && !lenisOff) {
+              if (Math.abs(lenis.velocity) > 0.8) {
+                applyScrollWake(lenis.velocity);
+                lastWakeTime = performance.now();
+              }
+              lenisOff = lenis.on('scroll', () => {
+                const vel = lenis.velocity;
+                const now = performance.now();
+                if (Math.abs(vel) > 1.2 && now - lastWakeTime > 280) {
+                  lastWakeTime = now;
+                  applyScrollWake(vel);
+                }
+              });
+            }
+          } catch {
+            // passive enhancement, ignore if unavailable
+          }
         } else {
+          if (lenisOff) {
+            lenisOff();
+            lenisOff = null;
+          }
           if (teardownPit) {
             const { setBallPitVisible } = await import('../lib/three/ballpit');
             setBallPitVisible(false);
@@ -111,6 +140,10 @@
   });
 
   document.addEventListener('astro:before-swap', () => {
+    if (lenisOff) {
+      lenisOff();
+      lenisOff = null;
+    }
     if (observer) {
       observer.disconnect();
       observer = null;
