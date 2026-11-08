@@ -2,6 +2,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { onPaletteChange } from '../palette-events';
+import { getLenis } from './lenis';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -33,7 +34,7 @@ export function initScrollAnimations(): Cleanup {
   cleanups.push(() => abort.abort());
 
   const ctx = gsap.context(() => {
-    setupProgressBar();
+    setupProgressBar(cleanups);
     setupHero(signal);
     setupScrollReveals();
     setupStaggers();
@@ -107,9 +108,26 @@ function createRevealAnimation(el: HTMLElement): gsap.core.Animation {
 /*  1. Reading progress bar                                                   */
 /* -------------------------------------------------------------------------- */
 
-function setupProgressBar() {
+function setupProgressBar(cleanups: Array<() => void>) {
   const progressBar = document.getElementById('scroll-progress-bar');
   if (!progressBar) return;
+
+  // Remaster: drive from Lenis' own progress when available (single source,
+  // no extra ScrollTrigger over document.body). Falls back to a scrubbed
+  // ScrollTrigger on native scroll (touch / reduced-motion / no-Lenis).
+  const lenis = getLenis();
+  if (lenis) {
+    const setProgress = () => {
+      const p = Math.min(1, Math.max(0, lenis.progress ?? 0));
+      gsap.set(progressBar, { scaleX: p });
+    };
+    setProgress();
+    const off = lenis.on('scroll', setProgress);
+    // ctx.revert() does not unsubscribe Lenis listeners — register via the
+    // context's cleanup so swaps do not leak duplicate handlers.
+    cleanups.push(() => off());
+    return;
+  }
 
   gsap.to(progressBar, {
     scaleX: 1,
@@ -173,7 +191,7 @@ function setupHero(signal: AbortSignal) {
       trigger: hero,
       start: 'top top',
       end: 'bottom top',
-      scrub: true,
+      scrub: 0.3,
     },
   });
   if (content) {
@@ -193,14 +211,19 @@ function setupScrollReveals() {
     (el) => !el.closest('#hero')
   );
 
-  reveals.forEach((el) => {
-    const anim = createRevealAnimation(el);
-    ScrollTrigger.create({
-      trigger: el,
-      start: REVEAL_START,
-      once: true,
-      onEnter: () => anim.play(),
-    });
+  if (reveals.length === 0) return;
+
+  // Remaster: ScrollTrigger.batch registers one trigger for the group
+  // instead of one per element, cutting refresh/recalc cost with many reveals.
+  const anims = new Map<HTMLElement, gsap.core.Animation>();
+  reveals.forEach((el) => anims.set(el, createRevealAnimation(el)));
+
+  ScrollTrigger.batch(reveals, {
+    start: REVEAL_START,
+    once: true,
+    onEnter: (batch) => {
+      batch.forEach((el) => anims.get(el as HTMLElement)?.play());
+    },
   });
 }
 
@@ -253,7 +276,7 @@ function setupTimelineLine() {
         trigger: container,
         start: 'top 75%',
         end: 'bottom 75%',
-        scrub: true,
+        scrub: 0.3,
       },
     }
   );
@@ -402,8 +425,17 @@ function setupMagneticButtons(signal: AbortSignal) {
 /* -------------------------------------------------------------------------- */
 
 function scheduleRefresh(signal: AbortSignal) {
+  // Remaster: coalesce bursts (20 images loading in sequence) into one
+  // rAF-throttled refresh instead of a full recalcs per image.
+  let queued = false;
   const refresh = () => {
-    if (!signal.aborted) ScrollTrigger.refresh();
+    if (signal.aborted) return;
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      if (!signal.aborted) ScrollTrigger.refresh();
+    });
   };
 
   // Web fonts (Geist / Instrument Serif) change heading heights once they land

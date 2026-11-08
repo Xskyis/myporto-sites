@@ -55,6 +55,8 @@
 }
 
 :root {
+  /* Fixed header height — single source for lenis.ts anchor offsets. */
+  --header-height: 80px;
   /* Default Monochrome Light */
   --bg-primary: #FAFAF9;
   --bg-surface: #FFFFFF;

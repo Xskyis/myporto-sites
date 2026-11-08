@@ -226,7 +226,8 @@ const isHome = currentPath === "/";
 <script>
   import { gsap } from "gsap";
   import { ScrollTrigger } from "gsap/ScrollTrigger";
-  import { scrollToTarget, getLenis } from "../lib/scroll/lenis";
+  import { scrollToTarget } from "../lib/scroll/lenis";
+  import { scrollLock } from "../lib/scroll/scroll-lock";
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -235,6 +236,7 @@ const isHome = currentPath === "/";
 
   const releaseBodyScrollLock = () => {
     document.body.style.overflow = "";
+    scrollLock.release('mobile-menu');
   };
 
   function setupNavbar() {
@@ -366,15 +368,14 @@ const isHome = currentPath === "/";
                 btnMobile.setAttribute("aria-expanded", "false");
                 openIcon?.classList.remove("hidden");
                 closeIcon?.classList.add("hidden");
-                document.body.style.overflow = "";
-                getLenis()?.start();
-                scrollToTarget(hash, { duration: 1.4 });
+                scrollLock.release('mobile-menu');
+                scrollToTarget(hash);
               },
             });
           }
         } else {
           moveIndicatorTo(targetLink, true);
-          scrollToTarget(hash, { duration: 1.4 });
+          scrollToTarget(hash);
         }
       }
     };
@@ -625,8 +626,7 @@ const isHome = currentPath === "/";
         mobileMenu.setAttribute("aria-hidden", "false");
         openIcon?.classList.add("hidden");
         closeIcon?.classList.remove("hidden");
-        document.body.style.overflow = "hidden";
-        getLenis()?.stop();
+        scrollLock.acquire('mobile-menu');
         header?.classList.add("border-b-hairline");
         header?.classList.remove("border-b-transparent");
       } else {
@@ -642,8 +642,7 @@ const isHome = currentPath === "/";
             mobileMenu.setAttribute("aria-hidden", "true");
             openIcon?.classList.remove("hidden");
             closeIcon?.classList.add("hidden");
-            document.body.style.overflow = "";
-            getLenis()?.start();
+            scrollLock.release('mobile-menu');
             updateHeaderScrollBorder();
           },
         });

@@ -1,5 +1,6 @@
 import { gsap } from 'gsap';
 import { getLenis } from '../scroll/lenis';
+import { scrollLock } from '../scroll/scroll-lock';
 
 // Astro fires `astro:page-load` on the initial load too, so the component's direct call and
 // its page-load hook both land here. Track the element we already booted instead of the page:
@@ -41,16 +42,14 @@ export function initSplashScreen() {
     return;
   }
 
-  // 1. Lock scroll and reset to top
+  // 1. Lock scroll and reset to top (centralised ref-counted lock)
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;
-  document.documentElement.classList.add('overflow-hidden');
-  document.body.classList.add('overflow-hidden');
+  scrollLock.acquire('splash');
 
   const lenis = getLenis();
   if (lenis) {
-    lenis.stop();
     lenis.scrollTo(0, { immediate: true });
   }
 
@@ -119,11 +118,8 @@ export function initSplashScreen() {
 
     const exitTl = gsap.timeline({
       onComplete: () => {
-        // Unlock scroll and restore Lenis
-        document.documentElement.classList.remove('overflow-hidden');
-        document.body.classList.remove('overflow-hidden');
-        const activeLenis = getLenis();
-        if (activeLenis) activeLenis.start();
+        // Unlock scroll and restore Lenis (centralised lock)
+        scrollLock.release('splash');
 
         try {
           sessionStorage.setItem('splash_shown', 'true');
@@ -277,10 +273,7 @@ function handleReducedMotion(splashEl: HTMLElement, endModalFocus: () => void) {
     delay: 0.15,
     ease: 'none',
     onComplete: () => {
-      document.documentElement.classList.remove('overflow-hidden');
-      document.body.classList.remove('overflow-hidden');
-      const lenis = getLenis();
-      if (lenis) lenis.start();
+      scrollLock.release('splash');
 
       try {
         sessionStorage.setItem('splash_shown', 'true');

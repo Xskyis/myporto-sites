@@ -1,6 +1,15 @@
 import Lenis from 'lenis';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import {
+  LENIS_EASE,
+  LENIS_LERP,
+  WHEEL_MULTIPLIER,
+  durationForDistance,
+  headerOffsetFromVar,
+  shouldUseLenis,
+} from './scroll-math';
+import { scrollLock, wireScrollLock } from './scroll-lock';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -9,35 +18,55 @@ ScrollTrigger.config({
 });
 
 let lenisInstance: Lenis | null = null;
+let splashWatchdog: number | null = null;
 
 /**
  * Scroll offset so anchored sections land just below the fixed header.
- * Uses CSS var --header-height for zero-DOM-read performance.
+ * Reads `--header-height` (defined in global.css, fallback 80px).
  */
 function headerOffset(): number {
-  return -(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-height') || '80px') - 5);
+  const raw = getComputedStyle(document.documentElement).getPropertyValue('--header-height');
+  return headerOffsetFromVar(raw);
 }
 
 export function initLenis(): Lenis | null {
   if (typeof window === 'undefined') return null;
 
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fine = window.matchMedia('(pointer: fine)').matches;
+  const coarse = window.matchMedia('(pointer: coarse)').matches;
+
+  // Remaster: never hijack scroll for reduced-motion users (no rAF cost),
+  // and keep native momentum on coarse-only devices (phones/tablets).
+  // Hybrid devices (fine + coarse) still get Lenis.
+  if (!shouldUseLenis({ fine, coarse, reducedMotion: prefersReduced })) {
+    return null;
+  }
 
   if (lenisInstance) {
     return lenisInstance;
   }
 
   const lenis = new Lenis({
-    duration: prefersReduced ? 0.01 : 1.35,
-    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // exponential easeOut
-    smoothWheel: !prefersReduced,
-    touchMultiplier: 1.5,
+    // Remaster: lerp mode for wheel (frame-rate independent, tighter feel).
+    // NOTE: duration + easing would take precedence over lerp inside Lenis'
+    // Animate, so the instance intentionally omits them. Programmatic
+    // scrolls pass duration+easing explicitly per call (see scrollToTarget).
+    lerp: LENIS_LERP,
+    smoothWheel: true,
+    // Native touch on hybrid devices: never smooth touch gestures.
+    syncTouch: false,
+    wheelMultiplier: WHEEL_MULTIPLIER,
     // Kill wheel inertia the moment a link to another page is clicked, so a glide that is
     // still running can't carry over into the next page (see installNavigationScroll).
     stopInertiaOnNavigate: true,
   });
 
   lenisInstance = lenis;
+  wireScrollLock(
+    () => lenis.stop(),
+    () => lenis.start(),
+  );
 
   // Synchronize Lenis scroll position with GSAP ScrollTrigger
   lenis.on('scroll', ScrollTrigger.update);
@@ -51,16 +80,31 @@ export function initLenis(): Lenis | null {
   gsap.ticker.lagSmoothing(0);
 
   // Refresh ScrollTrigger after fonts and layout settle
-  window.addEventListener('load', () => {
-    ScrollTrigger.refresh();
-  });
+  const onWindowLoad = () => ScrollTrigger.refresh();
+  window.addEventListener('load', onWindowLoad);
 
-  const isSplashActive =
+  const isSplashActive = () =>
     !document.documentElement.classList.contains('no-splash') &&
     !!document.getElementById('splash-screen');
 
-  if (isSplashActive) {
+  if (isSplashActive()) {
     lenis.stop();
+    // Watchdog: if the splash script never exits (failed/blocked), never
+    // leave the user permanently stuck with a stopped Lenis.
+    if (splashWatchdog !== null) window.clearTimeout(splashWatchdog);
+    splashWatchdog = window.setTimeout(() => {
+      if (isSplashActive()) lenis.start();
+      splashWatchdog = null;
+    }, 6000);
+    // Release the watchdog once the splash announces itself.
+    window.addEventListener(
+      'splash:hero-reveal',
+      () => {
+        if (splashWatchdog !== null) window.clearTimeout(splashWatchdog);
+        splashWatchdog = null;
+      },
+      { once: true },
+    );
   }
 
   return lenis;
@@ -102,13 +146,17 @@ export function installNavigationScroll() {
   // animation from the previous page and align its internal position with the window, so a
   // stale smooth-scroll can never "resume" and drag the new page around.
   document.addEventListener('astro:after-swap', () => {
+    // Centralised lock reset — a lock from the previous page (splash, menu,
+    // dialog) must never survive navigation. This is the single escape hatch
+    // that lets every owner skip its own swap cleanup.
+    scrollLock.reset();
+
     const lenis = lenisInstance;
     if (!lenis) return;
     // stop()/start() is the public way to force Lenis' internal reset(): it aborts the running
     // wheel-inertia animation and snaps animatedScroll/targetScroll to the real window position.
     // (scrollTo(window.scrollY) is NOT enough: it returns early, without resetting, whenever the
     // target already equals targetScroll, which is exactly the state after resize().)
-    // start() also guarantees no scroll lock from a mobile menu or splash survives the swap.
     lenis.stop();
     lenis.start();
     lenis.resize();
@@ -193,7 +241,12 @@ export function scrollToTarget(
 
   const targetSelector = typeof target === 'string' ? target : `#${targetEl.id}`;
   const offset = options?.offset ?? headerOffset();
-  const duration = prefersReduced ? 0.01 : (options?.duration ?? 1.4);
+  const currentY = window.scrollY;
+  const targetY = targetEl.getBoundingClientRect().top + currentY + offset;
+  const distance = Math.abs(targetY - currentY);
+  const duration = prefersReduced
+    ? 0.01
+    : (options?.duration ?? durationForDistance(distance));
 
   // Update URL hash without causing an instant browser jump. Keep the existing state object:
   // Astro's ClientRouter stores { index, scrollX, scrollY } there for back/forward restoration.
@@ -205,17 +258,17 @@ export function scrollToTarget(
     lenisInstance.scrollTo(targetEl, {
       offset,
       duration,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      easing: LENIS_EASE,
       onComplete: () => {
         options?.onComplete?.();
       },
     });
   } else {
-    // No Lenis (reduced motion or init failure): apply the header offset ourselves, otherwise
-    // the section top lands under the fixed navbar.
-    const top = targetEl.offsetTop + offset;
-    window.scrollTo({ top, left: 0, behavior: prefersReduced ? 'auto' : 'smooth' });
-    setTimeout(() => {
+    // No Lenis (reduced motion / coarse pointer / init skipped): apply the
+    // header offset with the same rect+scrollY math as applyHeaderOffset.
+    // (offsetTop is relative to offsetParent — wrong when the parent is positioned.)
+    window.scrollTo({ top: targetY, left: 0, behavior: prefersReduced ? 'auto' : 'smooth' });
+    window.setTimeout(() => {
       options?.onComplete?.();
     }, prefersReduced ? 50 : 600);
   }

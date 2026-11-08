@@ -422,7 +422,7 @@ function resolveCertUrl(url?: string): string {
 </section>
 
 <script>
-  import { getLenis } from '../lib/scroll/lenis';
+  import { scrollLock } from '../lib/scroll/scroll-lock';
 
   let certsModalCleanup: (() => void) | null = null;
   let honorsCleanup: (() => void) | null = null;
@@ -453,12 +453,12 @@ function resolveCertUrl(url?: string): string {
 
     const lockScroll = () => {
       document.documentElement.classList.add('certs-modal-open');
-      getLenis()?.stop();
+      scrollLock.acquire('certs');
     };
 
     const unlockScroll = () => {
       document.documentElement.classList.remove('certs-modal-open');
-      getLenis()?.start();
+      scrollLock.release('certs');
     };
 
     const applyFilter = (category: string) => {
