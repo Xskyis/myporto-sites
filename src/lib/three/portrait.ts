@@ -174,7 +174,7 @@ const FRAG = /* glsl */ `
   }
 `;
 
-function decodePoints(buffer: ArrayBuffer, count: number) {
+export function decodePoints(buffer: ArrayBuffer, count: number) {
   const u16 = new Uint16Array(buffer);
   const b = meta.bounds;
   const dec = (q: number, [lo, hi]: readonly number[]) => lo + (q / 65535) * (hi - lo);
@@ -202,7 +202,7 @@ function decodePoints(buffer: ArrayBuffer, count: number) {
 }
 
 /** Deterministic per-point randoms (mulberry32) so the intro looks the same on every load. */
-function makeRandoms(count: number, seed = 1337) {
+export function makeRandoms(count: number, seed = 1337) {
   let a = seed >>> 0;
   const next = () => {
     a = (a + 0x6d2b79f5) >>> 0;

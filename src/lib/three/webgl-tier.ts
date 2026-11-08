@@ -9,9 +9,13 @@ export type WebGLTier = 'none' | 'software' | 'hardware';
  * Linux) – without paying for initialising that software renderer. Those visitors get the
  * static portrait instead of a 5fps one.
  */
-const SOFTWARE_RENDERER = /swiftshader|llvmpipe|softpipe|software|mesa offscreen|microsoft basic render/i;
+export const SOFTWARE_RENDERER = /swiftshader|llvmpipe|softpipe|software|mesa offscreen|microsoft basic render/i;
 
-function rendererName(gl: WebGLRenderingContext): string {
+export function isSoftwareRenderer(name: string): boolean {
+  return SOFTWARE_RENDERER.test(name);
+}
+
+export function rendererName(gl: WebGLRenderingContext): string {
   const info = gl.getExtension('WEBGL_debug_renderer_info');
   return info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : '';
 }

@@ -22,13 +22,19 @@ function getCurrentPaletteState(): { palette: PaletteMode; tone: MonoTone } {
   return { palette, tone };
 }
 
-interface Ball {
+export interface Ball {
   x: number;
   y: number;
   z: number;
   vx: number;
   vy: number;
   r: number;
+}
+
+export interface BallBounds {
+  floor: number;
+  left: number;
+  right: number;
 }
 
 // --- module state ------------------------------------------------------------
@@ -63,17 +69,17 @@ let frustumW = 20;
 let frustumH = 10;
 
 // --- solver tuning -----------------------------------------------------------
-const FIXED_DT = 1 / 60;
-const MAX_SUBSTEPS = 3;
-const GRAVITY = -16;
-const BALL_RESTITUTION = 0.45;
-const WALL_RESTITUTION = 0.25;
-const LINEAR_DAMPING = 0.35;
-const MAX_SPEED = 25;
-const REPEL_RADIUS = 2.5;
-const REPEL_ACCEL = 30;
-const TOSS_RADIUS = 4;
-const TOSS_FORCE = 22;
+export const FIXED_DT = 1 / 60;
+export const MAX_SUBSTEPS = 3;
+export const GRAVITY = -16;
+export const BALL_RESTITUTION = 0.45;
+export const WALL_RESTITUTION = 0.25;
+export const LINEAR_DAMPING = 0.35;
+export const MAX_SPEED = 25;
+export const REPEL_RADIUS = 2.5;
+export const REPEL_ACCEL = 30;
+export const TOSS_RADIUS = 4;
+export const TOSS_FORCE = 22;
 
 export function setBallPitVisible(visible: boolean) {
   if (visible === isVisible) return;
@@ -162,16 +168,14 @@ export function updateBallPitColors(immediate = false) {
 }
 
 /**
- * One fixed physics step: integrate, resolve ball/ball overlaps with a restitution impulse,
- * then clamp against the pit walls.
+ * Pure fixed-step solver: integrate, resolve ball/ball overlaps with a restitution impulse,
+ * then clamp against the pit walls. Exported for unit tests — operates only on its arguments.
  */
-function stepPhysics(dt: number) {
-  const floor = -frustumH / 2;
-  const left = -frustumW / 2;
-  const right = frustumW / 2;
+export function stepBalls(list: Ball[], dt: number, bounds: BallBounds) {
+  const { floor, left, right } = bounds;
   const damp = Math.max(0, 1 - LINEAR_DAMPING * dt);
 
-  for (const b of balls) {
+  for (const b of list) {
     b.vy += GRAVITY * dt;
     b.vx *= damp;
     b.vy *= damp;
@@ -190,7 +194,7 @@ function stepPhysics(dt: number) {
   // Resolving the floor only once at the end would push the bottom row back into the pile,
   // so the wall pass is interleaved with the relaxation passes.
   const resolveWalls = () => {
-    for (const b of balls) {
+    for (const b of list) {
       if (b.y - b.r < floor) {
         b.y = floor + b.r;
         if (b.vy < 0) b.vy = -b.vy * WALL_RESTITUTION;
@@ -209,10 +213,10 @@ function stepPhysics(dt: number) {
 
   // Four passes keep a 110-ball pile from visibly overlapping at rest.
   for (let iter = 0; iter < 4; iter++) {
-    for (let i = 0; i < balls.length; i++) {
-      const a = balls[i];
-      for (let j = i + 1; j < balls.length; j++) {
-        const b = balls[j];
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i];
+      for (let j = i + 1; j < list.length; j++) {
+        const b = list[j];
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const minDist = a.r + b.r;
@@ -249,6 +253,14 @@ function stepPhysics(dt: number) {
 
     resolveWalls();
   }
+}
+
+function stepPhysics(dt: number) {
+  stepBalls(balls, dt, {
+    floor: -frustumH / 2,
+    left: -frustumW / 2,
+    right: frustumW / 2,
+  });
 }
 
 export async function initBallPit(canvas: HTMLCanvasElement): Promise<() => void> {
