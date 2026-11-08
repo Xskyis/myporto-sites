@@ -19,28 +19,38 @@
   --color-bg-primary: var(--bg-primary);
   --color-bg-surface: var(--bg-surface);
   --color-bg-soft: var(--bg-surface-soft);
+  --color-bg-surface-soft: var(--bg-surface-soft);
   --color-fg-primary: var(--text-primary);
   --color-fg-muted: var(--text-muted);
   --color-border-subtle: var(--border-subtle);
+  --color-border-focus: var(--border-focus);
   --color-accent: var(--accent-primary);
+  --color-accent-primary: var(--accent-primary);
   --color-accent-contrast: var(--accent-contrast);
+  --color-status-dot: var(--status-dot);
+  --color-swatch-color: var(--swatch-color);
 
   --font-display: var(--font-display);
   --font-body: var(--font-body);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  --animate-pulse-subtle: pulseSubtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --spacing-18: 4.5rem;
+  --spacing-88: 22rem;
+  --spacing-112: 28rem;
+  --spacing-128: 32rem;
 
-  @keyframes pulseSubtle {
-    0%,
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 0.4;
-      transform: scale(0.92);
-    }
+  --animate-pulse-subtle: pulseSubtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulseSubtle {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.92);
   }
 }
 
@@ -190,33 +200,33 @@ html[data-palette="color"] .fluid-subheading {
   font-style: italic;
 }
 
-/* Hairline borders (inside @layer utilities so hover/active utility classes can override cleanly) */
-@layer utilities {
-  .border-hairline {
-    border-color: var(--border-subtle);
-  }
+/* Hairline borders (defined via Tailwind v4 @utility for full responsive & state variant support) */
+@utility border-hairline {
+  border-color: var(--border-subtle);
+}
 
-  .border-b-hairline {
-    border-bottom-width: 1px;
-    border-bottom-color: var(--border-subtle);
-  }
+@utility border-b-hairline {
+  border-bottom-width: 1px;
+  border-bottom-color: var(--border-subtle);
+}
 
-  .border-t-hairline {
-    border-top-width: 1px;
-    border-top-color: var(--border-subtle);
-  }
+@utility border-t-hairline {
+  border-top-width: 1px;
+  border-top-color: var(--border-subtle);
+}
 
-  .border-y-hairline {
-    border-top-width: 1px;
-    border-bottom-width: 1px;
-    border-left-width: 0 !important;
-    border-right-width: 0 !important;
-    border-top-color: var(--border-subtle);
-    border-bottom-color: var(--border-subtle);
-  }
+@utility border-y-hairline {
+  border-top-width: 1px;
+  border-bottom-width: 1px;
+  border-left-width: 0 !important;
+  border-right-width: 0 !important;
+  border-top-color: var(--border-subtle);
+  border-bottom-color: var(--border-subtle);
+}
 
-  .divide-hairline > :not(:last-child),
-  .divide-hairline > :not([hidden]) ~ :not([hidden]) {
+@utility divide-hairline {
+  & > :not(:last-child),
+  & > :not([hidden]) ~ :not([hidden]) {
     border-color: var(--border-subtle);
   }
 }
@@ -235,22 +245,22 @@ html[data-palette="color"] .fluid-subheading {
   background-size: 200px 200px;
 }
 
-/* View Transition circular clip animation for theme toggling */
+/* View Transition circular clip animation for theme toggling (scoped so page navigations do not flash) */
 ::view-transition {
   background-color: var(--bg-primary);
 }
 
-::view-transition-old(root),
-::view-transition-new(root) {
+html.theme-transitioning::view-transition-old(root),
+html.theme-transitioning::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
 }
 
-::view-transition-old(root) {
+html.theme-transitioning::view-transition-old(root) {
   z-index: 1;
 }
 
-::view-transition-new(root) {
+html.theme-transitioning::view-transition-new(root) {
   z-index: 9999;
 }
 

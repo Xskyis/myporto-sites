@@ -61,7 +61,7 @@ const projects = allProjects
           <li data-stagger-item>
             <a
               href={`/projects/${p.id}`}
-              class="project-row group relative flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4 xl:gap-6 py-6 md:py-8 px-4 sm:px-6 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[var(--border-focus)]"
+              class="project-row group relative flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6 xl:gap-8 py-6 md:py-8 px-4 sm:px-6 focus:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-[var(--border-focus)]"
               data-project-index={idx}
               data-project-id={p.id}
               data-project-number={p.index}
@@ -73,7 +73,7 @@ const projects = allProjects
             >
               <!-- Thumbnail (below 1024px only; desktop uses the preview panel) -->
               <div
-                class="lg:hidden shrink-0 w-28 sm:w-[120px] aspect-[16/10] rounded-md overflow-hidden border border-hairline bg-[var(--bg-surface-soft)]"
+                class="lg:hidden shrink-0 w-28 sm:w-[120px] aspect-[1.96/1] rounded-md overflow-hidden border border-hairline bg-[var(--bg-surface-soft)]"
                 aria-hidden="true"
               >
                 {p.meta ? (
@@ -83,14 +83,14 @@ const projects = allProjects
                       src={p.meta.previewWebp}
                       alt=""
                       width="160"
-                      height="100"
+                      height="82"
                       loading={idx === 0 ? 'eager' : 'lazy'}
                       decoding="async"
-                      class="w-full h-full object-cover"
+                      class="w-full h-full object-contain"
                     />
                   </picture>
                 ) : p.cover ? (
-                  <img src={p.cover} alt="" width="160" height="100" loading={idx === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-full object-cover" />
+                  <img src={p.cover} alt="" width="160" height="82" loading={idx === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-full object-contain" />
                 ) : (
                   <div class="w-full h-full flex items-center justify-center font-mono text-xs text-[var(--text-muted)]">{p.index}</div>
                 )}
@@ -100,7 +100,7 @@ const projects = allProjects
               <span class="project-index hidden sm:block w-6 shrink-0 font-mono text-xs text-[var(--text-muted)]" aria-hidden="true">{p.index}</span>
 
               <!-- Title + descriptor -->
-              <div class="flex-1 min-w-0 pr-2" aria-hidden="true">
+              <div class="flex-1 min-w-0 pr-4 sm:pr-6" aria-hidden="true">
                 <span class="project-index sm:hidden block font-mono text-xs text-[var(--text-muted)] mb-1.5">{p.index}</span>
                 <h3 class="project-title font-display font-medium text-[clamp(1.5rem,2.2vw,2.35rem)] leading-[1.08] tracking-tight text-[var(--text-primary)]">
                   {p.listTitle}
@@ -114,9 +114,9 @@ const projects = allProjects
               </div>
 
               <!-- Meta (md and up) -->
-              <div class="hidden md:block shrink-0 text-right font-mono text-xs lg:text-[13px] leading-relaxed text-[var(--text-muted)]" aria-hidden="true">
+              <div class="hidden md:block shrink-0 text-right font-mono text-xs lg:text-[13px] leading-relaxed text-[var(--text-muted)] max-w-[220px] xl:max-w-none" aria-hidden="true">
                 <div class="text-[var(--text-primary)]">{p.year}</div>
-                <div class="whitespace-nowrap">{p.stack}</div>
+                <div>{p.stack}</div>
               </div>
 
               <!-- Arrow -->
@@ -171,7 +171,7 @@ const projects = allProjects
           </div>
 
           <!-- Layered cover viewport -->
-          <div class="relative aspect-[16/10] overflow-hidden bg-[var(--bg-surface-soft)]">
+          <div class="relative aspect-[1.96/1] overflow-hidden bg-[var(--bg-surface-soft)]">
             {projects.map((p, idx) => (
               <div class="preview-layer absolute inset-0 bg-[var(--bg-surface-soft)]" data-preview-index={idx} data-active={idx === 0 ? 'true' : 'false'}>
                 {p.meta ? (
@@ -187,14 +187,14 @@ const projects = allProjects
                       sizes="(min-width: 1280px) 460px, 38vw"
                       alt=""
                       width="800"
-                      height="500"
+                      height="408"
                       loading={idx === 0 ? 'eager' : 'lazy'}
                       decoding="async"
-                      class="w-full h-full object-cover object-top"
+                      class="w-full h-full object-contain"
                     />
                   </picture>
                 ) : p.cover ? (
-                  <img src={p.cover} alt="" width="800" height="500" loading={idx === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-full object-cover object-top" />
+                  <img src={p.cover} alt="" width="800" height="408" loading={idx === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-full object-contain" />
                 ) : (
                   <div class="w-full h-full flex items-center justify-center font-display text-5xl text-[var(--text-muted)]">{p.index}</div>
                 )}
@@ -272,15 +272,11 @@ const projects = allProjects
 
   .preview-layer {
     opacity: 0;
-    transform: scale(1.035);
-    transition:
-      opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-      transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .preview-layer[data-active='true'] {
     opacity: 1;
-    transform: scale(1);
   }
 
   @media (prefers-reduced-motion: reduce) {

@@ -490,7 +490,10 @@ const isHome = currentPath === "/";
 
     const runThemeViewTransition = (apply: () => void, event?: MouseEvent) => {
       const doc = document as Document & {
-        startViewTransition?: (update: () => void) => { ready: Promise<void> };
+        startViewTransition?: (update: () => void) => {
+          ready: Promise<void>;
+          finished?: Promise<void>;
+        };
       };
 
       if (!doc.startViewTransition || isReduced) {
@@ -505,8 +508,19 @@ const isHome = currentPath === "/";
         Math.max(y, window.innerHeight - y),
       );
 
+      document.documentElement.classList.add("theme-transitioning");
+      const cleanupTransition = () => {
+        document.documentElement.classList.remove("theme-transitioning");
+      };
+
       try {
         const transition = doc.startViewTransition(apply);
+        if (transition.finished) {
+          transition.finished.finally(cleanupTransition);
+        } else {
+          window.setTimeout(cleanupTransition, 600);
+        }
+
         transition.ready
           .then(() => {
             try {
@@ -525,8 +539,11 @@ const isHome = currentPath === "/";
               );
             } catch {}
           })
-          .catch(() => {});
+          .catch(() => {
+            cleanupTransition();
+          });
       } catch {
+        cleanupTransition();
         apply();
       }
     };

@@ -146,7 +146,13 @@ const personSchema = {
             if (!ev || !ev.newDocument) return;
             var currentHtml = document.documentElement;
             var newHtml = ev.newDocument.documentElement;
-            applyThemeAndState(newHtml);
+            var currentPalette = currentHtml.getAttribute("data-palette") || localStorage.getItem("theme-palette") || "mono";
+            newHtml.setAttribute("data-palette", currentPalette);
+            if (currentHtml.classList.contains("dark")) {
+              newHtml.classList.add("dark");
+            } else {
+              newHtml.classList.remove("dark");
+            }
             newHtml.classList.add("no-splash");
             if (currentHtml.classList.contains("has-custom-cursor")) {
               newHtml.classList.add("has-custom-cursor");
