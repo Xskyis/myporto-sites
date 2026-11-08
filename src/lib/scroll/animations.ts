@@ -316,10 +316,17 @@ function setupCounters() {
   const counters = document.querySelectorAll<HTMLElement>('[data-counter-target]');
   counters.forEach((el) => {
     const target = parseInt(el.getAttribute('data-counter-target') || '0', 10);
+    if (!Number.isFinite(target) || target <= 0) {
+      el.textContent = Number.isFinite(target) ? String(Math.max(0, target)) : '0';
+      return;
+    }
+    // Duration scales with magnitude — a fixed 1.8s makes 1-digit stats
+    // (e.g. "1+ yrs", "1st") sit at 0 for ~most of the tween before flipping.
+    const duration = target <= 9 ? 0.6 : target <= 99 ? 1.2 : 1.8;
     const obj = { val: 0 };
     gsap.to(obj, {
       val: target,
-      duration: 1.8,
+      duration,
       ease: 'power2.out',
       scrollTrigger: {
         trigger: el,
@@ -327,7 +334,11 @@ function setupCounters() {
         toggleActions: 'play none none none',
       },
       onUpdate: () => {
-        el.textContent = Math.floor(obj.val).toString();
+        // round (not floor) so small counts flip at ~50% instead of the very end
+        el.textContent = Math.round(obj.val).toString();
+      },
+      onComplete: () => {
+        el.textContent = target.toString();
       },
     });
   });
