@@ -3,6 +3,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { onPaletteChange } from '../palette-events';
 import { getLenis } from './lenis';
+import { counterDuration } from './scroll-math';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -320,17 +321,18 @@ function setupCounters() {
       el.textContent = Number.isFinite(target) ? String(Math.max(0, target)) : '0';
       return;
     }
-    // Duration scales with magnitude — a fixed 1.8s makes 1-digit stats
-    // (e.g. "1+ yrs", "1st") sit at 0 for ~most of the tween before flipping.
-    const duration = target <= 9 ? 0.6 : target <= 99 ? 1.2 : 1.8;
+    // Duration scales with magnitude — target 1 finishes in 0.35s so it ticks
+    // right as the card enters, instead of lingering awkwardly on 0.
+    const duration = counterDuration(target);
     const obj = { val: 0 };
+    const trigger = el.closest('[data-stagger-item]') || el;
     gsap.to(obj, {
       val: target,
       duration,
       ease: 'power2.out',
       scrollTrigger: {
-        trigger: el,
-        start: 'top 90%',
+        trigger,
+        start: 'top 88%',
         toggleActions: 'play none none none',
       },
       onUpdate: () => {

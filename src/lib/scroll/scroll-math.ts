@@ -75,3 +75,16 @@ export function shouldUseLenis(input: LenisUseInput): boolean {
   const coarseOnly = input.coarse && !input.fine;
   return !coarseOnly;
 }
+
+/**
+ * Animation duration for numeric stat counters.
+ * Target 1 ("1+ yrs", "1st") has no intermediate integers, so it counts swiftly
+ * (0.35s) without lingering awkwardly at 0. Larger numbers scale progressively
+ * to showcase fluid counting motion.
+ */
+export function counterDuration(target: number): number {
+  if (target <= 1) return 0.35;
+  if (target <= 9) return 0.6;
+  if (target <= 99) return 1.2;
+  return 1.8;
+}

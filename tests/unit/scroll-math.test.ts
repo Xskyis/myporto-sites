@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   LENIS_EASE,
   LENIS_SCROLL_DURATION,
+  counterDuration,
   durationForDistance,
   headerOffsetFromVar,
   shouldUseLenis,
@@ -111,5 +112,25 @@ describe('shouldUseLenis', () => {
 
   it('true for no-pointer signals (SSR / unknown)', () => {
     expect(shouldUseLenis({ fine: false, coarse: false, reducedMotion: false })).toBe(true);
+  });
+});
+
+describe('counterDuration', () => {
+  it('target 1 is snappy (0.35s) so it flips immediately without lingering at 0', () => {
+    expect(counterDuration(1)).toBe(0.35);
+  });
+
+  it('small digits (2-9) use 0.6s', () => {
+    expect(counterDuration(2)).toBe(0.6);
+    expect(counterDuration(9)).toBe(0.6);
+  });
+
+  it('medium numbers (10-99) like 57 use 1.2s', () => {
+    expect(counterDuration(57)).toBe(1.2);
+    expect(counterDuration(99)).toBe(1.2);
+  });
+
+  it('large numbers (>99) use 1.8s', () => {
+    expect(counterDuration(100)).toBe(1.8);
   });
 });
