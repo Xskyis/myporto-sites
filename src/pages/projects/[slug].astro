@@ -24,12 +24,14 @@ const coverMeta = getProjectCoverMeta(project.data.cover);
 const cover = project.data.cover;
 const coverWebp = cover?.endsWith('.webp') ? cover : null;
 const coverAvif = coverMeta?.avif ?? (coverWebp ? coverWebp.replace(/\.webp$/, '.avif') : null);
+// Social cards must be 1200x630; a raw cover is ~1.96:1 and gets cropped by every platform.
+const ogImage = coverMeta?.ogImage ?? '/og-image.png';
 ---
 
 <BaseLayout
   title={`${project.data.title} — Achmad Nabil Afgareza`}
   description={project.data.description}
-  image={project.data.cover}
+  image={ogImage}
   currentPath={`/projects/${project.id}`}
 >
   <article class="pt-32 md:pt-40 pb-20 px-6 max-w-5xl mx-auto z-10 relative">

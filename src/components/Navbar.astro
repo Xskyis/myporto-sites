@@ -366,9 +366,11 @@ const isHome = currentPath === "/";
                 mobileMenu.classList.add("hidden");
                 mobileMenu.classList.remove("flex");
                 btnMobile.setAttribute("aria-expanded", "false");
+                mobileMenu.setAttribute("aria-hidden", "true");
                 openIcon?.classList.remove("hidden");
                 closeIcon?.classList.add("hidden");
                 scrollLock.release('mobile-menu');
+                updateHeaderScrollBorder();
                 scrollToTarget(hash);
               },
             });
@@ -609,6 +611,35 @@ const isHome = currentPath === "/";
     );
 
     // 6. Mobile Menu Overlay Toggle
+    const mobileMenuFocusables = () =>
+      Array.from(
+        mobileMenu?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      );
+
+    const closeMobileMenu = (restoreFocus = true) => {
+      if (!mobileMenu || !btnMobile) return;
+      if (mobileMenu.classList.contains("hidden")) return;
+      gsap.to(mobileMenu, {
+        opacity: 0,
+        y: -6,
+        duration: 0.18,
+        ease: "power2.in",
+        onComplete: () => {
+          mobileMenu.classList.add("hidden");
+          mobileMenu.classList.remove("flex");
+          btnMobile.setAttribute("aria-expanded", "false");
+          mobileMenu.setAttribute("aria-hidden", "true");
+          openIcon?.classList.remove("hidden");
+          closeIcon?.classList.add("hidden");
+          scrollLock.release('mobile-menu');
+          updateHeaderScrollBorder();
+          if (restoreFocus) btnMobile.focus();
+        },
+      });
+    };
+
     const toggleMobileMenu = (forceClose = false) => {
       if (!mobileMenu || !btnMobile) return;
       const isCurrentlyOpen = !mobileMenu.classList.contains("hidden");
@@ -629,27 +660,41 @@ const isHome = currentPath === "/";
         scrollLock.acquire('mobile-menu');
         header?.classList.add("border-b-hairline");
         header?.classList.remove("border-b-transparent");
+        mobileMenuFocusables()[0]?.focus();
       } else {
-        gsap.to(mobileMenu, {
-          opacity: 0,
-          y: -6,
-          duration: 0.18,
-          ease: "power2.in",
-          onComplete: () => {
-            mobileMenu.classList.add("hidden");
-            mobileMenu.classList.remove("flex");
-            btnMobile.setAttribute("aria-expanded", "false");
-            mobileMenu.setAttribute("aria-hidden", "true");
-            openIcon?.classList.remove("hidden");
-            closeIcon?.classList.add("hidden");
-            scrollLock.release('mobile-menu');
-            updateHeaderScrollBorder();
-          },
-        });
+        closeMobileMenu();
       }
     };
 
     btnMobile?.addEventListener("click", () => toggleMobileMenu(), { signal });
+
+    // Escape closes the overlay; Tab is trapped inside it while open (it is a full-screen
+    // modal surface, so focus must not wander into the page behind it).
+    document.addEventListener(
+      "keydown",
+      (e) => {
+        if (!mobileMenu || mobileMenu.classList.contains("hidden")) return;
+        if (e.key === "Escape") {
+          e.preventDefault();
+          closeMobileMenu();
+          return;
+        }
+        if (e.key !== "Tab") return;
+        const focusables = mobileMenuFocusables();
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        if (e.shiftKey && (active === first || !mobileMenu.contains(active))) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && (active === last || !mobileMenu.contains(active))) {
+          e.preventDefault();
+          first.focus();
+        }
+      },
+      { signal },
+    );
   }
 
   // Register on astro:page-load and clean up on before-swap

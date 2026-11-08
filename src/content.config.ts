@@ -10,7 +10,7 @@ const projects = defineCollection({
     shortTitle: z.string().optional(),
     subtitle: z.string().optional(),
     /** One short descriptor for the project list (sentence case, ~6 words). */
-    tagline: z.string().max(60).optional(),
+    tagline: z.string().max(40).optional(),
     /** At most three key technologies shown in the project list; `tags` keeps the full stack. */
     stackShort: z.array(z.string()).min(1).max(3).optional(),
     description: z.string(),

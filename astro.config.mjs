@@ -15,7 +15,7 @@ export default defineConfig({
   integrations: [
     icon({
       include: {
-        // Explicit allowlist of every icon actually rendered (see `npm run test:run`
+        // Explicit allowlist of every icon actually rendered (see `npm run test`
         // → tests/unit/icon-allowlist.test.ts). Adding a new <Icon name="…"> requires
         // adding it here; a wildcard re-inlines the full collections into the build.
         lucide: [

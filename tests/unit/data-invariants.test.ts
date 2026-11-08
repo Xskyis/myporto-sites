@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { PROFILE } from '../../src/data/profile';
 import { SOCIALS } from '../../src/data/socials';
 import { TIMELINE } from '../../src/data/timeline';
@@ -6,6 +9,8 @@ import { HONORS } from '../../src/data/honors';
 import { TECH_STACK, TECH_CATEGORIES } from '../../src/data/techstack';
 import { PROJECT_COVER_METAS, getProjectCoverMeta } from '../../src/data/project-assets';
 import { SITE_URL } from '../../src/site';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 describe('PROFILE', () => {
   it('has required identity fields', () => {
@@ -84,6 +89,9 @@ describe('PROJECT_COVER_METAS', () => {
       expect(key).toMatch(/^\/projects\/.*\.webp$/);
       expect(m.previewWebp).toContain('/previews/');
       expect(m.avif).toMatch(/\.avif$/);
+      // Social cards must be 1200x630 or platforms crop them.
+      expect(m.ogImage).toMatch(/^\/og\/.+\.jpg$/);
+      expect(existsSync(join(root, 'public', m.ogImage))).toBe(true);
     }
   });
 

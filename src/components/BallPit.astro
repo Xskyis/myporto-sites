@@ -39,6 +39,9 @@
   let initializing = false;
   let lenisOff: (() => void) | null = null;
   let lastWakeTime = 0;
+  // Bumped on every teardown so an init that resolves after a swap can dispose itself
+  // instead of attaching a renderer to a canvas that is no longer in the document.
+  let generation = 0;
 
   function showFallback(canvas: HTMLCanvasElement | null, fallback: HTMLElement | null) {
     if (canvas) canvas.style.display = 'none';
@@ -65,6 +68,7 @@
     }
 
     // Use IntersectionObserver for lazy initialization & pause when out of view
+    const myGeneration = generation;
     observer = new IntersectionObserver(
       async (entries) => {
         const [entry] = entries;
@@ -75,7 +79,13 @@
             initializing = true;
             try {
               const { initBallPit, setBallPitVisible } = await import('../lib/three/ballpit');
-              teardownPit = await initBallPit(canvas);
+              const teardown = await initBallPit(canvas);
+              if (myGeneration !== generation) {
+                // A swap happened while three.js was loading: this canvas is detached.
+                teardown();
+                return;
+              }
+              teardownPit = teardown;
               setBallPitVisible(true);
               canvas.classList.remove('opacity-0');
               canvas.classList.add('opacity-100');
@@ -83,7 +93,9 @@
               console.warn('Ball pit init error, showing fallback:', err);
               showFallback(canvas, fallback);
             } finally {
-              initializing = false;
+              // Only the current generation owns the flag; a stale init must not clear it
+              // while the new page's init is still in flight.
+              if (myGeneration === generation) initializing = false;
             }
           } else if (teardownPit) {
             const { setBallPitVisible } = await import('../lib/three/ballpit');
@@ -140,6 +152,8 @@
   });
 
   document.addEventListener('astro:before-swap', () => {
+    generation += 1;
+    initializing = false;
     if (lenisOff) {
       lenisOff();
       lenisOff = null;

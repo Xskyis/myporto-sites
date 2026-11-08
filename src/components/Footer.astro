@@ -81,7 +81,7 @@ import { Icon } from "astro-icon/components";
             id="copy-check-icon"
             aria-hidden="true"
           />
-          <span id="copy-text">Copy email</span>
+          <span id="copy-text" aria-live="polite">Copy email</span>
         </button>
 
         <!-- Primary "View CV" Button -->
@@ -149,9 +149,9 @@ import { Icon } from "astro-icon/components";
 
         <!-- Back to top button -->
         <a
-          href="#hero"
+          href="#main-content"
           id="back-to-top-btn"
-          class="nav-scroll-trigger magnetic-btn group inline-flex items-center gap-2 px-4 py-2 rounded-full border border-hairline bg-[var(--bg-surface-soft)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+          class="magnetic-btn group inline-flex items-center gap-2 px-4 py-2 rounded-full border border-hairline bg-[var(--bg-surface-soft)]/50 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--text-primary)] transition-colors duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
           aria-label="Back to top of page"
         >
           <span>BACK TO TOP</span>
@@ -182,6 +182,7 @@ import { Icon } from "astro-icon/components";
 
 <script>
   import { PROFILE } from "../data/profile";
+  import { getLenis } from "../lib/scroll/lenis";
 
   let footerAbortController: AbortController | null = null;
 
@@ -192,6 +193,24 @@ import { Icon } from "astro-icon/components";
     footerAbortController = new AbortController();
     const { signal } = footerAbortController;
 
+    // Back to top: the footer renders on both the home page and project pages, and only the
+    // home page has #hero. Scroll to the document top instead of a page-specific anchor.
+    const backToTop = document.getElementById("back-to-top-btn");
+    backToTop?.addEventListener(
+      "click",
+      (e) => {
+        e.preventDefault();
+        const lenis = getLenis();
+        if (lenis) {
+          lenis.scrollTo(0, { duration: 1.1 });
+        } else {
+          const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+        }
+      },
+      { signal },
+    );
+
     const copyBtn = document.getElementById("copy-email-btn");
     const copyText = document.getElementById("copy-text");
     const copyIcon = document.getElementById("copy-icon");
@@ -199,6 +218,7 @@ import { Icon } from "astro-icon/components";
     if (!copyBtn || !copyText) return;
 
     let resetTimer: number | undefined;
+    signal.addEventListener("abort", () => window.clearTimeout(resetTimer));
 
     copyBtn.addEventListener(
       "click",

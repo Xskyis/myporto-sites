@@ -60,7 +60,8 @@ const personSchema = {
     <meta name="title" content={title} />
     <meta name="description" content={description} />
     <meta name="author" content={PROFILE.name} />
-    <meta name="theme-color" content="#0A0A0A" />
+    <meta name="theme-color" content="#FAFAF9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0A0A0A" media="(prefers-color-scheme: dark)" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -130,6 +131,35 @@ const personSchema = {
         }
 
         applyThemeAndState(document.documentElement);
+
+        // theme-color: the media-query pair in <head> is the no-JS fallback. Once JS runs, the
+        // palette switch (mono ↔ poster color) also changes --bg-primary, so collapse the pair
+        // into one meta that follows the resolved token instead of duplicating hex values here.
+        function syncThemeColor() {
+          var bg = getComputedStyle(document.documentElement)
+            .getPropertyValue('--bg-primary')
+            .trim();
+          if (!bg) return;
+          var metas = document.querySelectorAll('meta[name="theme-color"]');
+          if (metas.length === 1 && !metas[0].hasAttribute('media')) {
+            metas[0].setAttribute('content', bg);
+            return;
+          }
+          metas.forEach(function (m) {
+            m.remove();
+          });
+          var meta = document.createElement('meta');
+          meta.setAttribute('name', 'theme-color');
+          meta.setAttribute('content', bg);
+          document.head.appendChild(meta);
+        }
+        syncThemeColor();
+        // This inline script re-runs on every swap (data-astro-rerun), so bind the listeners once.
+        if (!window.__themeColorBound) {
+          window.__themeColorBound = true;
+          window.addEventListener('palette-change', syncThemeColor);
+          document.addEventListener('astro:page-load', syncThemeColor);
+        }
 
         if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
           window.setTimeout(function () {
