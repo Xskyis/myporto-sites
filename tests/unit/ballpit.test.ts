@@ -1,10 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import {
   stepBalls,
+  findHitBallIndex,
+  stepBurstParticles,
   FIXED_DT,
   GRAVITY,
+  FLOAT_GRAVITY,
+  FLOAT_DAMPING,
+  FLOAT_WALL_RESTITUTION,
   BALL_RESTITUTION,
   type Ball,
+  type BurstParticle,
 } from '../../src/lib/three/ballpit';
 
 const BOUNDS = { floor: -5, left: -10, right: 10 };
@@ -97,5 +103,59 @@ describe('ballpit stepBalls', () => {
     stepBalls([b], FIXED_DT, BOUNDS);
     const speed = Math.hypot(b.vx, b.vy);
     expect(speed).toBeLessThanOrEqual(25.001);
+  });
+
+  it('supports buoyant floating mode with ceiling rebound', () => {
+    const floater = ball({ x: 0, y: 4.8, vy: 4, r: 0.5 });
+    stepBalls([floater], FIXED_DT, BOUNDS, 2, {
+      gravity: FLOAT_GRAVITY,
+      ceiling: 5,
+      damping: FLOAT_DAMPING,
+      wallRestitution: FLOAT_WALL_RESTITUTION,
+    });
+    expect(floater.y).toBeCloseTo(4.5, 5);
+    expect(floater.vy).toBeLessThan(0);
+
+    const suspended = ball({ x: 1, y: 1, vy: 0, r: 0.5 });
+    stepBalls([suspended], FIXED_DT, BOUNDS, 2, {
+      gravity: FLOAT_GRAVITY,
+      ceiling: 5,
+      damping: FLOAT_DAMPING,
+      wallRestitution: FLOAT_WALL_RESTITUTION,
+    });
+    expect(suspended.y).toBeCloseTo(1, 5);
+    expect(suspended.vy).toBe(0);
+  });
+
+  it('ignores popped balls during integration and collisions', () => {
+    const popped = ball({ x: 0, y: 2, popTimer: 0.5 });
+    const active = ball({ x: 0.2, y: 2 });
+    stepBalls([popped, active], FIXED_DT, BOUNDS, 2);
+    expect(popped.x).toBe(0);
+    expect(popped.y).toBe(2);
+    expect(active.x).toBeCloseTo(0.2, 6);
+  });
+});
+
+describe('ballpit pop & burst helpers', () => {
+  it('picks the front-most active ball under the pointer and skips popped balls', () => {
+    const list: Ball[] = [
+      ball({ x: 0, y: 0, z: -1, r: 0.8 }),
+      ball({ x: 0.1, y: 0.1, z: 1.5, r: 0.8 }),
+      ball({ x: 0.05, y: 0.05, z: 3, r: 0.8, popTimer: 0.6 }),
+    ];
+    expect(findHitBallIndex(list, 0, 0)).toBe(1);
+    expect(findHitBallIndex(list, 5, 5)).toBe(-1);
+  });
+
+  it('advances burst particles until their life expires', () => {
+    const particles: BurstParticle[] = [
+      { x: 0, y: 1, z: 0, vx: 4, vy: 5, vz: 0, baseScale: 0.2, life: 1, maxLife: 0.2 },
+    ];
+    expect(stepBurstParticles(particles, 0.1)).toBe(true);
+    expect(particles[0].x).toBeGreaterThan(0);
+    expect(particles[0].life).toBeCloseTo(0.5, 5);
+    expect(stepBurstParticles(particles, 0.15)).toBe(false);
+    expect(particles[0].life).toBe(0);
   });
 });

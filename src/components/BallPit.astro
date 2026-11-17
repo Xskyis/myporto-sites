@@ -1,5 +1,5 @@
 ---
-// BallPit.astro - 3D Interactive Physics Ball Pit for Footer
+// BallPit.astro - 3D Interactive Floating Bubble Pit for Footer
 ---
 
 <div id="ball-pit-wrapper" class="absolute inset-0 w-full h-full overflow-hidden pointer-events-auto z-0" aria-hidden="true">
@@ -8,163 +8,46 @@
     id="ball-pit-canvas"
     class="w-full h-full block relative z-0 opacity-0 transition-opacity duration-700 select-none"
     style="touch-action: pan-y;"
-    aria-label="Interactive 3D Ball Pit background"
+    aria-label="Interactive 3D Floating Bubble Pit background"
   ></canvas>
 
-  <!-- Soft blur & theme-adaptive veil overlay for crystal-clear text readability -->
+  <!-- Soft translucent scrim + desktop-only subtle blur so foreground text stays crisp -->
   <div
-    class="pointer-events-none absolute inset-0 z-[1]"
-    style="background: linear-gradient(180deg, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary) 88%, transparent) 45%, color-mix(in srgb, var(--bg-primary) 60%, transparent) 100%); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);"
+    class="ball-pit-veil pointer-events-none absolute inset-0 z-[1]"
+    style="background: linear-gradient(180deg, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary) 55%, transparent) 22%, color-mix(in srgb, var(--bg-primary) 16%, transparent) 100%);"
     aria-hidden="true"
   ></div>
 
-  <!-- Fallback for prefers-reduced-motion or unsupported WebGL -->
-  <div id="ball-pit-fallback" class="hidden absolute inset-0 z-0 flex items-end justify-center p-6 gap-3 flex-wrap overflow-hidden opacity-30" aria-hidden="true">
-    <div class="w-16 h-16 rounded-full bg-[var(--accent-primary)] opacity-80"></div>
-    <div class="w-12 h-12 rounded-full border border-hairline bg-[var(--bg-surface)]"></div>
-    <div class="w-20 h-20 rounded-full border border-hairline bg-[var(--text-muted)] opacity-40"></div>
-    <div class="w-14 h-14 rounded-full bg-[var(--accent-primary)] opacity-70"></div>
-    <div class="w-16 h-16 rounded-full border border-hairline bg-[var(--bg-surface)]"></div>
-    <div class="w-10 h-10 rounded-full bg-[var(--text-muted)] opacity-50"></div>
-    <div class="w-18 h-18 rounded-full border border-hairline bg-[var(--accent-primary)]"></div>
-    <div class="w-14 h-14 rounded-full bg-[var(--bg-surface)]"></div>
+  <!-- Fallback for prefers-reduced-motion, save-data, or unsupported WebGL -->
+  <div id="ball-pit-fallback" class="hidden absolute inset-0 z-0 flex items-center justify-around p-8 gap-6 flex-wrap overflow-hidden opacity-25" aria-hidden="true">
+    <div class="w-16 h-16 rounded-full border border-[var(--text-muted)] bg-[var(--text-primary)]/5"></div>
+    <div class="w-12 h-12 rounded-full border border-[var(--text-muted)] bg-[var(--accent-primary)]/10"></div>
+    <div class="w-20 h-20 rounded-full border border-[var(--text-muted)] bg-[var(--text-primary)]/5"></div>
+    <div class="w-14 h-14 rounded-full border border-[var(--text-muted)] bg-[var(--accent-primary)]/10"></div>
+    <div class="w-16 h-16 rounded-full border border-[var(--text-muted)] bg-[var(--text-primary)]/5"></div>
+    <div class="w-12 h-12 rounded-full border border-[var(--text-muted)] bg-[var(--text-primary)]/5"></div>
   </div>
 </div>
 
 <script>
-  import { detectWebGL } from '../lib/three/webgl-tier';
+  import { setupBallPit } from '../lib/three/ballpit-controller';
 
-  let teardownPit: (() => void) | null = null;
-  let observer: IntersectionObserver | null = null;
-  let initializing = false;
-  let lenisOff: (() => void) | null = null;
-  let lastWakeTime = 0;
-  // Bumped on every teardown so an init that resolves after a swap can dispose itself
-  // instead of attaching a renderer to a canvas that is no longer in the document.
-  let generation = 0;
-
-  function showFallback(canvas: HTMLCanvasElement | null, fallback: HTMLElement | null) {
-    if (canvas) canvas.style.display = 'none';
-    fallback?.classList.remove('hidden');
-  }
-
-  async function setupBallPit() {
-    const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const canvas = document.getElementById('ball-pit-canvas') as HTMLCanvasElement | null;
-    const fallback = document.getElementById('ball-pit-fallback');
-
-    if (isReduced) {
-      showFallback(canvas, fallback);
-      return;
-    }
-
-    if (!canvas) return;
-
-    // Same gate as the portrait: never download three.js for a software renderer, where the
-    // ball pit would steal frames from the device least able to afford them.
-    if (detectWebGL() !== 'hardware') {
-      showFallback(canvas, fallback);
-      return;
-    }
-
-    // Use IntersectionObserver for lazy initialization & pause when out of view
-    const myGeneration = generation;
-    observer = new IntersectionObserver(
-      async (entries) => {
-        const [entry] = entries;
-        if (entry.isIntersecting) {
-          // `teardownPit` is only assigned after init resolves; without this flag two entries
-          // arriving inside that await window start a second renderer and leak the first.
-          if (!teardownPit && !initializing) {
-            initializing = true;
-            try {
-              const { initBallPit, setBallPitVisible } = await import('../lib/three/ballpit');
-              const teardown = await initBallPit(canvas);
-              if (myGeneration !== generation) {
-                // A swap happened while three.js was loading: this canvas is detached.
-                teardown();
-                return;
-              }
-              teardownPit = teardown;
-              setBallPitVisible(true);
-              canvas.classList.remove('opacity-0');
-              canvas.classList.add('opacity-100');
-            } catch (err) {
-              console.warn('Ball pit init error, showing fallback:', err);
-              showFallback(canvas, fallback);
-            } finally {
-              // Only the current generation owns the flag; a stale init must not clear it
-              // while the new page's init is still in flight.
-              if (myGeneration === generation) initializing = false;
-            }
-          } else if (teardownPit) {
-            const { setBallPitVisible } = await import('../lib/three/ballpit');
-            setBallPitVisible(true);
-          }
-
-          // Wire scroll wake reaction while footer is in view
-          try {
-            const { getLenis } = await import('../lib/scroll/lenis');
-            const { applyScrollWake } = await import('../lib/three/ballpit');
-            const lenis = getLenis();
-            if (lenis && !lenisOff) {
-              if (Math.abs(lenis.velocity) > 0.8) {
-                applyScrollWake(lenis.velocity);
-                lastWakeTime = performance.now();
-              }
-              lenisOff = lenis.on('scroll', () => {
-                const vel = lenis.velocity;
-                const now = performance.now();
-                if (Math.abs(vel) > 1.2 && now - lastWakeTime > 280) {
-                  lastWakeTime = now;
-                  applyScrollWake(vel);
-                }
-              });
-            }
-          } catch {
-            // passive enhancement, ignore if unavailable
-          }
-        } else {
-          if (lenisOff) {
-            lenisOff();
-            lenisOff = null;
-          }
-          if (teardownPit) {
-            const { setBallPitVisible } = await import('../lib/three/ballpit');
-            setBallPitVisible(false);
-          }
-        }
-      },
-      { rootMargin: '100px 0px' }
-    );
-
-    const wrapper = document.getElementById('ball-pit-wrapper');
-    if (wrapper) {
-      observer.observe(wrapper);
-    }
-  }
-
-  setupBallPit();
+  let cleanup: (() => void) | null = null;
   document.addEventListener('astro:page-load', () => {
-    if (!observer && !teardownPit) {
-      setupBallPit();
-    }
+    cleanup?.();
+    cleanup = setupBallPit();
   });
-
   document.addEventListener('astro:before-swap', () => {
-    generation += 1;
-    initializing = false;
-    if (lenisOff) {
-      lenisOff();
-      lenisOff = null;
-    }
-    if (observer) {
-      observer.disconnect();
-      observer = null;
-    }
-    if (teardownPit) {
-      teardownPit();
-      teardownPit = null;
-    }
+    cleanup?.();
+    cleanup = null;
   });
 </script>
+
+<style>
+  @media (min-width: 1024px) and (pointer: fine) {
+    .ball-pit-veil {
+      -webkit-backdrop-filter: blur(2.5px);
+      backdrop-filter: blur(2.5px);
+    }
+  }
+</style>

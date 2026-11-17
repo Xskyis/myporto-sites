@@ -26,6 +26,22 @@ const REVEAL_START = 'top 88%';
 type RevealVariant = 'up' | 'fade' | 'scale' | 'clip' | 'words';
 
 export function initScrollAnimations(): Cleanup {
+  const media = gsap.matchMedia();
+  media.add({
+    mobile: '(max-width: 1023.98px), (pointer: coarse)',
+    reduced: '(prefers-reduced-motion: reduce)',
+    all: '(min-width: 0px)',
+  }, (context) => {
+    if (context.conditions?.reduced) {
+      document.documentElement.classList.remove('js-anim');
+      return;
+    }
+    return initAnimationProfile(Boolean(context.conditions?.mobile));
+  });
+  return () => media.revert();
+}
+
+function initAnimationProfile(mobile: boolean): Cleanup {
   const isReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (isReduced) return () => {};
 
@@ -36,15 +52,18 @@ export function initScrollAnimations(): Cleanup {
 
   const ctx = gsap.context(() => {
     setupProgressBar(cleanups);
-    setupHero(signal);
-    setupScrollReveals();
+    setupHero(signal, mobile);
+    if (mobile) setupMobileReveals(cleanups);
+    else {
+      setupScrollReveals();
+      setupBioIllumination();
+      setupStaggers();
+      setupParallax();
+    }
     setupHairlineSweeps();
-    setupBioIllumination();
-    setupStaggers();
     setupTimelineLine();
     setupCounters();
-    setupParallax();
-    setupMagneticButtons(signal);
+    if (!mobile) setupMagneticButtons(signal);
   });
 
   // `js-anim` (global.css) exists only to hide [data-reveal] between first paint and the
@@ -64,7 +83,12 @@ export function initScrollAnimations(): Cleanup {
 /*  Reveal factory                                                            */
 /* -------------------------------------------------------------------------- */
 
-function createRevealAnimation(el: HTMLElement): gsap.core.Animation {
+function createRevealAnimation(el: HTMLElement, mobile = false): gsap.core.Animation {
+  if (mobile) {
+    return gsap.fromTo(el, { opacity: 0, y: 16 }, {
+      opacity: 1, y: 0, duration: 0.45, ease: 'power2.out', paused: true,
+    });
+  }
   const variant = (el.dataset.reveal || 'up') as RevealVariant;
 
   switch (variant) {
@@ -148,7 +172,7 @@ function setupProgressBar(cleanups: Array<() => void>) {
 /*  2. Hero: entrance choreography + scroll-out parallax                      */
 /* -------------------------------------------------------------------------- */
 
-function setupHero(signal: AbortSignal) {
+function setupHero(signal: AbortSignal, mobile: boolean) {
   const hero = document.getElementById('hero');
   if (!hero) return;
 
@@ -161,12 +185,12 @@ function setupHero(signal: AbortSignal) {
   if (heroReveals.length > 0) {
     const entrance = gsap.timeline({ paused: true });
     heroReveals.forEach((el, i) => {
-      const anim = createRevealAnimation(el);
+      const anim = createRevealAnimation(el, mobile);
       anim.paused(false);
-      entrance.add(anim, i * 0.12);
+      entrance.add(anim, i * (mobile ? 0.06 : 0.12));
     });
 
-    if (isSplashActive) {
+    if (isSplashActive && !(window as unknown as { __heroRevealed?: boolean }).__heroRevealed) {
       // Hold until the splash curtain wipe exposes the hero. Safety net: the splash script can
       // fail after adding `js-anim` (which hides every [data-reveal]) and never announce, so
       // never let the hero stay invisible.
@@ -185,6 +209,9 @@ function setupHero(signal: AbortSignal) {
       entrance.delay(0.1).play();
     }
   }
+
+  // Mobile keeps the headline and CTAs stable while the portrait handles the hand-off.
+  if (mobile) return;
 
   // Scroll-out: hero content drifts up slower than the page and fades, giving depth to the hand-off
   const content = hero.querySelector<HTMLElement>('[data-hero-parallax]');
@@ -216,8 +243,7 @@ function setupScrollReveals() {
 
   if (reveals.length === 0) return;
 
-  // Remaster: ScrollTrigger.batch registers one trigger for the group
-  // instead of one per element, cutting refresh/recalc cost with many reveals.
+  // Batch coordinates callbacks; ScrollTrigger still creates one trigger per target.
   const anims = new Map<HTMLElement, gsap.core.Animation>();
   reveals.forEach((el) => anims.set(el, createRevealAnimation(el)));
 
@@ -228,6 +254,30 @@ function setupScrollReveals() {
       batch.forEach((el) => anims.get(el as HTMLElement)?.play());
     },
   });
+}
+
+/** One observer reveals mobile rows only when each row enters the viewport. */
+function setupMobileReveals(cleanups: Cleanup[]) {
+  const targets = Array.from(document.querySelectorAll<HTMLElement>(
+    '[data-reveal], [data-stagger-item], [data-reading-illuminate] p'
+  )).filter((el) => !el.closest('#hero') && el.getClientRects().length > 0);
+  const animations = new Map<HTMLElement, gsap.core.Animation>();
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      animations.get(entry.target as HTMLElement)?.play();
+      observer.unobserve(entry.target);
+    });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  targets.forEach((el) => {
+    // Bio remains at full contrast throughout its small entrance movement.
+    const animation = el.matches('[data-reading-illuminate] p')
+      ? gsap.fromTo(el, { y: 12 }, { y: 0, duration: 0.4, paused: true, ease: 'power2.out' })
+      : createRevealAnimation(el, true);
+    animations.set(el, animation);
+    observer.observe(el);
+  });
+  cleanups.push(() => observer.disconnect());
 }
 
 /* -------------------------------------------------------------------------- */
@@ -306,7 +356,6 @@ function setupBioIllumination() {
     // Dimmed initial state
     gsap.set(split.words, {
       opacity: 0.28,
-      willChange: 'opacity, color',
     });
 
     // Scrubbed illumination following reading line
@@ -508,13 +557,15 @@ function setupMagneticButtons(signal: AbortSignal) {
 function scheduleRefresh(signal: AbortSignal) {
   // Remaster: coalesce bursts (20 images loading in sequence) into one
   // rAF-throttled refresh instead of a full recalcs per image.
-  let queued = false;
+  let refreshFrame: number | null = null;
+  signal.addEventListener('abort', () => {
+    if (refreshFrame !== null) cancelAnimationFrame(refreshFrame);
+  }, { once: true });
   const refresh = () => {
     if (signal.aborted) return;
-    if (queued) return;
-    queued = true;
-    requestAnimationFrame(() => {
-      queued = false;
+    if (refreshFrame !== null) return;
+    refreshFrame = requestAnimationFrame(() => {
+      refreshFrame = null;
       if (!signal.aborted) ScrollTrigger.refresh();
     });
   };
@@ -526,7 +577,7 @@ function scheduleRefresh(signal: AbortSignal) {
 
   // Switching between mono (Geist) and poster color (Instrument Serif) shifts display font metrics
   onPaletteChange(() => {
-    requestAnimationFrame(refresh);
+    refresh();
   }, signal);
 
   // Images without explicit dimensions (project covers) push content down as they load

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { decodePoints, makeRandoms } from '../../src/lib/three/portrait';
+import { decodePoints, makeRandoms, sdCursorTriangle } from '../../src/lib/three/portrait';
 import meta from '../../src/data/portrait-points.meta.json';
 
 describe('portrait decodePoints', () => {
@@ -81,5 +81,21 @@ describe('portrait meta invariants', () => {
   it('aspect ratio is positive and portrait-like', () => {
     expect(meta.aspect).toBeGreaterThan(0.5);
     expect(meta.aspect).toBeLessThan(2);
+  });
+});
+
+describe('portrait cursor triangle SDF', () => {
+  it('is negative inside centroid, zero on vertices/edges, and positive outside', () => {
+    const h = 0.15;
+    // Centroid (0, 0) is strictly inside
+    expect(sdCursorTriangle(0, 0, h)).toBeLessThan(0);
+    // Top-left vertex (-0.2667 * h, 0.5533 * h) is on the boundary
+    expect(sdCursorTriangle(-0.2667 * h, 0.5533 * h, h)).toBeCloseTo(0, 6);
+    // Right wing (0.5333 * h, -0.1067 * h) is on the boundary
+    expect(sdCursorTriangle(0.5333 * h, -0.1067 * h, h)).toBeCloseTo(0, 6);
+    // Left of vertical edge is strictly outside (> 0)
+    expect(sdCursorTriangle(-0.35 * h, 0, h)).toBeGreaterThan(0);
+    // Above the top-right edge is strictly outside (> 0), not circular
+    expect(sdCursorTriangle(0.2 * h, 0.45 * h, h)).toBeGreaterThan(0);
   });
 });

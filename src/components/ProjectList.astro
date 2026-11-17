@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 import { getProjectCoverMeta } from '../data/project-assets';
 
+const emptyImage = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 const allProjects = await getCollection('projects');
 const projects = allProjects
   .sort((a, b) => a.data.order - b.data.order)
@@ -81,19 +82,23 @@ const projects = allProjects
               >
                 {p.meta ? (
                   <picture>
-                    <source srcset={p.meta.previewAvif} type="image/avif" />
+                    <source media="(max-width: 1023.98px)" srcset={p.meta.thumbnailAvif} type="image/avif" />
+                    <source media="(max-width: 1023.98px)" srcset={p.meta.thumbnailWebp} type="image/webp" />
                     <img
-                      src={p.meta.previewWebp}
+                      src={emptyImage}
                       alt=""
                       width="160"
                       height="82"
-                      loading={idx === 0 ? 'eager' : 'lazy'}
+                      loading="lazy"
                       decoding="async"
                       class="w-full h-full object-contain"
                     />
                   </picture>
                 ) : p.cover ? (
-                  <img src={p.cover} alt="" width="160" height="82" loading={idx === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-full object-contain" />
+                  <picture>
+                    <source media="(max-width: 1023.98px)" srcset={p.cover} />
+                    <img src={emptyImage} alt="" width="160" height="82" loading="lazy" decoding="async" class="w-full h-full object-contain" />
+                  </picture>
                 ) : (
                   <div class="w-full h-full flex items-center justify-center font-mono text-xs text-[var(--text-muted)]">{p.index}</div>
                 )}
@@ -180,24 +185,32 @@ const projects = allProjects
                 {p.meta ? (
                   <picture>
                     <source
+                      media="(min-width: 1024px)"
                       type="image/avif"
                       srcset={`${p.meta.previewAvif} 640w, ${p.meta.avif} ${p.meta.width}w`}
                       sizes="(min-width: 1280px) 460px, 38vw"
                     />
-                    <img
-                      src={p.meta.previewWebp}
+                    <source
+                      media="(min-width: 1024px)"
+                      type="image/webp"
                       srcset={`${p.meta.previewWebp} 640w, ${p.cover} ${p.meta.width}w`}
                       sizes="(min-width: 1280px) 460px, 38vw"
+                    />
+                    <img
+                      src={emptyImage}
                       alt=""
                       width="800"
                       height="408"
-                      loading={idx === 0 ? 'eager' : 'lazy'}
+                      loading="lazy"
                       decoding="async"
                       class="w-full h-full object-contain"
                     />
                   </picture>
                 ) : p.cover ? (
-                  <img src={p.cover} alt="" width="800" height="408" loading={idx === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-full object-contain" />
+                  <picture>
+                    <source media="(min-width: 1024px)" srcset={p.cover} />
+                    <img src={emptyImage} alt="" width="800" height="408" loading="lazy" decoding="async" class="w-full h-full object-contain" />
+                  </picture>
                 ) : (
                   <div class="w-full h-full flex items-center justify-center font-display text-5xl text-[var(--text-muted)]">{p.index}</div>
                 )}

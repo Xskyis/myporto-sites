@@ -20,7 +20,7 @@ const { class: className = '' } = Astro.props;
   id="portrait-particles"
   class:list={['portrait', className]}
   style={`--portrait-aspect: ${meta.aspect};`}
-  data-state="idle"
+  data-state="fallback"
 >
   <!-- Static dotted portrait: placeholder while WebGL boots, and the full fallback otherwise -->
   <div
@@ -32,6 +32,19 @@ const { class: className = '' } = Astro.props;
   <!-- Decorative WebGL layer -->
   <canvas class="portrait__canvas" aria-hidden="true"></canvas>
 </div>
+
+<script is:inline data-astro-rerun>
+  (function () {
+    var root = document.getElementById('portrait-particles');
+    if (!root) return;
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var saveData = navigator.connection && navigator.connection.saveData === true;
+    var forcedOff = new URLSearchParams(window.location.search).get('portrait') === '0';
+    if (!reduced && !saveData && !forcedOff) {
+      root.setAttribute('data-state', 'idle');
+    }
+  })();
+</script>
 
 <style>
   .portrait {
@@ -67,7 +80,7 @@ const { class: className = '' } = Astro.props;
     -webkit-mask-composite: source-in;
     mask-composite: intersect;
     opacity: 0;
-    transition: opacity 0.6s ease, background-color 0.4s ease;
+    transition: opacity 0.25s ease, background-color 0.4s ease;
   }
 
   /* 200% overscan (mirrored in portrait.ts OVERSCAN = 2.0).
@@ -75,9 +88,9 @@ const { class: className = '' } = Astro.props;
      All 4 boundary sides (top, bottom, left, right) falloff is handled mathematically
      in the vertex shader via NDC edgeFade, ensuring 0% clipping. */
   .portrait__canvas {
-    inset: -50%;
-    width: 200%;
-    height: 200%;
+    inset: var(--portrait-inset, -50%);
+    width: var(--portrait-size, 200%);
+    height: var(--portrait-size, 200%);
     opacity: 0;
     transition: opacity 0.35s ease;
     -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0, 0, 0, 0.55) 10%, #000 22%);
@@ -105,9 +118,9 @@ const { class: className = '' } = Astro.props;
       mask-image: url('/portrait-dots.webp'), linear-gradient(to bottom, #000 0%, #000 55%, rgba(0, 0, 0, 0.35) 100%);
     }
     .portrait__canvas {
-      inset: -50%;
-      width: 200%;
-      height: 200%;
+      inset: var(--portrait-inset, -50%);
+      width: var(--portrait-size, 200%);
+      height: var(--portrait-size, 200%);
       -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 60%, rgba(0, 0, 0, 0.35) 86%, transparent 100%);
       mask-image: linear-gradient(to bottom, #000 0%, #000 60%, rgba(0, 0, 0, 0.35) 86%, transparent 100%);
     }
@@ -157,10 +170,12 @@ const { class: className = '' } = Astro.props;
       return state;
     }
 
-    // Static dots appear only when WebGL is slow: too early and a fast load pops from
-    // static → animated; never and a slow load leaves an empty portrait box. Whether they
-    // were shown also decides the intro (crossfade vs. full assemble), see the boot start.
+    // The server renders `data-state="fallback"` so static dots stay visible without JavaScript.
+    // The inline pre-paint script above switches to `idle` when motion + JS are enabled, so
+    // reloads and first visits both run the assemble intro cleanly without flashing static dots
+    // over the WebGL canvas. Static dots only step in if WebGL fails or exceeds the timer.
     let placeholderShown = false;
+    root.dataset.state = 'idle';
     const showPlaceholder = () => {
       if (root.dataset.state !== 'idle') return;
       root.dataset.state = 'placeholder';
@@ -172,6 +187,12 @@ const { class: className = '' } = Astro.props;
       placeholderTimer = window.setTimeout(showPlaceholder, delay);
     };
     signal.addEventListener('abort', () => window.clearTimeout(placeholderTimer));
+
+    const reduced = isTouch || isNarrow || lowEnd;
+    if (reduced) {
+      root.style.setProperty('--portrait-inset', '-20%');
+      root.style.setProperty('--portrait-size', '140%');
+    }
 
     const boot = async () => {
       if (signal.aborted) return;
@@ -195,7 +216,8 @@ const { class: className = '' } = Astro.props;
       let handle: PortraitHandle;
       try {
         handle = await mod.initPortrait(canvas, {
-          reduced: isTouch || isNarrow || lowEnd,
+          reduced,
+          signal,
           tilt: !isTouch,
           onReady: () => {
             if (signal.aborted) return;
@@ -204,6 +226,7 @@ const { class: className = '' } = Astro.props;
           },
         });
       } catch (err) {
+        if (signal.aborted) return;
         console.warn('[portrait] WebGL init failed, using static fallback:', err);
         root.dataset.state = 'fallback';
         return;
@@ -212,21 +235,19 @@ const { class: className = '' } = Astro.props;
         handle.dispose();
         return;
       }
+      window.clearTimeout(placeholderTimer);
       state.handle = handle;
 
       // --- intro -----------------------------------------------------------
-      // The reveal event fires before this boot can possibly finish, so by now the curtain
-      // is lifting or already gone. When the slow-boot placeholder is up it already shows
-      // the assembled portrait — crossfade to the identical live state rather than sweeping
-      // an assemble over it, which would read as a double image. Otherwise play the full
-      // scattered → assembled intro; while the curtain is still lifting it simply runs
-      // behind it, already in motion as the hero is exposed.
-      handle.setActive(true);
+      // When the slow-boot placeholder already appeared, crossfade straight to the assembled
+      // portrait instead of sweeping an assemble over static dots. Otherwise play the full
+      // scattered → assembled intro on both first visits and reloads.
       if (placeholderShown) {
         handle.showAssembled();
       } else {
         void handle.assemble();
       }
+      handle.setActive(!document.hidden);
 
       // --- visibility: only the on-screen WebGL context may run its loop ------
       let heroInView = true;
@@ -271,6 +292,7 @@ const { class: className = '' } = Astro.props;
         hero.addEventListener('pointerleave', () => handle.setPointer(null, null), { signal });
       } else {
         let rippleTimer = 0;
+        signal.addEventListener('abort', () => window.clearTimeout(rippleTimer), { once: true });
         hero.addEventListener(
           'touchmove',
           (e) => {
@@ -283,12 +305,19 @@ const { class: className = '' } = Astro.props;
           },
           { passive: true, signal }
         );
-        hero.addEventListener('touchend', () => handle.setPointer(null, null), { passive: true, signal });
+        const endRipple = () => {
+          window.clearTimeout(rippleTimer);
+          handle.setPointer(null, null);
+        };
+        hero.addEventListener('touchend', endRipple, { passive: true, signal });
+        hero.addEventListener('touchcancel', endRipple, { passive: true, signal });
       }
 
       // --- scroll → scatter (Hero progress 0..1) ------------------------------
       const { gsap } = await import('gsap');
+      if (signal.aborted) return;
       const { ScrollTrigger } = await import('gsap/ScrollTrigger');
+      if (signal.aborted) return;
       gsap.registerPlugin(ScrollTrigger);
       const st = ScrollTrigger.create({
         trigger: hero,
@@ -315,20 +344,21 @@ const { class: className = '' } = Astro.props;
         // Safety path (splash never announced): cover the box immediately.
         showPlaceholder();
       } else {
-        // 600 ms beats the splash curtain, which finishes lifting ~700 ms after the reveal
-        // event starts this boot: a slow download is covered before the box is exposed.
-        armPlaceholderTimer(600);
+        // 800 ms covers typical bundle + point-cloud boot (including the 700 ms splash wipe)
+        // so normal reloads and first visits run the assemble intro instead of crossfading
+        // over static dots, while genuinely slow connections still get a placeholder.
+        armPlaceholderTimer(800);
       }
       void boot();
     };
 
-    if (isSplashActive()) {
+    if (isSplashActive() && !(window as unknown as { __heroRevealed?: boolean }).__heroRevealed) {
       window.addEventListener('splash:hero-reveal', () => startBoot(false), { once: true, signal });
       // Safety net: if the splash never announces (e.g. its script failed), boot anyway.
       const safetyTimer = window.setTimeout(() => startBoot(true), 5000);
       signal.addEventListener('abort', () => window.clearTimeout(safetyTimer));
     } else {
-      // Returning visitors and subpages: no splash, boot straight away.
+      // Returning visitors, reloads, and subpages: boot straight away with the assemble intro.
       startBoot(false);
     }
 

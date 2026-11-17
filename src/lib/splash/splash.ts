@@ -43,6 +43,7 @@ export function initSplashScreen() {
   }
 
   // 1. Lock scroll and reset to top (centralised ref-counted lock)
+  (window as unknown as { __heroRevealed?: boolean }).__heroRevealed = false;
   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   document.documentElement.scrollTop = 0;
   document.body.scrollTop = 0;

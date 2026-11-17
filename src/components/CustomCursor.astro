@@ -1,246 +1,40 @@
 ---
-// Custom Cursor Component (Desktop Only) - Pinpoint Centered Accuracy
+// Custom Cursor Component (Desktop Only) - Pinpoint Tip Accuracy
 ---
 
-<!-- Outer trailing ring (smooth lerp lag) -->
+<!-- Single triangular pointer with its tip aligned to the real pointer position -->
 <div
   id="cursor-ring"
-  class="pointer-events-none fixed top-0 left-0 z-[100001] w-8 h-8 rounded-full border border-hairline opacity-0 transition-opacity duration-300 hidden md:block will-change-transform"
-  style="border-color: var(--cursor-color);"
+  class="cursor-reticle pointer-events-none fixed top-0 left-0 z-[100001] opacity-0 transition-opacity duration-300 hidden md:block will-change-transform"
   aria-hidden="true"
 ></div>
 
-<!-- Inner solid dot (instant, 100% pinpoint accuracy at mouse center) -->
-<div
-  id="cursor-dot"
-  class="pointer-events-none fixed top-0 left-0 z-[100002] w-2 h-2 rounded-full opacity-0 transition-opacity duration-200 hidden md:block will-change-transform"
-  style="background-color: var(--cursor-color);"
-  aria-hidden="true"
-></div>
+<style>
+  .cursor-reticle {
+    width: 24px;
+    height: 30px;
+    color: var(--cursor-color);
+    background: currentColor;
+    clip-path: polygon(0 0, 0 100%, 100% 66%);
+    transform-origin: 0 0;
+    filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--bg-primary) 70%, transparent));
+  }
+</style>
 
 <script>
-  import { getLenis } from '../lib/scroll/lenis';
-
-  function setupCursor() {
-    const isTouch = window.matchMedia('(pointer: coarse)').matches;
-    const ring = document.getElementById('cursor-ring');
-    const dot = document.getElementById('cursor-dot');
-
-    if (isTouch || !ring || !dot) {
-      document.documentElement.classList.remove('has-custom-cursor');
-      return null;
-    }
-
-    // The native cursor is hidden by CSS only once this class exists, so a missing or
-    // broken custom cursor can never leave desktop visitors without a pointer.
-    document.documentElement.classList.add('has-custom-cursor');
-
-    let mouseX = -100;
-    let mouseY = -100;
-    let ringX = -100;
-    let ringY = -100;
-    let isHovering = false;
-    let isVisible = false;
-    let isMouseDown = false;
-    let isRunning = false;
-    let animFrameId: number | null = null;
-    let lastTime = 0;
-    let currentInteractive: Element | null = null;
-    let smoothedVel = 0;
-
-    const getScale = () => {
-      if (isMouseDown) return isHovering ? 1.3 : 0.85;
-      return isHovering ? 1.6 : 1;
-    };
-
-    const updateRing = (now: number) => {
-      if (!isRunning) return;
-
-      const dt = lastTime ? Math.min((now - lastTime) / 1000, 0.05) : 1 / 60;
-      lastTime = now;
-
-      const dx = mouseX - ringX;
-      const dy = mouseY - ringY;
-
-      // Frame-rate independent lerp (~0.22 per frame at 60Hz, identical feel at 120Hz/144Hz)
-      const k = 1 - Math.pow(0.0000005, dt);
-      ringX += dx * k;
-      ringY += dy * k;
-
-      // Velocity inertia stretch: smoothly stretch the ring vertically along the scroll axis
-      const lenis = getLenis();
-      const targetVel = lenis ? lenis.velocity : 0;
-      smoothedVel += (targetVel - smoothedVel) * 0.16;
-      if (Math.abs(smoothedVel) < 0.01) smoothedVel = 0;
-
-      const stretch = Math.min(Math.abs(smoothedVel) * 0.022, 0.40);
-      const baseScale = getScale();
-      const scaleX = baseScale * (1 - stretch * 0.22);
-      const scaleY = baseScale * (1 + stretch * 0.45);
-
-      ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%) scale(${scaleX}, ${scaleY})`;
-
-      // Sleep loop when ring arrives at mouse target and scroll velocity is settled
-      if (Math.abs(dx) < 0.08 && Math.abs(dy) < 0.08 && Math.abs(smoothedVel) < 0.03) {
-        ringX = mouseX;
-        ringY = mouseY;
-        smoothedVel = 0;
-        ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%) scale(${baseScale})`;
-        stopLoop();
-        return;
-      }
-
-      animFrameId = requestAnimationFrame(updateRing);
-    };
-
-    const startLoop = () => {
-      if (document.hidden) return;
-      if (!isRunning) {
-        isRunning = true;
-        lastTime = 0;
-        animFrameId = requestAnimationFrame(updateRing);
-      }
-    };
-
-    const stopLoop = () => {
-      isRunning = false;
-      lastTime = 0;
-      if (animFrameId !== null) {
-        cancelAnimationFrame(animFrameId);
-        animFrameId = null;
-      }
-    };
-
-    const onPointerMove = (e: PointerEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-
-      // Pinpoint accuracy: maintain correct scale during hover so dot doesn't flicker
-      const dotScale = isHovering ? 0.6 : 1;
-      dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%) scale(${dotScale})`;
-
-      if (!isVisible) {
-        ringX = mouseX;
-        ringY = mouseY;
-        ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%) scale(${getScale()})`;
-        dot.classList.remove('opacity-0');
-        ring.classList.remove('opacity-0');
-        dot.classList.add('opacity-100');
-        ring.classList.add('opacity-100');
-        isVisible = true;
-      }
-
-      startLoop();
-    };
-
-    const onMouseLeave = () => {
-      dot.classList.add('opacity-0');
-      ring.classList.add('opacity-0');
-      dot.classList.remove('opacity-100');
-      ring.classList.remove('opacity-100');
-      isVisible = false;
-      stopLoop();
-    };
-
-    const onMouseEnter = () => {
-      dot.classList.remove('opacity-0');
-      ring.classList.remove('opacity-0');
-      dot.classList.add('opacity-100');
-      ring.classList.add('opacity-100');
-      isVisible = true;
-      startLoop();
-    };
-
-    const onMouseDown = () => {
-      isMouseDown = true;
-      ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%) scale(${getScale()})`;
-    };
-
-    const onMouseUp = () => {
-      isMouseDown = false;
-      ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0) translate(-50%, -50%) scale(${getScale()})`;
-    };
-
-    const onVisibilityChange = () => {
-      if (document.hidden) {
-        stopLoop();
-      } else if (isVisible) {
-        startLoop();
-      }
-    };
-
-    // Interactive element hover detection (deduplicated across child nodes)
-    const INTERACTIVE_SELECTOR =
-      'a, button, [role="button"], [role="tab"], input, textarea, select, .project-card, .project-row, .honor-row, .magnetic-btn';
-
-    const handleMouseOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-      const interactive = target.closest(INTERACTIVE_SELECTOR);
-      if (interactive && interactive !== currentInteractive) {
-        currentInteractive = interactive;
-        isHovering = true;
-        // Token-driven hover fill (mirrors --border-subtle's alpha idea) instead of a
-        // hardcoded rgba, so it adapts to mono light/dark and the poster palette.
-        ring.style.backgroundColor = 'color-mix(in srgb, var(--text-primary) 12%, transparent)';
-        dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%) scale(0.6)`;
-        startLoop();
-      }
-    };
-
-    const handleMouseOut = (e: MouseEvent) => {
-      if (!currentInteractive) return;
-      const related = e.relatedTarget as Node | null;
-      if (related && currentInteractive.contains(related)) return;
-      currentInteractive = null;
-      isHovering = false;
-      ring.style.backgroundColor = 'transparent';
-      dot.style.transform = `translate3d(${mouseX}px, ${mouseY}px, 0) translate(-50%, -50%) scale(1)`;
-      startLoop();
-    };
-
-    const onScroll = () => {
-      startLoop();
-    };
-
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
-    window.addEventListener('scroll', onScroll, { passive: true });
-    document.addEventListener('mouseleave', onMouseLeave);
-    document.addEventListener('mouseenter', onMouseEnter);
-    document.addEventListener('mousedown', onMouseDown);
-    document.addEventListener('mouseup', onMouseUp);
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    document.addEventListener('mouseover', handleMouseOver);
-    document.addEventListener('mouseout', handleMouseOut);
-
-    return () => {
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('scroll', onScroll);
-      document.removeEventListener('mouseleave', onMouseLeave);
-      document.removeEventListener('mouseenter', onMouseEnter);
-      document.removeEventListener('mousedown', onMouseDown);
-      document.removeEventListener('mouseup', onMouseUp);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      document.removeEventListener('mouseover', handleMouseOver);
-      document.removeEventListener('mouseout', handleMouseOut);
-      stopLoop();
-      document.documentElement.classList.remove('has-custom-cursor');
-    };
-  }
+  import { setupCursor } from '../lib/cursor';
 
   let cleanup: (() => void) | null = null;
 
   function init() {
-    if (cleanup) cleanup();
+    cleanup?.();
     cleanup = setupCursor();
   }
 
   init();
   document.addEventListener('astro:page-load', init);
   document.addEventListener('astro:before-swap', () => {
-    if (cleanup) {
-      cleanup();
-      cleanup = null;
-    }
+    cleanup?.();
+    cleanup = null;
   });
 </script>

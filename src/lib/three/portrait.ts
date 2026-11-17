@@ -16,12 +16,15 @@ import { gsap } from 'gsap';
 import pointsUrl from '../../data/portrait-points.bin?url';
 import pointsUrlMobile from '../../data/portrait-points-mobile.bin?url';
 import meta from '../../data/portrait-points.meta.json';
+import { createRenderLoop } from './render-loop';
 
 export interface PortraitOptions {
   /** Use the decimated prefix of the point set (mobile / low-end). */
   reduced: boolean;
   /** Disable the mouse tilt (touch devices). */
   tilt: boolean;
+  /** Aborts the point download before allocating a WebGL context. */
+  signal?: AbortSignal;
   /** Called once the first frame has been rendered. */
   onReady?: () => void;
 }
@@ -69,6 +72,28 @@ const VERT = /* glsl */ `
     );
   }
 
+  // Exact 2D signed distance to the triangular cursor reticle: polygon(0 0, 0 100%, 100% 66%),
+  // converted to world +Y-up coordinates and centered on the triangle centroid.
+  float sdCursorTriangle(vec2 p, float h) {
+    vec2 p0 = vec2(-0.2667,  0.5533) * h;
+    vec2 p1 = vec2(-0.2667, -0.4467) * h;
+    vec2 p2 = vec2( 0.5333, -0.1067) * h;
+    vec2 e0 = p1 - p0, e1 = p2 - p1, e2 = p0 - p2;
+    vec2 v0 = p - p0,  v1 = p - p1,  v2 = p - p2;
+    vec2 pq0 = v0 - e0 * clamp(dot(v0, e0) / dot(e0, e0), 0.0, 1.0);
+    vec2 pq1 = v1 - e1 * clamp(dot(v1, e1) / dot(e1, e1), 0.0, 1.0);
+    vec2 pq2 = v2 - e2 * clamp(dot(v2, e2) / dot(e2, e2), 0.0, 1.0);
+    float s = sign(e0.x * e2.y - e0.y * e2.x);
+    vec2 d = min(
+      min(
+        vec2(dot(pq0, pq0), s * (v0.x * e0.y - v0.y * e0.x)),
+        vec2(dot(pq1, pq1), s * (v1.x * e1.y - v1.y * e1.x))
+      ),
+      vec2(dot(pq2, pq2), s * (v2.x * e2.y - v2.y * e2.x))
+    );
+    return -sqrt(d.x) * sign(d.y);
+  }
+
   void main() {
     vec3 target = position;
 
@@ -102,14 +127,23 @@ const VERT = /* glsl */ `
     // --- breathing drift (ramped up as particles arrive so the intro reads cleanly)
     pos += drift(aRand, uTime) * uDrift * ease;
 
-    // --- cursor repulsion with soft falloff (gentle displacement so dissolves stay clean)
-    // Quadratic falloff + a little per-point jitter so it reads as a soft dent, not a punched hole
-    vec2 toMouse = pos.xy - uMouse.xy;
-    float dist = length(toMouse);
-    float influence = smoothstep(uMouseRadius, 0.0, dist);
-    influence = influence * influence * uMouse.z;
-    pos.xy += normalize(toMouse + vec2(0.0001)) * influence * uMouseRadius * (0.20 + 0.18 * aRand.x);
-    pos.z  += influence * 0.03 * (aRand.y - 0.3);
+    // --- cursor repulsion matching the triangular pointer reticle
+    // SDF shapes a soft triangular clearing centered on the pointer body; radial outward push
+    // from the centroid avoids internal Voronoi crease seams, with zero-length guards.
+    if (uMouse.z > 0.001) {
+      vec2 cursorCenter = uMouse.xy + vec2(0.011, -0.022);
+      vec2 toCenter = pos.xy - cursorCenter;
+      float triH = uMouseRadius * 0.92;
+      float sd = sdCursorTriangle(toCenter, triH);
+      float outerPad = uMouseRadius * 0.18;
+      float innerCore = -uMouseRadius * 0.16;
+      float influence = smoothstep(outerPad, innerCore, sd);
+      influence = influence * influence * uMouse.z;
+      float centerLen = length(toCenter);
+      vec2 pushDir = centerLen > 0.0001 ? (toCenter / centerLen) : vec2(0.0, 1.0);
+      pos.xy += pushDir * influence * uMouseRadius * (0.14 + 0.18 * aRand.x);
+      pos.z  += influence * 0.025 * (aRand.y - 0.3);
+    }
 
     // --- scroll scatter: stream out organically towards the left side
     // Particles peel away and blow across to the left like dust/mist in the wind
@@ -201,6 +235,33 @@ export function decodePoints(buffer: ArrayBuffer, count: number) {
   return { positions, tones };
 }
 
+/** Pure CPU mirror of the shader's cursor triangle SDF (`polygon(0 0, 0 100%, 100% 66%)`) for tests. */
+export function sdCursorTriangle(px: number, py: number, h: number): number {
+  const p0x = -0.2667 * h, p0y = 0.5533 * h;
+  const p1x = -0.2667 * h, p1y = -0.4467 * h;
+  const p2x = 0.5333 * h, p2y = -0.1067 * h;
+  const e0x = p1x - p0x, e0y = p1y - p0y;
+  const e1x = p2x - p1x, e1y = p2y - p1y;
+  const e2x = p0x - p2x, e2y = p0y - p2y;
+  const v0x = px - p0x, v0y = py - p0y;
+  const v1x = px - p1x, v1y = py - p1y;
+  const v2x = px - p2x, v2y = py - p2y;
+  const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+  const t0 = clamp01((v0x * e0x + v0y * e0y) / (e0x * e0x + e0y * e0y));
+  const t1 = clamp01((v1x * e1x + v1y * e1y) / (e1x * e1x + e1y * e1y));
+  const t2 = clamp01((v2x * e2x + v2y * e2y) / (e2x * e2x + e2y * e2y));
+  const pq0x = v0x - e0x * t0, pq0y = v0y - e0y * t0;
+  const pq1x = v1x - e1x * t1, pq1y = v1y - e1y * t1;
+  const pq2x = v2x - e2x * t2, pq2y = v2y - e2y * t2;
+  const s = Math.sign(e0x * e2y - e0y * e2x);
+  const d0x = pq0x * pq0x + pq0y * pq0y, d0y = s * (v0x * e0y - v0y * e0x);
+  const d1x = pq1x * pq1x + pq1y * pq1y, d1y = s * (v1x * e1y - v1y * e1x);
+  const d2x = pq2x * pq2x + pq2y * pq2y, d2y = s * (v2x * e2y - v2y * e2x);
+  const minDistSq = Math.min(d0x, d1x, d2x);
+  const minSigned = Math.min(d0y, d1y, d2y);
+  return -Math.sqrt(minDistSq) * Math.sign(minSigned);
+}
+
 /** Deterministic per-point randoms (mulberry32) so the intro looks the same on every load. */
 export function makeRandoms(count: number, seed = 1337) {
   let a = seed >>> 0;
@@ -226,21 +287,27 @@ function readPalette() {
 }
 
 /**
- * The canvas uses 200% vertical overscan (CSS inset -50%) so scattered / repelled points have
- * generous room before they hit the edge. The camera is pulled back by the same factor so the portrait
- * itself still fills the visible box.
+ * The canvas uses 200% vertical overscan on desktop (140% in reduced mode, matching
+ * `--portrait-inset` / `--portrait-size` in PortraitParticles.astro) so scattered / repelled
+ * points have room before hitting the edge. The camera is pulled back by the same factor so the
+ * portrait itself still fills the visible box.
  */
-const OVERSCAN = 2.0;
-
 export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitOptions): Promise<PortraitHandle> {
   const count = options.reduced ? meta.mobileCount : meta.count;
+  const overscan = options.reduced ? 1.4 : 2.0;
 
   // --- data ------------------------------------------------------------------
   // `reduced` (mobile / low-end) fetches a smaller pre-sliced buffer instead of downloading
   // the desktop payload and discarding everything past the prefix.
-  const res = await fetch(options.reduced ? pointsUrlMobile : pointsUrl);
+  const abortError = () => new DOMException('Aborted', 'AbortError');
+  if (options.signal?.aborted) throw abortError();
+  const res = await fetch(options.reduced ? pointsUrlMobile : pointsUrl, {
+    signal: options.signal,
+  });
   if (!res.ok) throw new Error(`portrait points: HTTP ${res.status}`);
-  const { positions, tones } = decodePoints(await res.arrayBuffer(), count);
+  const buffer = await res.arrayBuffer();
+  if (options.signal?.aborted) throw abortError();
+  const { positions, tones } = decodePoints(buffer, count);
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -256,7 +323,7 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
     powerPreference: 'high-performance',
     premultipliedAlpha: true,
   });
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, options.reduced ? 1.25 : 2);
   renderer.setPixelRatio(dpr);
   renderer.setClearColor(0x000000, 0);
 
@@ -264,7 +331,7 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 20);
   // Portrait height is ~1 world unit; frame it so the bust sits flush at the bottom boundary
   const cameraY = 0.025;
-  const fitDistance = (0.5 / Math.tan((camera.fov * Math.PI) / 360)) * 1.02 * OVERSCAN;
+  const fitDistance = (0.5 / Math.tan((camera.fov * Math.PI) / 360)) * 1.02 * overscan;
   camera.position.set(0, cameraY, fitDistance);
   camera.lookAt(0, cameraY, 0);
 
@@ -276,7 +343,7 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
     uMouse: { value: new THREE.Vector3(10, 10, 0) },
     uMouseRadius: { value: 0.09 },
     uSize: { value: 1 },
-    uDrift: { value: 0.0035 },
+    uDrift: { value: options.reduced ? 0 : 0.0035 },
     uColor: { value: new THREE.Color(palette.dots) },
     uAccentColor: { value: new THREE.Color(palette.accent) },
     uAccentMix: { value: palette.accentMix },
@@ -299,6 +366,44 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
   group.add(points);
   scene.add(group);
 
+  // --- interaction state -----------------------------------------------------
+  const pointerTarget = new THREE.Vector3(10, 10, 0); // x, y world; z = strength
+  const tiltTarget = new THREE.Vector2(0, 0);
+  const tiltCurrent = new THREE.Vector2(0, 0);
+  const MAX_TILT_X = THREE.MathUtils.degToRad(1.5);
+  const MAX_TILT_Y = THREE.MathUtils.degToRad(2.2);
+
+  // --- render loop -----------------------------------------------------------
+  let ready = false;
+  const loop = createRenderLoop(
+    (dt) => {
+      if (!options.reduced) uniforms.uTime.value += dt;
+
+      // Ease pointer position & strength (spring-back when the pointer leaves)
+      const m = uniforms.uMouse.value;
+      const k = 1 - Math.pow(0.001, dt); // frame-rate independent lerp (~fast)
+      m.x += (pointerTarget.x - m.x) * k;
+      m.y += (pointerTarget.y - m.y) * k;
+      const kz = 1 - Math.pow(pointerTarget.z > m.z ? 0.0005 : 0.02, dt);
+      m.z += (pointerTarget.z - m.z) * kz;
+
+      // Tilt towards the mouse
+      const kt = 1 - Math.pow(0.01, dt);
+      tiltCurrent.x += (tiltTarget.x - tiltCurrent.x) * kt;
+      tiltCurrent.y += (tiltTarget.y - tiltCurrent.y) * kt;
+      group.rotation.y = tiltCurrent.x * MAX_TILT_Y;
+      group.rotation.x = -tiltCurrent.y * MAX_TILT_X;
+
+      renderer.render(scene, camera);
+
+      if (!ready) {
+        ready = true;
+        options.onReady?.();
+      }
+    },
+    { fps: options.reduced ? 30 : 60, continuous: !options.reduced },
+  );
+
   // --- sizing ----------------------------------------------------------------
   let width = 1;
   let height = 1;
@@ -311,25 +416,20 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
     camera.updateProjectionMatrix();
     // Point size in device px: scale with the *portrait* height so density looks constant.
     // (gl_PointSize is multiplied by 1/-mv.z in the shader, hence × fitDistance here)
-    const portraitPx = height / OVERSCAN;
+    const portraitPx = height / overscan;
     const base = (portraitPx / 820) * (options.reduced ? 2.3 : 1.75);
     uniforms.uSize.value = base * dpr * fitDistance;
+    loop.invalidate();
   };
   resize();
   const ro = new ResizeObserver(resize);
   ro.observe(canvas);
 
-  // --- interaction state -----------------------------------------------------
-  const pointerTarget = new THREE.Vector3(10, 10, 0); // x, y world; z = strength
-  const tiltTarget = new THREE.Vector2(0, 0);
-  const tiltCurrent = new THREE.Vector2(0, 0);
-  const MAX_TILT_X = THREE.MathUtils.degToRad(1.5);
-  const MAX_TILT_Y = THREE.MathUtils.degToRad(2.2);
-
   const setPointer: PortraitHandle['setPointer'] = (x, y, strength = 1) => {
     if (x === null || y === null) {
       pointerTarget.z = 0;
       tiltTarget.set(0, 0);
+      loop.invalidate(1100);
       return;
     }
     // CSS px → world units (portrait height = 1, centred). Visible world height at z=0:
@@ -342,55 +442,11 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
       // Gentle, restrained tilt range so dissolve boundaries remain completely clean
       tiltTarget.set(THREE.MathUtils.clamp(nx * 0.8, -1, 1), THREE.MathUtils.clamp(ny * 0.7, -1, 1));
     }
-  };
-
-  // --- render loop -----------------------------------------------------------
-  let active = false;
-  let rafId: number | null = null;
-  let ready = false;
-  const clock = new THREE.Clock(false);
-
-  const frame = () => {
-    rafId = null;
-    if (!active) return;
-    const dt = Math.min(clock.getDelta(), 0.05);
-    uniforms.uTime.value += dt;
-
-    // Ease pointer position & strength (spring-back when the pointer leaves)
-    const m = uniforms.uMouse.value;
-    const k = 1 - Math.pow(0.001, dt); // frame-rate independent lerp (~fast)
-    m.x += (pointerTarget.x - m.x) * k;
-    m.y += (pointerTarget.y - m.y) * k;
-    const kz = 1 - Math.pow(pointerTarget.z > m.z ? 0.0005 : 0.02, dt);
-    m.z += (pointerTarget.z - m.z) * kz;
-
-    // Tilt towards the mouse
-    const kt = 1 - Math.pow(0.01, dt);
-    tiltCurrent.x += (tiltTarget.x - tiltCurrent.x) * kt;
-    tiltCurrent.y += (tiltTarget.y - tiltCurrent.y) * kt;
-    group.rotation.y = tiltCurrent.x * MAX_TILT_Y;
-    group.rotation.x = -tiltCurrent.y * MAX_TILT_X;
-
-    renderer.render(scene, camera);
-
-    if (!ready) {
-      ready = true;
-      options.onReady?.();
-    }
-    rafId = requestAnimationFrame(frame);
+    loop.invalidate(1100);
   };
 
   const setActive = (next: boolean) => {
-    if (next === active) return;
-    active = next;
-    if (active) {
-      clock.start();
-      if (rafId === null) rafId = requestAnimationFrame(frame);
-    } else {
-      clock.stop();
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      rafId = null;
-    }
+    loop.setActive(next);
   };
 
   // --- palette ---------------------------------------------------------------
@@ -404,10 +460,12 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
       uniforms.uColor.value.copy(dots);
       uniforms.uAccentColor.value.copy(accent);
       uniforms.uAccentMix.value = p.accentMix;
+      loop.invalidate();
       return;
     }
     const c = uniforms.uColor.value;
     const a = uniforms.uAccentColor.value;
+    loop.invalidate(650);
     paletteTween = gsap.to(
       { cr: c.r, cg: c.g, cb: c.b, ar: a.r, ag: a.g, ab: a.b, mix: uniforms.uAccentMix.value },
       {
@@ -419,6 +477,7 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
           c.setRGB(t.cr, t.cg, t.cb);
           a.setRGB(t.ar, t.ag, t.ab);
           uniforms.uAccentMix.value = t.mix;
+          loop.invalidate();
         },
       }
     );
@@ -430,24 +489,28 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
     new Promise<void>((resolve) => {
       introTween?.kill();
       uniforms.uProgress.value = 0;
+      loop.invalidate(1700);
       introTween = gsap.to(uniforms.uProgress, {
         value: 1,
         duration: 1.6,
         ease: 'power2.out',
+        onUpdate: () => loop.invalidate(),
         onComplete: resolve,
       });
     });
   const showAssembled = () => {
     introTween?.kill();
     uniforms.uProgress.value = 1;
+    loop.invalidate();
   };
 
   const setScatter = (v: number) => {
     uniforms.uScatter.value = THREE.MathUtils.clamp(v, 0, 1);
+    loop.invalidate();
   };
 
   const dispose = () => {
-    setActive(false);
+    loop.dispose();
     ro.disconnect();
     introTween?.kill();
     paletteTween?.kill();

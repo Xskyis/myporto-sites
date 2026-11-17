@@ -12,7 +12,6 @@ const isHome = currentPath === "/";
 <header
   id="main-header"
   class="fixed top-0 left-0 w-full z-50 transition-[border-color,background-color] duration-300 border-b border-b-transparent"
-  style="background-color: color-mix(in srgb, var(--bg-primary) 92%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);"
 >
   <!-- Thin reading progress bar -->
   <div
@@ -710,3 +709,16 @@ const isHome = currentPath === "/";
     releaseBodyScrollLock();
   });
 </script>
+
+<style>
+  #main-header {
+    background-color: var(--bg-primary);
+  }
+  @media (min-width: 1024px) and (pointer: fine) {
+    #main-header {
+      background-color: color-mix(in srgb, var(--bg-primary) 92%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  }
+</style>

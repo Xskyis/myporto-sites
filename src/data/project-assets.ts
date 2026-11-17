@@ -2,6 +2,8 @@ export interface ProjectImageMeta {
   width: number;
   height: number;
   aspectRatio: number;
+  thumbnailWebp: string;
+  thumbnailAvif: string;
   previewWebp: string;
   previewAvif: string;
   avif: string;
@@ -14,6 +16,8 @@ export const PROJECT_COVER_METAS: Record<string, ProjectImageMeta> = {
     width: 1901,
     height: 967,
     aspectRatio: 1901 / 967,
+    thumbnailWebp: '/projects/thumbnails/DetroitRadiant.webp',
+    thumbnailAvif: '/projects/thumbnails/DetroitRadiant.avif',
     previewWebp: '/projects/previews/DetroitRadiant.webp',
     previewAvif: '/projects/previews/DetroitRadiant.avif',
     avif: '/projects/DetroitRadiant.avif',
@@ -23,6 +27,8 @@ export const PROJECT_COVER_METAS: Record<string, ProjectImageMeta> = {
     width: 1280,
     height: 617,
     aspectRatio: 1280 / 617,
+    thumbnailWebp: '/projects/thumbnails/GFU.webp',
+    thumbnailAvif: '/projects/thumbnails/GFU.avif',
     previewWebp: '/projects/previews/GFU.webp',
     previewAvif: '/projects/previews/GFU.avif',
     avif: '/projects/GFU.avif',
@@ -32,6 +38,8 @@ export const PROJECT_COVER_METAS: Record<string, ProjectImageMeta> = {
     width: 1350,
     height: 636,
     aspectRatio: 1350 / 636,
+    thumbnailWebp: '/projects/thumbnails/jycmp.webp',
+    thumbnailAvif: '/projects/thumbnails/jycmp.avif',
     previewWebp: '/projects/previews/jycmp.webp',
     previewAvif: '/projects/previews/jycmp.avif',
     avif: '/projects/jycmp.avif',
@@ -41,6 +49,8 @@ export const PROJECT_COVER_METAS: Record<string, ProjectImageMeta> = {
     width: 1901,
     height: 971,
     aspectRatio: 1901 / 971,
+    thumbnailWebp: '/projects/thumbnails/SKN.webp',
+    thumbnailAvif: '/projects/thumbnails/SKN.avif',
     previewWebp: '/projects/previews/SKN.webp',
     previewAvif: '/projects/previews/SKN.avif',
     avif: '/projects/SKN.avif',
@@ -50,6 +60,8 @@ export const PROJECT_COVER_METAS: Record<string, ProjectImageMeta> = {
     width: 1897,
     height: 962,
     aspectRatio: 1897 / 962,
+    thumbnailWebp: '/projects/thumbnails/weather.webp',
+    thumbnailAvif: '/projects/thumbnails/weather.avif',
     previewWebp: '/projects/previews/weather.webp',
     previewAvif: '/projects/previews/weather.avif',
     avif: '/projects/weather.avif',
