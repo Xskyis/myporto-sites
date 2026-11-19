@@ -228,7 +228,7 @@ const projects = allProjects
                 {projects[0]?.stack ?? ''}
               </div>
             </div>
-            <span class="shrink-0 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-[var(--text-primary)] group-hover/preview:text-[var(--accent-primary)] transition-colors">
+            <span class="shrink-0 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-[var(--text-primary)] group-hover/preview:text-[var(--accent-text)] transition-colors">
               <span>Case study</span>
               <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5 transition-transform duration-200 group-hover/preview:translate-x-0.5 group-hover/preview:-translate-y-0.5" />
             </span>
@@ -255,7 +255,7 @@ const projects = allProjects
 
   /* Always keep a subtle connection between the active row and the sticky preview panel */
   .project-row[data-active='true'] .project-index {
-    color: var(--accent-primary);
+    color: var(--accent-text);
     font-weight: 600;
   }
 

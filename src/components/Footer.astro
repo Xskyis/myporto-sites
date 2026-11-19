@@ -230,7 +230,7 @@ import { Icon } from "astro-icon/components";
           copyCheckIcon?.classList.remove("hidden");
           copyBtn.classList.add(
             "border-[var(--status-dot)]",
-            "text-[var(--status-dot)]",
+            "text-[var(--accent-text)]",
           );
 
           window.clearTimeout(resetTimer);
@@ -240,7 +240,7 @@ import { Icon } from "astro-icon/components";
             copyCheckIcon?.classList.add("hidden");
             copyBtn.classList.remove(
               "border-[var(--status-dot)]",
-              "text-[var(--status-dot)]",
+              "text-[var(--accent-text)]",
             );
           }, 2500);
         } catch (err) {

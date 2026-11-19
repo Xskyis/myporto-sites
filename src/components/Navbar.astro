@@ -75,28 +75,28 @@ const isHome = currentPath === "/";
         data-section="about"
         class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
       >
-        <span class="text-[var(--accent-primary)] mr-1 opacity-60">01</span> About
+        <span class="text-[var(--accent-text)] mr-1">01</span> About
       </a>
       <a
         href={isHome ? "#projects" : "/#projects"}
         data-section="projects"
         class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
       >
-        <span class="text-[var(--accent-primary)] mr-1 opacity-60">02</span> Projects
+        <span class="text-[var(--accent-text)] mr-1">02</span> Projects
       </a>
       <a
         href={isHome ? "#tech-stack" : "/#tech-stack"}
         data-section="tech-stack"
         class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
       >
-        <span class="text-[var(--accent-primary)] mr-1 opacity-60">03</span> Stack
+        <span class="text-[var(--accent-text)] mr-1">03</span> Stack
       </a>
       <a
         href={isHome ? "#contact" : "/#contact"}
         data-section="contact"
         class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
       >
-        <span class="text-[var(--accent-primary)] mr-1 opacity-60">04</span> Contact
+        <span class="text-[var(--accent-text)] mr-1">04</span> Contact
       </a>
     </div>
 
@@ -183,7 +183,7 @@ const isHome = currentPath === "/";
     <a
       href={isHome ? "#about" : "/#about"}
       data-section="about"
-      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors flex items-center justify-between border-b-hairline pb-4"
+      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-text)] transition-colors flex items-center justify-between border-b-hairline pb-4"
     >
       <span>About</span>
       <span class="text-xs font-mono text-[var(--text-muted)]">01</span>
@@ -191,7 +191,7 @@ const isHome = currentPath === "/";
     <a
       href={isHome ? "#projects" : "/#projects"}
       data-section="projects"
-      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors flex items-center justify-between border-b-hairline pb-4"
+      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-text)] transition-colors flex items-center justify-between border-b-hairline pb-4"
     >
       <span>Projects</span>
       <span class="text-xs font-mono text-[var(--text-muted)]">02</span>
@@ -199,7 +199,7 @@ const isHome = currentPath === "/";
     <a
       href={isHome ? "#tech-stack" : "/#tech-stack"}
       data-section="tech-stack"
-      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors flex items-center justify-between border-b-hairline pb-4"
+      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-text)] transition-colors flex items-center justify-between border-b-hairline pb-4"
     >
       <span>Tech Stack</span>
       <span class="text-xs font-mono text-[var(--text-muted)]">03</span>
@@ -207,7 +207,7 @@ const isHome = currentPath === "/";
     <a
       href={isHome ? "#contact" : "/#contact"}
       data-section="contact"
-      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors flex items-center justify-between border-b-hairline pb-4"
+      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-text)] transition-colors flex items-center justify-between border-b-hairline pb-4"
     >
       <span>Contact</span>
       <span class="text-xs font-mono text-[var(--text-muted)]">04</span>
@@ -227,6 +227,10 @@ const isHome = currentPath === "/";
   import { ScrollTrigger } from "gsap/ScrollTrigger";
   import { scrollToTarget } from "../lib/scroll/lenis";
   import { scrollLock } from "../lib/scroll/scroll-lock";
+  import {
+    focusNavigationTarget,
+    setupMobileMenu,
+  } from "../lib/scroll/navbar-menu";
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -256,8 +260,6 @@ const isHome = currentPath === "/";
     const btnTone = document.getElementById("btn-tone-toggle");
     const btnMobile = document.getElementById("btn-mobile-menu");
     const mobileMenu = document.getElementById("mobile-menu-overlay");
-    const openIcon = btnMobile?.querySelector(".menu-icon-open");
-    const closeIcon = btnMobile?.querySelector(".menu-icon-close");
     const desktopLinks =
       document.querySelectorAll<HTMLAnchorElement>(".nav-link");
     const mobileLinks =
@@ -293,6 +295,16 @@ const isHome = currentPath === "/";
       signal,
     });
     updateHeaderScrollBorder();
+
+    const menuController =
+      mobileMenu && btnMobile
+        ? setupMobileMenu({
+            menu: mobileMenu,
+            button: btnMobile,
+            signal,
+            onStateChange: updateHeaderScrollBorder,
+          })
+        : null;
 
     // 1. Sliding Indicator Positioning
     const moveIndicatorTo = (
@@ -357,23 +369,13 @@ const isHome = currentPath === "/";
         }
 
         if (isMobileLink) {
-          if (mobileMenu && btnMobile) {
-            gsap.to(mobileMenu, {
-              opacity: 0,
-              duration: 0.2,
-              onComplete: () => {
-                mobileMenu.classList.add("hidden");
-                mobileMenu.classList.remove("flex");
-                btnMobile.setAttribute("aria-expanded", "false");
-                mobileMenu.setAttribute("aria-hidden", "true");
-                openIcon?.classList.remove("hidden");
-                closeIcon?.classList.add("hidden");
-                scrollLock.release('mobile-menu');
-                updateHeaderScrollBorder();
-                scrollToTarget(hash);
-              },
-            });
-          }
+          menuController?.close({
+            restoreFocus: false,
+            onComplete: () => {
+              focusNavigationTarget(targetElement, signal);
+              scrollToTarget(hash);
+            },
+          });
         } else {
           moveIndicatorTo(targetLink, true);
           scrollToTarget(hash);
@@ -605,92 +607,6 @@ const isHome = currentPath === "/";
         };
 
         runThemeViewTransition(apply, e);
-      },
-      { signal },
-    );
-
-    // 6. Mobile Menu Overlay Toggle
-    const mobileMenuFocusables = () =>
-      Array.from(
-        mobileMenu?.querySelectorAll<HTMLElement>(
-          'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-        ) ?? [],
-      );
-
-    const closeMobileMenu = (restoreFocus = true) => {
-      if (!mobileMenu || !btnMobile) return;
-      if (mobileMenu.classList.contains("hidden")) return;
-      gsap.to(mobileMenu, {
-        opacity: 0,
-        y: -6,
-        duration: 0.18,
-        ease: "power2.in",
-        onComplete: () => {
-          mobileMenu.classList.add("hidden");
-          mobileMenu.classList.remove("flex");
-          btnMobile.setAttribute("aria-expanded", "false");
-          mobileMenu.setAttribute("aria-hidden", "true");
-          openIcon?.classList.remove("hidden");
-          closeIcon?.classList.add("hidden");
-          scrollLock.release('mobile-menu');
-          updateHeaderScrollBorder();
-          if (restoreFocus) btnMobile.focus();
-        },
-      });
-    };
-
-    const toggleMobileMenu = (forceClose = false) => {
-      if (!mobileMenu || !btnMobile) return;
-      const isCurrentlyOpen = !mobileMenu.classList.contains("hidden");
-      const shouldOpen = forceClose ? false : !isCurrentlyOpen;
-
-      if (shouldOpen) {
-        mobileMenu.classList.remove("hidden");
-        mobileMenu.classList.add("flex");
-        gsap.fromTo(
-          mobileMenu,
-          { opacity: 0, y: -6 },
-          { opacity: 1, y: 0, duration: 0.22, ease: "power2.out" },
-        );
-        btnMobile.setAttribute("aria-expanded", "true");
-        mobileMenu.setAttribute("aria-hidden", "false");
-        openIcon?.classList.add("hidden");
-        closeIcon?.classList.remove("hidden");
-        scrollLock.acquire('mobile-menu');
-        header?.classList.add("border-b-hairline");
-        header?.classList.remove("border-b-transparent");
-        mobileMenuFocusables()[0]?.focus();
-      } else {
-        closeMobileMenu();
-      }
-    };
-
-    btnMobile?.addEventListener("click", () => toggleMobileMenu(), { signal });
-
-    // Escape closes the overlay; Tab is trapped inside it while open (it is a full-screen
-    // modal surface, so focus must not wander into the page behind it).
-    document.addEventListener(
-      "keydown",
-      (e) => {
-        if (!mobileMenu || mobileMenu.classList.contains("hidden")) return;
-        if (e.key === "Escape") {
-          e.preventDefault();
-          closeMobileMenu();
-          return;
-        }
-        if (e.key !== "Tab") return;
-        const focusables = mobileMenuFocusables();
-        if (focusables.length === 0) return;
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        const active = document.activeElement as HTMLElement | null;
-        if (e.shiftKey && (active === first || !mobileMenu.contains(active))) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && (active === last || !mobileMenu.contains(active))) {
-          e.preventDefault();
-          first.focus();
-        }
       },
       { signal },
     );

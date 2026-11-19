@@ -62,7 +62,7 @@ function initAnimationProfile(mobile: boolean): Cleanup {
     }
     setupHairlineSweeps();
     setupTimelineLine();
-    setupCounters();
+    setupCounters(cleanups);
     if (!mobile) setupMagneticButtons(signal);
   });
 
@@ -430,7 +430,7 @@ function setupTimelineLine() {
 /*  6. Stat counters                                                          */
 /* -------------------------------------------------------------------------- */
 
-function setupCounters() {
+function setupCounters(cleanups: Cleanup[]) {
   const counters = document.querySelectorAll<HTMLElement>('[data-counter-target]');
   counters.forEach((el) => {
     const target = parseInt(el.getAttribute('data-counter-target') || '0', 10);
@@ -443,6 +443,11 @@ function setupCounters() {
     const duration = counterDuration(target);
     const obj = { val: 0 };
     const trigger = el.closest('[data-stagger-item]') || el;
+    // HTML carries the final value for no-JS/reduced-motion visitors. Only the
+    // motion profile resets it, and restores it if the profile is torn down
+    // before the counter finishes (including a motion-preference change).
+    el.textContent = '0';
+    cleanups.push(() => { el.textContent = target.toString(); });
     gsap.to(obj, {
       val: target,
       duration,

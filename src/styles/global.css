@@ -34,6 +34,8 @@
   --border-subtle: rgba(10, 10, 10, 0.12);
   --border-focus: #0A0A0A;
   --accent-primary: #0A0A0A;
+  /* Text accents stay readable independently of decorative fills and canvas colors. */
+  --accent-text: var(--text-primary);
   --accent-contrast: #FAFAF9;
   --font-display: 'Geist Variable', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: 'Geist Variable', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -56,6 +58,7 @@ html[data-palette="mono"].dark,
   --border-subtle: rgba(250, 250, 249, 0.12);
   --border-focus: #FAFAF9;
   --accent-primary: #FAFAF9;
+  --accent-text: var(--text-primary);
   --accent-contrast: #0A0A0A;
   --font-display: 'Geist Variable', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: 'Geist Variable', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -75,7 +78,8 @@ html[data-palette="color"].dark {
   --border-subtle: rgba(253, 238, 169, 0.22);
   --border-focus: #FDEEA9;
   --accent-primary: #D82B2F;
-  --accent-contrast: #FDEEA9;
+  --accent-text: var(--text-primary);
+  --accent-contrast: #FFFFFF;
   --font-display: 'Instrument Serif', Georgia, serif;
   --font-body: 'Geist Variable', -apple-system, BlinkMacSystemFont, sans-serif;
   --cursor-color: #D82B2F;
@@ -334,7 +338,7 @@ html.js-anim [data-reveal] {
 }
 
 .case-study-prose a:hover {
-  color: var(--accent-primary);
+  color: var(--accent-text);
   text-decoration-color: currentColor;
 }
 
@@ -554,7 +558,7 @@ html.no-splash #splash-screen {
 }
 
 .honor-row[data-active="true"] .honor-index {
-  color: var(--accent-primary);
+  color: var(--accent-text);
 }
 
 .honor-ghost-year {
