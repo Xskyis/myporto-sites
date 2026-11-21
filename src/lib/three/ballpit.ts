@@ -463,7 +463,7 @@ export function initBallPit(canvas: HTMLCanvasElement): () => void {
     threeRenderer = new THREE.WebGLRenderer({
       canvas,
       alpha: true,
-      antialias: !isMobile,
+      antialias: true,
       powerPreference: isMobile ? 'default' : 'high-performance',
       precision: isMobile ? 'mediump' : 'highp',
     });
@@ -474,13 +474,13 @@ export function initBallPit(canvas: HTMLCanvasElement): () => void {
   }
 
   threeRenderer.setSize(width, height);
-  threeRenderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 1.5));
+  threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   threeRenderer.setClearColor(0x000000, 0);
 
   // 2. Translucent Fresnel bubbles + lightweight pop burst pool (no scene lights needed)
   const depth = 4.0;
 
-  sphereGeometry = new THREE.SphereGeometry(1, isMobile ? 10 : 18, isMobile ? 8 : 14);
+  sphereGeometry = new THREE.SphereGeometry(1, isMobile ? 22 : 24, isMobile ? 16 : 18);
   sphereMaterial = new THREE.ShaderMaterial({
     uniforms: {},
     vertexShader: /* glsl */ `
@@ -823,7 +823,7 @@ export function initBallPit(canvas: HTMLCanvasElement): () => void {
     lastHeight = h;
 
     threeRenderer.setSize(w, h);
-    threeRenderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 1.5));
+    threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     // setSize updates the canvas's inline CSS dimensions; cache its rect afterward
     // so pointer hit testing uses the same size as the new camera frustum.
     cachedRect = canvas.getBoundingClientRect();
@@ -844,6 +844,9 @@ export function initBallPit(canvas: HTMLCanvasElement): () => void {
     resumeLoop?.();
   };
   window.addEventListener('resize', onResize, { passive: true });
+  const resizeObserver =
+    typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onResize) : null;
+  resizeObserver?.observe(container);
 
   // Visibility handler
   const onVisibilityChange = () => {
@@ -1086,6 +1089,7 @@ export function initBallPit(canvas: HTMLCanvasElement): () => void {
     window.removeEventListener('scroll', markRectDirty);
     canvas.removeEventListener('pointerleave', onPointerLeave);
     window.removeEventListener('resize', onResize);
+    resizeObserver?.disconnect();
     document.removeEventListener('visibilitychange', onVisibilityChange);
     disposePaletteListener();
 

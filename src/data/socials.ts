@@ -1,5 +1,3 @@
-import { PROFILE } from './profile';
-
 export interface SocialLink {
   name: string;
   url: string;
@@ -19,11 +17,5 @@ export const SOCIALS: SocialLink[] = [
     url: 'https://www.linkedin.com/in/nabilfgrza/',
     label: 'linkedin.com/in/nabilfgrza',
     icon: 'simple-icons:linkedin',
-  },
-  {
-    name: 'Email',
-    url: `mailto:${PROFILE.email}`,
-    label: PROFILE.email,
-    icon: 'lucide:mail',
   },
 ];

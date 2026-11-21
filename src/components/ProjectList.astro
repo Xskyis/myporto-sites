@@ -8,7 +8,7 @@ const allProjects = await getCollection('projects');
 const projects = allProjects
   .sort((a, b) => a.data.order - b.data.order)
   .map((project, idx) => {
-    const { title, shortTitle, tagline, stackShort, year, cover, tags, subtitle } = project.data;
+    const { title, shortTitle, tagline, stackShort, year, role, cover, tags, subtitle } = project.data;
     const resolvedStack = (Array.isArray(stackShort) && stackShort.length > 0)
       ? stackShort.join(' / ')
       : (Array.isArray(tags) ? tags.slice(0, 3).join(' / ') : '');
@@ -21,6 +21,7 @@ const projects = allProjects
       tagline: resolvedTagline,
       stack: resolvedStack,
       year,
+      role,
       cover,
       meta: getProjectCoverMeta(cover),
     };
@@ -70,6 +71,7 @@ const projects = allProjects
               data-project-id={p.id}
               data-project-number={p.index}
               data-project-title={p.listTitle}
+              data-project-role={p.role}
               data-project-stack={p.stack}
               data-project-year={p.year}
               data-active={idx === 0 ? 'true' : 'false'}
@@ -166,18 +168,6 @@ const projects = allProjects
           tabindex="-1"
           class="group/preview block rounded-2xl border border-hairline overflow-hidden bg-[var(--bg-surface)] shadow-sm transition-colors duration-300 hover:border-[var(--text-primary)]"
         >
-          <!-- Editorial preview top bar -->
-          <div class="px-4 py-2.5 border-b border-hairline bg-[var(--bg-surface-soft)]/60 flex items-center justify-between font-mono text-[11px] text-[var(--text-muted)]">
-            <div class="flex items-center gap-2">
-              <span class="inline-block w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)]"></span>
-              <span>
-                <span id="preview-index" class="text-[var(--text-primary)] font-semibold">{projects[0]?.index ?? '01'}</span>
-                <span class="opacity-50"> / {String(projects.length).padStart(2, '0')}</span>
-              </span>
-            </div>
-            <span id="preview-year" class="uppercase tracking-wider">{projects[0]?.year ?? ''}</span>
-          </div>
-
           <!-- Layered cover viewport -->
           <div class="relative aspect-[1.96/1] overflow-hidden bg-[var(--bg-surface-soft)]">
             {projects.map((p, idx) => (
@@ -218,20 +208,20 @@ const projects = allProjects
             ))}
           </div>
 
-          <!-- Editorial preview caption footer -->
-          <div class="px-4 py-3 border-t border-hairline bg-[var(--bg-surface)] flex items-center justify-between gap-4">
+          <!-- Minimal editorial caption -->
+          <div class="px-5 py-4 border-t border-hairline bg-[var(--bg-surface)] flex items-center justify-between gap-4">
             <div class="min-w-0">
-              <div id="preview-title" class="font-display font-semibold text-sm text-[var(--text-primary)] truncate">
+              <div id="preview-title" class="font-display font-semibold text-base text-[var(--text-primary)] truncate">
                 {projects[0]?.listTitle ?? ''}
               </div>
-              <div id="preview-stack" class="font-mono text-[11px] text-[var(--text-muted)] truncate mt-0.5">
-                {projects[0]?.stack ?? ''}
+              <div id="preview-role" class="text-xs text-[var(--text-muted)] truncate mt-0.5">
+                {projects[0]?.role ?? ''}
               </div>
             </div>
-            <span class="shrink-0 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-[var(--text-primary)] group-hover/preview:text-[var(--accent-text)] transition-colors">
-              <span>Case study</span>
-              <Icon name="lucide:arrow-up-right" class="w-3.5 h-3.5 transition-transform duration-200 group-hover/preview:translate-x-0.5 group-hover/preview:-translate-y-0.5" />
-            </span>
+            <div class="shrink-0 inline-flex items-center gap-2 font-mono text-xs text-[var(--text-muted)] group-hover/preview:text-[var(--text-primary)] transition-colors">
+              <span id="preview-year">{projects[0]?.year ?? ''}</span>
+              <Icon name="lucide:arrow-up-right" class="w-4 h-4 transition-transform duration-200 group-hover/preview:translate-x-0.5 group-hover/preview:-translate-y-0.5" />
+            </div>
           </div>
         </a>
       </div>
@@ -243,14 +233,17 @@ const projects = allProjects
   .project-row,
   .project-index,
   .project-title,
-  .project-arrow,
-  .project-arrow :global(svg) {
+  .project-arrow {
     transition:
       opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1),
       transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
       background-color 0.3s ease,
       color 0.3s ease,
       border-color 0.3s ease;
+  }
+
+  .project-arrow :global(svg) {
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   /* Always keep a subtle connection between the active row and the sticky preview panel */
@@ -264,7 +257,7 @@ const projects = allProjects
   }
 
   .project-row[data-active='true'] .project-arrow :global(svg) {
-    transform: rotate(-45deg);
+    transform: rotate(var(--arrow-angle, 0deg));
   }
 
   /* Emphasize the active surface while keeping every project label readable. */
@@ -318,19 +311,51 @@ const projects = allProjects
     const rows = Array.from(list.querySelectorAll<HTMLElement>('[data-project-index]'));
     const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-preview-index]'));
     const previewLink = document.getElementById('preview-card-link') as HTMLAnchorElement | null;
-    const previewIndex = document.getElementById('preview-index');
     const previewYear = document.getElementById('preview-year');
     const previewTitle = document.getElementById('preview-title');
-    const previewStack = document.getElementById('preview-stack');
+    const previewRole = document.getElementById('preview-role');
     if (rows.length === 0) return null;
 
     const abort = new AbortController();
     const { signal } = abort;
+    const desktopQuery = window.matchMedia('(min-width: 1024px)');
 
+    let activeIndex = 0;
     let isPointerOverList = false;
+    let arrowFrame: number | null = null;
     let scrollTriggers: Array<{ kill: () => void }> = [];
 
+    const updateActiveArrowAngle = () => {
+      rows.forEach((row, i) => {
+        const arrow = row.querySelector<HTMLElement>('.project-arrow');
+        if (!arrow) return;
+        if (i !== activeIndex || !desktopQuery.matches || !previewLink) {
+          arrow.style.removeProperty('--arrow-angle');
+          return;
+        }
+        const previewRect = previewLink.getBoundingClientRect();
+        if (previewRect.width === 0 || previewRect.height === 0) {
+          arrow.style.removeProperty('--arrow-angle');
+          return;
+        }
+        const arrowRect = arrow.getBoundingClientRect();
+        const dx = (previewRect.left + previewRect.width / 2) - (arrowRect.left + arrowRect.width / 2);
+        const dy = (previewRect.top + previewRect.height / 2) - (arrowRect.top + arrowRect.height / 2);
+        const angle = Math.max(-55, Math.min(55, (Math.atan2(dy, dx) * 180) / Math.PI));
+        arrow.style.setProperty('--arrow-angle', `${angle.toFixed(1)}deg`);
+      });
+    };
+
+    const scheduleArrowUpdate = () => {
+      if (signal.aborted || arrowFrame !== null) return;
+      arrowFrame = requestAnimationFrame(() => {
+        arrowFrame = null;
+        if (!signal.aborted) updateActiveArrowAngle();
+      });
+    };
+
     const setActive = (index: number) => {
+      activeIndex = index;
       rows.forEach((row, i) => row.setAttribute('data-active', String(i === index)));
       layers.forEach((layer, i) => layer.setAttribute('data-active', String(i === index)));
 
@@ -338,10 +363,10 @@ const projects = allProjects
       if (!activeRow) return;
       const id = activeRow.dataset.projectId;
       if (previewLink && id) previewLink.href = `/projects/${id}`;
-      if (previewIndex) previewIndex.textContent = activeRow.dataset.projectNumber ?? '';
       if (previewYear) previewYear.textContent = activeRow.dataset.projectYear ?? '';
       if (previewTitle) previewTitle.textContent = activeRow.dataset.projectTitle ?? '';
-      if (previewStack) previewStack.textContent = activeRow.dataset.projectStack ?? '';
+      if (previewRole) previewRole.textContent = activeRow.dataset.projectRole ?? '';
+      updateActiveArrowAngle();
     };
 
     const setEngaged = (engaged: boolean) => list.setAttribute('data-engaged', String(engaged));
@@ -416,8 +441,17 @@ const projects = allProjects
       { signal }
     );
 
+    window.addEventListener('scroll', scheduleArrowUpdate, { passive: true, signal });
+    window.addEventListener('resize', scheduleArrowUpdate, { passive: true, signal });
+    desktopQuery.addEventListener('change', scheduleArrowUpdate, { signal });
+    updateActiveArrowAngle();
+
     return () => {
       abort.abort();
+      if (arrowFrame !== null) {
+        cancelAnimationFrame(arrowFrame);
+        arrowFrame = null;
+      }
       scrollTriggers.forEach((st) => st.kill());
       scrollTriggers = [];
       setEngaged(false);

@@ -17,24 +17,23 @@ describe('PROFILE', () => {
     expect(PROFILE.name.length).toBeGreaterThan(0);
     expect(PROFILE.email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
     expect(PROFILE.bio.length).toBeGreaterThan(0);
-    expect(PROFILE.stats.length).toBeGreaterThan(0);
+    expect(PROFILE.facts.length).toBeGreaterThan(0);
     expect(PROFILE.languages.length).toBeGreaterThan(0);
   });
 
-  it('stats have numeric values', () => {
-    for (const s of PROFILE.stats) {
-      expect(typeof s.value).toBe('number');
-      expect(s.value).toBeGreaterThanOrEqual(0);
+  it('facts have non-empty labels and values', () => {
+    for (const fact of PROFILE.facts) {
+      expect(fact.label.trim().length).toBeGreaterThan(0);
+      expect(fact.value.trim().length).toBeGreaterThan(0);
     }
   });
 });
 
 describe('SOCIALS', () => {
-  it('has at least GitHub + LinkedIn + Email', () => {
+  it('has at least GitHub + LinkedIn', () => {
     const names = SOCIALS.map((s) => s.name);
     expect(names).toContain('GitHub');
     expect(names).toContain('LinkedIn');
-    expect(names).toContain('Email');
   });
 
   it('all urls are absolute or mailto', () => {

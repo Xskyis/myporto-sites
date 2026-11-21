@@ -11,7 +11,7 @@
     aria-label="Interactive 3D Floating Bubble Pit background"
   ></canvas>
 
-  <!-- Soft translucent scrim + desktop-only subtle blur so foreground text stays crisp -->
+  <!-- Soft translucent scrim + subtle blur so foreground text stays crisp -->
   <div
     class="ball-pit-veil pointer-events-none absolute inset-0 z-[1]"
     style="background: linear-gradient(180deg, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary) 55%, transparent) 22%, color-mix(in srgb, var(--bg-primary) 16%, transparent) 100%);"
@@ -44,10 +44,8 @@
 </script>
 
 <style>
-  @media (min-width: 1024px) and (pointer: fine) {
-    .ball-pit-veil {
-      -webkit-backdrop-filter: blur(2.5px);
-      backdrop-filter: blur(2.5px);
-    }
+  .ball-pit-veil {
+    -webkit-backdrop-filter: blur(2.5px);
+    backdrop-filter: blur(2.5px);
   }
 </style>

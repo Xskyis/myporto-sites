@@ -12,11 +12,9 @@ export interface ProfileData {
     roles: string[];
   };
   bio: string[];
-  stats: {
-    value: number;
-    suffix: string;
+  facts: {
     label: string;
-    description: string;
+    value: string;
   }[];
   languages: {
     name: string;
@@ -41,26 +39,24 @@ export const PROFILE: ProfileData = {
   bio: [
     'I am a disciplined Informatics Engineering student at Politeknik Negeri Malang with an insatiable curiosity for emerging technologies and modern web design systems.',
     'My journey across the software landscape is propelled by continuous exploration and a relentless drive to craft fluid, accessible interfaces. Working across freelance AI annotation and production studio internships, I believe the deepest comprehension comes from hands-on execution: building, iterating, and refining.',
-    'Anchored in modern JavaScript, React, Next.js, and Tailwind CSS, I approach frontend engineering with an eye for subtle typography, micro-interactions, and purposeful minimalist aesthetics.',
+    'Anchored in modern JavaScript, React, Next.js, and Tailwind CSS, I approach frontend engineering with an eye for subtle typography, micro interactions, and purposeful minimalist aesthetics.',
   ],
-  stats: [
+  facts: [
     {
-      value: 57,
-      suffix: '+',
-      label: 'GitHub Repositories',
-      description: 'Continuous open exploration & experimentation',
+      label: 'Based in',
+      value: 'Malang, Indonesia · UTC+7',
     },
     {
-      value: 1,
-      suffix: '+ yrs',
-      label: 'Professional Experience',
-      description: 'Combining studio internship & freelance AI annotation',
+      label: 'Education',
+      value: 'Informatics Engineering, Polinema',
     },
     {
-      value: 1,
-      suffix: 'st',
-      label: 'Place Award',
-      description: 'HMTI Intercomp PKM GFT Category',
+      label: 'Focus',
+      value: 'Frontend & Design Systems',
+    },
+    {
+      label: 'Availability',
+      value: 'Open to Frontend Roles',
     },
   ],
   languages: [
