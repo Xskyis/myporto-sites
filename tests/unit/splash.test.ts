@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 type AnimationVars = {
   val?: number;
@@ -48,6 +50,15 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+class MockMediaQueryList extends EventTarget {
+  matches = false;
+
+  change(matches: boolean) {
+    this.matches = matches;
+    this.dispatchEvent(Object.assign(new Event('change'), { matches }));
+  }
+}
+
 vi.mock('gsap', () => ({ gsap: { to: mocks.to, timeline: mocks.timeline } }));
 vi.mock('../../src/lib/scroll/lenis', () => ({ getLenis: () => null }));
 vi.mock('../../src/lib/scroll/scroll-lock', () => ({
@@ -72,6 +83,15 @@ function renderPage() {
     <button id="page-button">Next page action</button>`;
 }
 
+function runInlineFallback() {
+  const source = readFileSync(join(process.cwd(), 'src/components/SplashScreen.astro'), 'utf8');
+  const inlineScript = source.match(/<script is:inline>([\s\S]*?)<\/script>/)?.[1];
+  if (!inlineScript) throw new Error('Splash fail-open script is missing');
+  new Function('window', 'document', inlineScript)(window, document);
+}
+
+let motionPreference: MockMediaQueryList;
+
 beforeEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
@@ -85,7 +105,8 @@ beforeEach(() => {
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
   vi.spyOn(document, 'readyState', 'get').mockReturnValue('complete');
   Object.defineProperty(document, 'fonts', { configurable: true, value: { ready: Promise.resolve() } });
-  vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })));
+  motionPreference = new MockMediaQueryList();
+  vi.stubGlobal('matchMedia', vi.fn(() => motionPreference));
   Object.assign(window, { __heroRevealed: false });
 });
 
@@ -203,7 +224,7 @@ describe('splash page lifecycle', () => {
   });
 
   it('cancels the reduced-motion fade without revealing or focusing the next page', async () => {
-    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })));
+    motionPreference.matches = true;
     await mount();
     const fade = mocks.tweens[0];
     const reveal = vi.fn();
@@ -225,7 +246,7 @@ describe('splash page lifecycle', () => {
   });
 
   it('completes the reduced-motion fade with the same hero handoff and focus release', async () => {
-    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })));
+    motionPreference.matches = true;
     await mount();
     const reveal = vi.fn();
     window.addEventListener('splash:hero-reveal', reveal, { once: true });
@@ -290,5 +311,74 @@ describe('splash page lifecycle', () => {
     expect(mocks.release).toHaveBeenCalledExactlyOnceWith('splash');
     await vi.advanceTimersByTimeAsync(0);
     expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('finishes immediately when reduced motion becomes active during the intro', async () => {
+    const scheduled = vi.spyOn(window, 'setTimeout');
+    const cleared = vi.spyOn(window, 'clearTimeout');
+    await mount();
+    const reveal = vi.fn();
+    window.addEventListener('splash:hero-reveal', reveal, { once: true });
+
+    motionPreference.change(true);
+
+    expect(mocks.timelines).toHaveLength(0);
+    expect(reveal).toHaveBeenCalledTimes(1);
+    expect(document.documentElement.classList.contains('no-splash')).toBe(true);
+    expect(document.getElementById('splash-screen')?.style.display).toBe('none');
+    expect(document.getElementById('main-header')?.style.pointerEvents).toBe('auto');
+    expect(document.activeElement?.id).toBe('main-content');
+    expect(mocks.release).toHaveBeenCalledExactlyOnceWith('splash');
+    expect(mocks.tweens.every((tween) => tween.kill.mock.calls.length > 0)).toBe(true);
+    const clearedTimers = cleared.mock.calls.map(([timer]) => timer);
+    expect(scheduled.mock.results.every(({ value }) => clearedTimers.includes(value))).toBe(true);
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(mocks.release).toHaveBeenCalledExactlyOnceWith('splash');
+    expect(mocks.timelines).toHaveLength(0);
+  });
+
+  it('fails open if the splash controller never initializes', async () => {
+    const scheduled = vi.spyOn(window, 'setTimeout');
+    const cleared = vi.spyOn(window, 'clearTimeout');
+    const releaseSplashLock = vi.fn(() => {
+      document.documentElement.classList.remove('overflow-hidden');
+      document.body.classList.remove('overflow-hidden');
+    });
+    Object.assign(window, { __releaseSplashScrollLock: releaseSplashLock });
+    document.documentElement.classList.add('overflow-hidden');
+    document.body.classList.add('overflow-hidden');
+
+    runInlineFallback();
+    const forceFinish = vi.fn();
+    window.addEventListener('splash:force-finish', forceFinish);
+    await vi.advanceTimersByTimeAsync(6500);
+
+    expect(document.documentElement.classList.contains('no-splash')).toBe(true);
+    expect(document.getElementById('splash-screen')?.style.display).toBe('none');
+    expect(document.getElementById('main-header')?.style.pointerEvents).toBe('auto');
+    expect(document.documentElement.classList.contains('overflow-hidden')).toBe(false);
+    expect(document.body.classList.contains('overflow-hidden')).toBe(false);
+    expect(document.activeElement?.id).toBe('main-content');
+    expect(releaseSplashLock).toHaveBeenCalledOnce();
+    expect((window as unknown as { __heroRevealed?: boolean }).__heroRevealed).toBe(true);
+    expect(cleared).toHaveBeenCalledWith(scheduled.mock.results[0].value);
+    await vi.advanceTimersByTimeAsync(6500);
+    expect(forceFinish).toHaveBeenCalledOnce();
+    window.removeEventListener('splash:force-finish', forceFinish);
+  });
+
+  it('fails open immediately when reduced motion changes before the controller initializes', async () => {
+    runInlineFallback();
+    const forceFinish = vi.fn();
+    window.addEventListener('splash:force-finish', forceFinish);
+
+    motionPreference.change(true);
+
+    expect(document.getElementById('splash-screen')?.style.display).toBe('none');
+    expect(document.getElementById('main-header')?.style.opacity).toBe('1');
+    expect(document.documentElement.classList.contains('no-splash')).toBe(true);
+    await vi.advanceTimersByTimeAsync(6500);
+    expect(forceFinish).toHaveBeenCalledOnce();
+    window.removeEventListener('splash:force-finish', forceFinish);
   });
 });

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   LENIS_EASE,
   LENIS_SCROLL_DURATION,
+  compensateLenisOffset,
   counterDuration,
   durationForDistance,
   headerOffsetFromVar,
@@ -90,6 +91,23 @@ describe('headerOffsetFromVar', () => {
   it('matches LENIS_SCROLL_DURATION sanity (positive durations only)', () => {
     expect(LENIS_SCROLL_DURATION).toBeGreaterThan(0);
     expect(LENIS_SCROLL_DURATION).toBeLessThan(2);
+  });
+});
+
+describe('compensateLenisOffset', () => {
+  it('adds back root scroll-padding-top so desired offset is preserved', () => {
+    expect(compensateLenisOffset(0, 96)).toBe(96);
+    expect(compensateLenisOffset(-75, 96)).toBe(21);
+  });
+
+  it('adds back target scroll-margin-top alongside root padding', () => {
+    expect(compensateLenisOffset(0, 96, 16)).toBe(112);
+    expect(compensateLenisOffset(-75, 96, 16)).toBe(37);
+  });
+
+  it('treats non-finite padding or margin as zero', () => {
+    expect(compensateLenisOffset(0, Number.NaN, Number.NaN)).toBe(0);
+    expect(compensateLenisOffset(-75, Number.NaN)).toBe(-75);
   });
 });
 

@@ -5,46 +5,36 @@ import CustomCursor from "../components/CustomCursor.astro";
 import SplashScreen from "../components/SplashScreen.astro";
 import { PROFILE } from "../data/profile";
 import { SITE_URL } from "../site";
+import { createPageSchema, PROFILE_DESCRIPTION, serializeJsonLd } from "../lib/seo";
 import "../styles/global.css";
 
 interface Props {
   title?: string;
   description?: string;
   image?: string;
+  imageAlt?: string;
   currentPath?: string;
+  project?: { name: string; description: string; keywords: string[] };
 }
 
 const {
   title = `${PROFILE.name} — ${PROFILE.role}`,
-  description = `${PROFILE.name} is a ${PROFILE.headline} based in ${PROFILE.location}. Explore featured projects, engineering skills, and verified milestones.`,
+  description = PROFILE_DESCRIPTION,
   image = "/og-image.png",
+  imageAlt = `${PROFILE.name} — ${PROFILE.role}`,
   currentPath = "/",
+  project,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site || SITE_URL);
 
-const personSchema = {
-  "@context": "https://schema.org",
-  "@type": "Person",
-  name: PROFILE.name,
-  alternateName: PROFILE.nickname,
-  jobTitle: PROFILE.role,
-  email: `mailto:${PROFILE.email}`,
-  description: description,
-  url: canonicalURL.toString(),
-  sameAs: [
-    "https://github.com/Xskyis",
-    "https://www.linkedin.com/in/nabilfgrza/",
-  ],
-  knowsAbout: [
-    "Frontend Development",
-    "Next.js",
-    "React",
-    "TypeScript",
-    "Tailwind CSS",
-    "Three.js",
-  ],
-};
+const pageSchema = createPageSchema({
+  site: Astro.site || SITE_URL,
+  pathname: Astro.url.pathname,
+  title,
+  description,
+  project,
+});
 ---
 
 <!doctype html>
@@ -69,6 +59,7 @@ const personSchema = {
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={new URL(image, canonicalURL)} />
+    <meta property="og:image:alt" content={imageAlt} />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
@@ -76,11 +67,12 @@ const personSchema = {
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content={new URL(image, canonicalURL)} />
+    <meta property="twitter:image:alt" content={imageAlt} />
 
     <!-- JSON-LD Structured Data -->
     <script
       type="application/ld+json"
-      set:html={JSON.stringify(personSchema)}
+      set:html={serializeJsonLd(pageSchema)}
     />
 
     <!-- Astro View Transitions -->
@@ -92,42 +84,40 @@ const personSchema = {
          after client-side navigation. -->
     <script is:inline data-astro-rerun>
       (function () {
-        function applyThemeAndState(targetHtml) {
+        function readStoredValue(storageName, key) {
           try {
-            const savedPalette = localStorage.getItem("theme-palette") || "mono";
-            targetHtml.setAttribute("data-palette", savedPalette);
-
-            const savedTone = localStorage.getItem("theme-tone");
-            const prefersDark = window.matchMedia(
-              "(prefers-color-scheme: dark)",
-            ).matches;
-            if (savedTone === "dark" || (!savedTone && prefersDark)) {
-              targetHtml.classList.add("dark");
-            } else {
-              targetHtml.classList.remove("dark");
-            }
-
-            const pathname = window.location.pathname;
-            const isHome =
-              pathname === "/" || pathname === "" || pathname === "/index.html";
-            const params = new URLSearchParams(window.location.search);
-            const forceSplash = params.get("splash") === "1";
-            let splashShown = false;
-            try {
-              splashShown = sessionStorage.getItem("splash_shown") === "true";
-            } catch (e) {}
-
-            if (!isHome || (splashShown && !forceSplash)) {
-              targetHtml.classList.add("no-splash");
-            }
-
-            if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-              targetHtml.classList.add("js-anim");
-            }
+            return window[storageName].getItem(key);
           } catch (e) {
-            targetHtml.classList.add("no-splash");
-            console.warn("Theme/Splash init exception:", e);
+            return null;
           }
+        }
+
+        function applyThemeAndState(targetHtml) {
+          const savedPalette = readStoredValue('localStorage', 'theme-palette');
+          targetHtml.setAttribute("data-palette", savedPalette === 'color' ? 'color' : 'mono');
+
+          const savedTone = readStoredValue('localStorage', 'theme-tone');
+          const prefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          if (savedTone === "dark" || (savedTone !== 'light' && prefersDark)) {
+            targetHtml.classList.add("dark");
+          } else {
+            targetHtml.classList.remove("dark");
+          }
+
+          const pathname = window.location.pathname;
+          const isHome =
+            pathname === "/" || pathname === "" || pathname === "/index.html";
+          const params = new URLSearchParams(window.location.search);
+          const forceSplash = params.get("splash") === "1";
+          const splashShown = readStoredValue('sessionStorage', 'splash_shown') === 'true';
+
+          if (!isHome || (splashShown && !forceSplash)) {
+            targetHtml.classList.add("no-splash");
+          }
+
+          targetHtml.classList.toggle('js-anim', !window.matchMedia("(prefers-reduced-motion: reduce)").matches);
         }
 
         applyThemeAndState(document.documentElement);
@@ -160,10 +150,38 @@ const personSchema = {
           window.addEventListener('palette-change', syncThemeColor);
           document.addEventListener('astro:page-load', syncThemeColor);
         }
+        // Keep following the OS while the visitor has no saved tone preference.
+        // Navbar persists an explicit light/dark choice, which disables this path.
+        if (!window.__systemToneBound) {
+          window.__systemToneBound = true;
+          if (readStoredValue('localStorage', 'theme-tone') !== null) {
+            window.__systemToneExplicit = true;
+          }
+          window.addEventListener('palette-change', function (event) {
+            var detail = event.detail;
+            if (detail && detail.tone && detail.source !== 'system') {
+              window.__systemToneExplicit = true;
+            }
+          });
+          window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (event) {
+            if (window.__systemToneExplicit || readStoredValue('localStorage', 'theme-tone') !== null) return;
+            document.documentElement.classList.toggle('dark', event.matches);
+            window.dispatchEvent(new CustomEvent('palette-change', {
+              detail: { tone: event.matches ? 'dark' : 'light', source: 'system' },
+            }));
+          });
+        }
 
+        // The fallback belongs to this page. An outgoing timer must not reveal the
+        // next page in the middle of its own entrance animations.
+        window.clearTimeout(window.__revealFallbackTimer);
+        window.__revealFallbackRevision = (window.__revealFallbackRevision || 0) + 1;
+        const revealRevision = window.__revealFallbackRevision;
         if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-          window.setTimeout(function () {
+          window.__revealFallbackTimer = window.setTimeout(function () {
+            if (window.__revealFallbackRevision !== revealRevision) return;
             document.documentElement.classList.remove("js-anim");
+            window.__revealFallbackTimer = null;
           }, 4000);
         }
 
@@ -173,10 +191,13 @@ const personSchema = {
         if (!window.__themeBeforeSwapBound) {
           window.__themeBeforeSwapBound = true;
           document.addEventListener("astro:before-swap", function (ev) {
+            window.clearTimeout(window.__revealFallbackTimer);
+            window.__revealFallbackTimer = null;
+            window.__revealFallbackRevision = (window.__revealFallbackRevision || 0) + 1;
             if (!ev || !ev.newDocument) return;
             var currentHtml = document.documentElement;
             var newHtml = ev.newDocument.documentElement;
-            var currentPalette = currentHtml.getAttribute("data-palette") || localStorage.getItem("theme-palette") || "mono";
+            var currentPalette = currentHtml.getAttribute("data-palette") || readStoredValue('localStorage', 'theme-palette') || "mono";
             newHtml.setAttribute("data-palette", currentPalette);
             if (currentHtml.classList.contains("dark")) {
               newHtml.classList.add("dark");
@@ -232,7 +253,7 @@ const personSchema = {
     <!-- Main Content Container -->
     <main
       id="main-content"
-      class="relative z-10 focus:outline-none"
+      class="relative z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--border-focus)]"
       tabindex="-1"
     >
       <slot />

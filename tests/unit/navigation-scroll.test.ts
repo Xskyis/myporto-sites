@@ -229,6 +229,35 @@ describe('navigation scroll ownership', () => {
 
     expect(onComplete).not.toHaveBeenCalled();
   });
+
+  it('lands data-nav-section targets flush at offset 0 for native scroll', () => {
+    const target = document.getElementById('projects')!;
+    target.setAttribute('data-nav-section', '');
+
+    scroll.scrollToTarget('#projects');
+
+    expect(window.scrollTo).toHaveBeenCalledExactlyOnceWith({ top: 1200, left: 0, behavior: 'smooth' });
+  });
+
+  it('compensates root scrollPaddingTop in Lenis for both data-nav-section and regular targets', () => {
+    document.documentElement.style.scrollPaddingTop = '96px';
+    scroll.initLenis();
+    const lenis = mocks.Lenis.instances[0];
+    const target = document.getElementById('projects')!;
+
+    scroll.scrollToTarget('#projects');
+    expect(lenis.scrollTo).toHaveBeenLastCalledWith(
+      target,
+      expect.objectContaining({ offset: 21 }),
+    );
+
+    target.setAttribute('data-nav-section', '');
+    scroll.scrollToTarget('#projects');
+    expect(lenis.scrollTo).toHaveBeenLastCalledWith(
+      target,
+      expect.objectContaining({ offset: 96 }),
+    );
+  });
 });
 
 describe('Lenis motion preference lifecycle', () => {

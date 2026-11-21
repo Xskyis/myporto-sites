@@ -9,6 +9,10 @@ export const CURSOR_HOVER_PRESS_SCALE = 0.92;
 const INTERACTIVE_SELECTOR =
   'a, button, [role="button"], [role="tab"], input, textarea, select, .project-card, .project-row, .honor-row, .magnetic-btn';
 
+// Astro swaps the whole page without moving the physical pointer. Keep its last viewport
+// coordinate so the new reticle does not hide the OS pointer while remaining invisible.
+let lastPointerPosition: { x: number; y: number } | null = null;
+
 /**
  * Build the CSS transform for the triangular pointer whose tip is at `(0, 0)`.
  *
@@ -45,10 +49,10 @@ export function targetCursorLean(
 }
 
 export function setupCursor(): (() => void) | null {
-  const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+  const supportsCustomCursor = window.matchMedia('(pointer: fine) and (min-width: 768px)').matches;
   const ring = document.getElementById('cursor-ring');
 
-  if (!hasFinePointer || !ring) {
+  if (!supportsCustomCursor || !ring) {
     document.documentElement.classList.remove('has-custom-cursor');
     return null;
   }
@@ -167,18 +171,21 @@ export function setupCursor(): (() => void) | null {
     currentLean = 0;
     currentInteractive = null;
     isHovering = false;
+    lastPointerPosition = null;
     ring.style.color = 'var(--cursor-color)';
     stopLoop();
   };
 
   const onPointerMove = (e: PointerEvent) => {
     if (e.pointerType === 'touch') {
+      lastPointerPosition = null;
       if (isVisible) hideCursor();
       return;
     }
 
     mouseX = e.clientX;
     mouseY = e.clientY;
+    lastPointerPosition = { x: mouseX, y: mouseY };
 
     if (!isVisible) {
       currentScale = getTargetScale();
@@ -193,6 +200,7 @@ export function setupCursor(): (() => void) | null {
   const onMouseEnter = (e: MouseEvent) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
+    lastPointerPosition = { x: mouseX, y: mouseY };
     currentScale = getTargetScale();
     currentLean = 0;
     applyTransform();
@@ -279,6 +287,23 @@ export function setupCursor(): (() => void) | null {
   document.addEventListener('mouseover', handleMouseOver, { signal });
   document.addEventListener('mouseout', handleMouseOut, { signal });
   reducedMotionQuery.addEventListener('change', onReducedMotionChange, { signal });
+
+  if (lastPointerPosition) {
+    mouseX = lastPointerPosition.x;
+    mouseY = lastPointerPosition.y;
+    const hovered = typeof document.elementFromPoint === 'function'
+      ? document.elementFromPoint(mouseX, mouseY)?.closest(INTERACTIVE_SELECTOR) ?? null
+      : null;
+    currentInteractive = hovered;
+    isHovering = hovered !== null;
+    currentScale = getTargetScale();
+    currentLean = 0;
+    ring.style.color = isHovering ? 'var(--accent-primary)' : 'var(--cursor-color)';
+    ring.classList.remove('opacity-0');
+    ring.classList.add('opacity-100');
+    isVisible = true;
+    applyTransform();
+  }
 
   return () => {
     abort.abort();

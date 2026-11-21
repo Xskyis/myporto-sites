@@ -24,7 +24,8 @@ const LEVEL_DOT_CLASS: Record<TechLevel, string> = {
 
 <section
   id="tech-stack"
-  class="py-16 md:py-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative"
+  data-nav-section
+  class="pt-20 pb-16 md:pt-24 md:pb-20 px-6 sm:px-8 md:px-12 lg:px-16 max-w-7xl mx-auto border-t-hairline z-10 relative"
   aria-labelledby="tech-stack-heading"
 >
   <!-- Section Header -->
@@ -45,7 +46,7 @@ const LEVEL_DOT_CLASS: Record<TechLevel, string> = {
   >
     <h2
       id="tech-stack-heading"
-      class="fluid-subheading font-medium text-[var(--text-primary)]"
+      class="fluid-subheading font-semibold text-[var(--text-primary)]"
     >
       Technical Stack
     </h2>
@@ -85,7 +86,7 @@ const LEVEL_DOT_CLASS: Record<TechLevel, string> = {
             data-stagger-item
           >
             <div class="flex items-baseline justify-between gap-2">
-              <h3 class="text-lg md:text-xl font-display font-medium text-[var(--text-primary)]">
+              <h3 class="text-lg md:text-xl font-display font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
                 {group.category}
                 <span class="ml-1.5 font-mono text-xs font-normal text-[var(--text-muted)]">
                   ({countLabel})

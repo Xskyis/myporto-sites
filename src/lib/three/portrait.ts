@@ -210,6 +210,9 @@ const FRAG = /* glsl */ `
 `;
 
 export function decodePoints(buffer: ArrayBuffer, count: number) {
+  if (!Number.isSafeInteger(count) || count < 0 || buffer.byteLength % 8 !== 0 || buffer.byteLength / 8 < count) {
+    throw new Error('Invalid portrait point data: incomplete uint16 point records');
+  }
   const u16 = new Uint16Array(buffer);
   const b = meta.bounds;
   const dec = (q: number, [lo, hi]: readonly number[]) => lo + (q / 65535) * (hi - lo);
@@ -485,6 +488,7 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
   };
 
   // --- intro -------------------------------------------------------------------
+  let disposed = false;
   let introTween: gsap.core.Tween | null = null;
   const assemble = () =>
     new Promise<void>((resolve) => {
@@ -511,6 +515,8 @@ export async function initPortrait(canvas: HTMLCanvasElement, options: PortraitO
   };
 
   const dispose = () => {
+    if (disposed) return;
+    disposed = true;
     loop.dispose();
     ro.disconnect();
     introTween?.kill();

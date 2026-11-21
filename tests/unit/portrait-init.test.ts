@@ -36,3 +36,14 @@ it('does not allocate a renderer if navigation cancels while the body is read', 
   })).rejects.toMatchObject({ name: 'AbortError' });
   expect(renderer).not.toHaveBeenCalled();
 });
+
+it('rejects a successful but truncated download before allocating WebGL resources', async () => {
+  vi.stubGlobal('fetch', vi.fn(async () => ({
+    ok: true,
+    arrayBuffer: async () => new ArrayBuffer(8),
+  })));
+  await expect(initPortrait({} as HTMLCanvasElement, {
+    reduced: true, tilt: false,
+  })).rejects.toThrow(/point data/i);
+  expect(renderer).not.toHaveBeenCalled();
+});

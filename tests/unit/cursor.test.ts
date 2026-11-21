@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let fineMatches = true;
+let wideMatches = true;
 let reducedMatches = false;
 let mockLenis: { velocity: number; isScrolling: boolean | 'native' | 'smooth' } | null = null;
 let pendingRaf = new Map<number, FrameRequestCallback>();
@@ -34,6 +35,7 @@ describe('CustomCursor reticle', () => {
   beforeEach(() => {
     vi.resetModules();
     fineMatches = true;
+    wideMatches = true;
     reducedMatches = false;
     mockLenis = { velocity: 0, isScrolling: false };
     pendingRaf = new Map();
@@ -52,6 +54,8 @@ describe('CustomCursor reticle', () => {
         matches:
           query === '(pointer: fine)'
             ? fineMatches
+            : query === '(pointer: fine) and (min-width: 768px)'
+              ? fineMatches && wideMatches
             : query === '(prefers-reduced-motion: reduce)'
               ? reducedMatches
               : false,
@@ -146,6 +150,24 @@ describe('CustomCursor reticle', () => {
     expect(ring.style.transform).toBe('translate3d(900px, 450px, 0px) scale(1)');
   });
 
+  it('remounts at the last pointer position after an Astro page swap', async () => {
+    const { setupCursor } = await import('../../src/lib/cursor');
+    cleanup = setupCursor();
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 740, clientY: 360 }));
+    expect(document.getElementById('cursor-ring')?.classList.contains('opacity-100')).toBe(true);
+
+    // astro:before-swap tears down the old ring, then the new body supplies another opacity-0 ring.
+    cleanup?.();
+    cleanup = null;
+    document.body.innerHTML = '<div id="cursor-ring" class="cursor-reticle opacity-0"></div>';
+    cleanup = setupCursor();
+
+    const ring = document.getElementById('cursor-ring')!;
+    expect(ring.classList.contains('opacity-100')).toBe(true);
+    expect(ring.style.transform).toBe('translate3d(740px, 360px, 0px) scale(1)');
+    expect(pendingRaf.size).toBe(0);
+  });
+
   it('animates hover and press scale around the locked tip without shifting position', async () => {
     const { setupCursor } = await import('../../src/lib/cursor');
     cleanup = setupCursor();
@@ -210,6 +232,20 @@ describe('CustomCursor reticle', () => {
     cleanup = setupCursor();
     expect(cleanup).toBeNull();
     expect(document.documentElement.classList.contains('has-custom-cursor')).toBe(false);
+  });
+
+  it('does not mount or bind the custom cursor below its CSS breakpoint', async () => {
+    const { setupCursor } = await import('../../src/lib/cursor');
+    const ring = document.getElementById('cursor-ring')!;
+    const addEventListener = vi.spyOn(window, 'addEventListener');
+    fineMatches = true;
+    wideMatches = false;
+
+    expect(setupCursor()).toBeNull();
+    expect(document.documentElement.classList.contains('has-custom-cursor')).toBe(false);
+    expect(addEventListener).not.toHaveBeenCalledWith('pointermove', expect.any(Function), expect.anything());
+    window.dispatchEvent(makePointerEvent('pointermove', { clientX: 200, clientY: 120 }));
+    expect(ring.classList.contains('opacity-0')).toBe(true);
   });
 
   it('respects prefers-reduced-motion and cleans up all state on teardown', async () => {

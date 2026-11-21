@@ -43,6 +43,11 @@ describe('portrait decodePoints', () => {
     expect(positions.length).toBe(10 * 3);
     expect(tones.length).toBe(10);
   });
+
+  it('rejects truncated point data instead of producing NaN vertices', () => {
+    expect(() => decodePoints(new ArrayBuffer(8), 2)).toThrow(/point data/i);
+    expect(() => decodePoints(new ArrayBuffer(15), 1)).toThrow(/point data/i);
+  });
 });
 
 describe('portrait makeRandoms', () => {

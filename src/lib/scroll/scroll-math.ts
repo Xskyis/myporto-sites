@@ -54,6 +54,21 @@ export function headerOffsetFromVar(raw: string | null | undefined): number {
   return -(height - 5);
 }
 
+/**
+ * Lenis subtracts `scrollPaddingTop` (from `html`) and `scrollMarginTop` (from the target)
+ * internally before adding `offset`. Add them back so `desiredOffset` produces the exact
+ * same landing position in Lenis as native `window.scrollTo`.
+ */
+export function compensateLenisOffset(
+  desiredOffset: number,
+  scrollPaddingTop: number,
+  scrollMarginTop = 0,
+): number {
+  const pad = Number.isFinite(scrollPaddingTop) ? scrollPaddingTop : 0;
+  const margin = Number.isFinite(scrollMarginTop) ? scrollMarginTop : 0;
+  return desiredOffset + pad + margin;
+}
+
 export interface PointerCaps {
   fine: boolean;
   coarse: boolean;

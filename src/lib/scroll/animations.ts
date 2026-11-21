@@ -345,23 +345,24 @@ function setupBioIllumination() {
   const paragraphs = Array.from(container.querySelectorAll<HTMLElement>('p'));
   if (paragraphs.length === 0) return;
 
-  paragraphs.forEach((p, idx) => {
-    const isLast = idx === paragraphs.length - 1;
+  paragraphs.forEach((p) => {
     const split = SplitText.create(p, {
       type: 'words',
       wordsClass: 'reading-word',
       aria: 'auto',
     });
 
-    // Dimmed initial state
+    // Keep every word readable before and during the scrub. Interpolate between the
+    // two accessible text tokens instead of fading the text into its background.
+    // CSS resolves the tokens live, so a palette change needs no tween rebuild.
     gsap.set(split.words, {
-      opacity: 0.28,
+      '--reading-highlight': '0%',
+      color: 'color-mix(in srgb, var(--text-muted), var(--text-primary) var(--reading-highlight, 0%))',
     });
 
     // Scrubbed illumination following reading line
     gsap.to(split.words, {
-      opacity: 1,
-      color: isLast ? 'var(--text-primary)' : 'inherit',
+      '--reading-highlight': '100%',
       stagger: 0.02,
       ease: 'none',
       scrollTrigger: {

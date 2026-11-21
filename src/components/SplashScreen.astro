@@ -24,7 +24,7 @@
   <!-- Center: Editorial Display Wordmark "nabilfgrza." -->
   <div class="relative z-10 my-auto flex items-center justify-center text-center w-full px-4">
     <div id="splash-wordmark" class="overflow-hidden flex items-baseline justify-center select-none will-change-transform">
-      <h1 class="font-display font-medium text-[var(--text-primary)] leading-[0.96] tracking-[-0.045em] text-[clamp(3.5rem,12vw,9.5rem)] flex items-baseline">
+      <h1 class="font-display font-semibold text-[var(--text-primary)] leading-[1.04] tracking-[-0.03em] text-[clamp(2.75rem,10vw,6.75rem)] flex items-baseline">
         <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform" style="transform: translateY(125%);">n</span></span>
         <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform" style="transform: translateY(125%);">a</span></span>
         <span class="inline-block overflow-hidden pb-2 sm:pb-3"><span class="splash-char inline-block will-change-transform" style="transform: translateY(125%);">b</span></span>
@@ -69,6 +69,67 @@
     ></div>
   </div>
 </div>
+
+<script is:inline>
+  (function () {
+    var previous = window.__splashFallbackState;
+    if (previous && typeof previous.cleanup === 'function') previous.cleanup();
+
+    var splash = document.getElementById('splash-screen');
+    var root = document.documentElement;
+    if (!splash || root.classList.contains('no-splash')) return;
+
+    var controller = new window.AbortController();
+    var finished = false;
+    var timer = window.setTimeout(failOpen, 6500);
+
+    function cleanup() {
+      if (!controller.signal.aborted) controller.abort();
+      window.clearTimeout(timer);
+      if (window.__splashFallbackState && window.__splashFallbackState.cleanup === cleanup) {
+        window.__splashFallbackState = null;
+      }
+    }
+
+    function failOpen() {
+      if (finished || !splash.isConnected || splash.style.display === 'none') {
+        cleanup();
+        return;
+      }
+      finished = true;
+      window.dispatchEvent(new window.Event('splash:force-finish'));
+      if (root.classList.contains('no-splash') || splash.style.display === 'none') {
+        cleanup();
+        return;
+      }
+
+      root.classList.add('no-splash');
+      splash.style.display = 'none';
+      splash.style.pointerEvents = 'none';
+      window.__heroRevealed = true;
+      window.dispatchEvent(new window.CustomEvent('splash:hero-reveal'));
+      try {
+        sessionStorage.setItem('splash_shown', 'true');
+      } catch (e) {}
+
+      var header = document.getElementById('main-header');
+      if (header) {
+        header.style.opacity = '1';
+        header.style.pointerEvents = 'auto';
+      }
+      if (typeof window.__releaseSplashScrollLock === 'function') window.__releaseSplashScrollLock();
+      document.getElementById('main-content')?.focus({ preventScroll: true });
+      cleanup();
+    }
+
+    window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', function (event) {
+      if (event.matches) failOpen();
+    }, { signal: controller.signal });
+    document.addEventListener('splash:finished', cleanup, { signal: controller.signal });
+    document.addEventListener('astro:before-swap', cleanup, { once: true, signal: controller.signal });
+    window.__splashFallbackState = { cleanup: cleanup };
+  })();
+</script>
 
 <script>
   import { initSplashScreen } from '../lib/splash/splash';

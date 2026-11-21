@@ -39,8 +39,9 @@ beforeEach(() => {
       <span class="menu-icon-open"></span><span class="menu-icon-close hidden"></span>
     </button>
     <div id="menu" class="hidden" aria-hidden="true">
-      <a href="#about">About</a><a href="#projects">Projects</a>
+      <a href="#about" class="mobile-nav-link" data-section="about">About</a><a href="#projects" class="mobile-nav-link" data-section="projects">Projects</a>
     </div>
+    <a href="/#about" class="nav-link" data-section="about">Desktop About</a><a href="/#projects" class="nav-link" data-section="projects">Desktop Projects</a>
     <section id="about"><h2>About</h2><a href="/credential">Credential</a></section>
     <section id="projects" tabindex="0"><h2>Projects</h2></section>`;
 });
@@ -82,6 +83,23 @@ describe('mobile navbar lifecycle', () => {
     expect(document.documentElement.classList.contains('overflow-hidden')).toBe(false);
     expect(focus).not.toHaveBeenCalled();
     expect(animation.killTweensOf).toHaveBeenLastCalledWith(menu);
+  });
+
+  it('moves focus from the now-hidden mobile link to its matching desktop section link', () => {
+    const { menu, button } = mount();
+    button.click();
+    const mobileProjects = menu.querySelector<HTMLElement>('[data-section="projects"]')!;
+    const desktopProjects = document.querySelector<HTMLElement>('.nav-link[data-section="projects"]')!;
+    const focus = vi.spyOn(desktopProjects, 'focus');
+    mobileProjects.focus();
+    expect(document.activeElement).toBe(mobileProjects);
+
+    desktop.change(true);
+
+    expect(menu.classList.contains('hidden')).toBe(true);
+    expect(document.activeElement).toBe(desktopProjects);
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(button.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('invalidates an in-flight close completion when the viewport becomes desktop', () => {
@@ -145,6 +163,38 @@ describe('mobile navbar lifecycle', () => {
     expect(document.activeElement).toBe(button);
     expect(animation.fromTo).not.toHaveBeenCalled();
     expect(animation.to).not.toHaveBeenCalled();
+  });
+
+  it('finishes an in-flight opening tween when reduced motion becomes active', () => {
+    const { menu, button } = mount();
+    button.click();
+    expect(animation.fromTo).toHaveBeenCalledOnce();
+    expect(scrollLock.isLocked()).toBe(true);
+
+    reduced.change(true);
+
+    expect(animation.killTweensOf).toHaveBeenLastCalledWith(menu);
+    expect(animation.set).toHaveBeenLastCalledWith(menu, { opacity: 1, y: 0 });
+    expect(menu.classList.contains('hidden')).toBe(false);
+    expect(menu.getAttribute('aria-hidden')).toBe('false');
+    expect(scrollLock.isLocked()).toBe(true);
+  });
+
+  it('finishes an in-flight closing tween immediately when reduced motion becomes active', () => {
+    const { close, menu, button } = mount();
+    button.click();
+    close();
+    const closingCompletion = animation.complete[0];
+    expect(menu.classList.contains('hidden')).toBe(false);
+
+    reduced.change(true);
+    closingCompletion();
+
+    expect(menu.classList.contains('hidden')).toBe(true);
+    expect(menu.getAttribute('aria-hidden')).toBe('true');
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    expect(scrollLock.isLocked()).toBe(false);
+    expect(document.activeElement).toBe(button);
   });
 
   it('hands focus to the navigation destination without a competing scroll', () => {

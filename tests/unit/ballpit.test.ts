@@ -9,6 +9,7 @@ import {
   FLOAT_DAMPING,
   FLOAT_WALL_RESTITUTION,
   BALL_RESTITUTION,
+  MAX_SPEED,
   type Ball,
   type BurstParticle,
 } from '../../src/lib/three/ballpit';
@@ -89,10 +90,11 @@ describe('ballpit stepBalls', () => {
     expect(after).toBeLessThanOrEqual(Math.abs(before));
   });
 
-  it('ignores zero-distance pairs (no NaN)', () => {
+  it('separates exactly coincident pairs without producing NaN', () => {
     const a = ball({ x: 0, y: 2 });
     const b = ball({ x: 0, y: 2 });
     stepBalls([a, b], FIXED_DT, BOUNDS);
+    expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeGreaterThanOrEqual(a.r + b.r - 1e-6);
     expect(Number.isFinite(a.x)).toBe(true);
     expect(Number.isFinite(b.x)).toBe(true);
     expect(Number.isFinite(a.vx)).toBe(true);
@@ -103,6 +105,21 @@ describe('ballpit stepBalls', () => {
     stepBalls([b], FIXED_DT, BOUNDS);
     const speed = Math.hypot(b.vx, b.vy);
     expect(speed).toBeLessThanOrEqual(25.001);
+  });
+
+  it('keeps collision impulses within the speed cap for unequal masses', () => {
+    const heavy = ball({ x: -0.8, vx: MAX_SPEED, r: 0.84 });
+    const light = ball({ x: 0.35, r: 0.44 });
+    stepBalls([heavy, light], FIXED_DT, BOUNDS, 2, {
+      gravity: FLOAT_GRAVITY,
+      damping: FLOAT_DAMPING,
+      wallRestitution: FLOAT_WALL_RESTITUTION,
+      ceiling: 5,
+    });
+    expect(light.vx).toBeGreaterThan(0);
+    for (const b of [heavy, light]) {
+      expect(Math.hypot(b.vx, b.vy)).toBeLessThanOrEqual(MAX_SPEED + 1e-6);
+    }
   });
 
   it('supports buoyant floating mode with ceiling rebound', () => {

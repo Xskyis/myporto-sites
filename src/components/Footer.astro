@@ -7,6 +7,7 @@ import { Icon } from "astro-icon/components";
 
 <footer
   id="contact"
+  data-nav-section
   class="relative w-full overflow-hidden border-t-hairline z-10 flex flex-col"
   aria-label="Footer and Contact"
 >
@@ -15,7 +16,7 @@ import { Icon } from "astro-icon/components";
 
   <!-- Main Contact Content (Foreground) -->
   <div
-    class="relative z-20 w-full max-w-7xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 pt-16 md:pt-20 pb-16 md:pb-20 flex flex-col"
+    class="relative z-20 w-full max-w-7xl mx-auto px-6 sm:px-8 md:px-12 lg:px-16 pt-20 pb-16 md:pt-24 md:pb-20 flex flex-col"
   >
     <!-- Section Header -->
     <div class="relative pb-6 sm:pb-8 text-xs font-mono text-[var(--text-muted)]">
@@ -31,14 +32,14 @@ import { Icon } from "astro-icon/components";
     <!-- Giant Callout Headline -->
     <div class="pt-8 sm:pt-10 md:pt-12 pb-8 sm:pb-10 md:pb-12 max-w-4xl">
       <h2
-        class="fluid-heading font-medium text-[var(--text-primary)] leading-[0.95]"
+        class="fluid-heading font-semibold text-[var(--text-primary)] leading-[1.06]"
         data-reveal="words"
       >
         Let's engineer something memorable together.
       </h2>
 
       <p
-        class="text-lg md:text-xl font-light text-[var(--text-muted)] mt-8 max-w-2xl leading-relaxed"
+        class="text-lg md:text-xl font-normal text-[var(--text-muted)] mt-8 max-w-2xl leading-relaxed"
         data-reveal
       >
         Whether you have an ambitious digital product in need of precision
@@ -66,7 +67,8 @@ import { Icon } from "astro-icon/components";
         <button
           type="button"
           id="copy-email-btn"
-          class="magnetic-btn group inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--text-primary)] text-xs font-mono tracking-wider shadow-xs hover:shadow-md transition-colors duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+          hidden
+          class="magnetic-btn group inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--text-primary)] text-sm font-medium shadow-xs hover:shadow-md transition-colors duration-300 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
           aria-label="Copy email address to clipboard"
         >
           <Icon
@@ -81,7 +83,7 @@ import { Icon } from "astro-icon/components";
             id="copy-check-icon"
             aria-hidden="true"
           />
-          <span id="copy-text" aria-live="polite">Copy email</span>
+          <span id="copy-text" aria-live="polite" aria-atomic="true">Copy email</span>
         </button>
 
         <!-- Primary "View CV" Button -->
@@ -104,7 +106,7 @@ import { Icon } from "astro-icon/components";
         <a
           href="/cv/CV_Achmad_Nabil_Afgareza_ATS.pdf"
           download="CV_Achmad_Nabil_Afgareza_ATS.pdf"
-          class="magnetic-btn group inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--text-primary)] text-xs font-mono tracking-wider shadow-xs hover:shadow-md transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+          class="magnetic-btn group inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 sm:py-4 min-h-[48px] sm:min-h-[52px] rounded-full border border-hairline bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--text-primary)] text-sm font-medium shadow-xs hover:shadow-md transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
           title="Download curriculum vitae PDF directly"
         >
           <Icon
@@ -123,7 +125,7 @@ import { Icon } from "astro-icon/components";
       data-reveal
     >
       <div
-        class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs font-mono text-[var(--text-muted)]"
+        class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs font-medium text-[var(--text-muted)]"
       >
         <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
           {
@@ -181,79 +183,17 @@ import { Icon } from "astro-icon/components";
 </footer>
 
 <script>
-  import { PROFILE } from "../data/profile";
-  import { getLenis } from "../lib/scroll/lenis";
+  import { setupFooter } from '../lib/footer';
 
-  let footerAbortController: AbortController | null = null;
+  let cleanupFooter: (() => void) | null = null;
 
-  function setupFooter() {
-    // One owner per page load: abort the previous listeners so repeated navigations
-    // cannot stack duplicate clipboard handlers on the same button.
-    footerAbortController?.abort();
-    footerAbortController = new AbortController();
-    const { signal } = footerAbortController;
+  document.addEventListener('astro:page-load', () => {
+    cleanupFooter?.();
+    cleanupFooter = setupFooter();
+  });
 
-    // Back to top: the footer renders on both the home page and project pages, and only the
-    // home page has #hero. Scroll to the document top instead of a page-specific anchor.
-    const backToTop = document.getElementById("back-to-top-btn");
-    backToTop?.addEventListener(
-      "click",
-      (e) => {
-        e.preventDefault();
-        const lenis = getLenis();
-        if (lenis) {
-          lenis.scrollTo(0, { duration: 1.1 });
-        } else {
-          const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-          window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
-        }
-      },
-      { signal },
-    );
-
-    const copyBtn = document.getElementById("copy-email-btn");
-    const copyText = document.getElementById("copy-text");
-    const copyIcon = document.getElementById("copy-icon");
-    const copyCheckIcon = document.getElementById("copy-check-icon");
-    if (!copyBtn || !copyText) return;
-
-    let resetTimer: number | undefined;
-    signal.addEventListener("abort", () => window.clearTimeout(resetTimer));
-
-    copyBtn.addEventListener(
-      "click",
-      async () => {
-        try {
-          await navigator.clipboard.writeText(PROFILE.email);
-          copyText.textContent = "Copied to clipboard!";
-          copyIcon?.classList.add("hidden");
-          copyCheckIcon?.classList.remove("hidden");
-          copyBtn.classList.add(
-            "border-[var(--status-dot)]",
-            "text-[var(--accent-text)]",
-          );
-
-          window.clearTimeout(resetTimer);
-          resetTimer = window.setTimeout(() => {
-            copyText.textContent = "Copy email";
-            copyIcon?.classList.remove("hidden");
-            copyCheckIcon?.classList.add("hidden");
-            copyBtn.classList.remove(
-              "border-[var(--status-dot)]",
-              "text-[var(--accent-text)]",
-            );
-          }, 2500);
-        } catch (err) {
-          console.warn("Clipboard write failed:", err);
-        }
-      },
-      { signal },
-    );
-  }
-
-  document.addEventListener("astro:page-load", setupFooter);
-  document.addEventListener("astro:before-swap", () => {
-    footerAbortController?.abort();
-    footerAbortController = null;
+  document.addEventListener('astro:before-swap', () => {
+    cleanupFooter?.();
+    cleanupFooter = null;
   });
 </script>

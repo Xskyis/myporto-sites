@@ -17,6 +17,7 @@ export function initSplashScreen() {
 
   const header = document.getElementById('main-header');
   const mainContent = document.getElementById('main-content');
+  const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   const isHome = ['/', '', '/index.html'].includes(window.location.pathname);
   const forceSplash = new URLSearchParams(window.location.search).get('splash') === '1';
   let splashShown = false;
@@ -56,6 +57,7 @@ export function initSplashScreen() {
     ownsScrollLock = false;
     scrollLock.release('splash');
   };
+  (window as unknown as { __releaseSplashScrollLock?: () => void }).__releaseSplashScrollLock = releaseScrollLock;
   const cleanup = () => {
     if (signal.aborted) return;
     scope.abort();
@@ -63,6 +65,10 @@ export function initSplashScreen() {
     timers.clear();
     animations.forEach((animation) => animation.kill());
     releaseScrollLock();
+    const splashWindow = window as unknown as { __releaseSplashScrollLock?: () => void };
+    if (splashWindow.__releaseSplashScrollLock === releaseScrollLock) {
+      splashWindow.__releaseSplashScrollLock = undefined;
+    }
     if (cleanupSplash === cleanup) cleanupSplash = null;
   };
   cleanupSplash = cleanup;
@@ -96,19 +102,48 @@ export function initSplashScreen() {
     (window as unknown as { __heroRevealed?: boolean }).__heroRevealed = true;
     window.dispatchEvent(new CustomEvent('splash:hero-reveal'));
   };
+  let hasExited = false;
+  let hasFinished = false;
   const finish = () => {
-    if (signal.aborted) return;
+    if (signal.aborted || hasFinished) return;
+    hasFinished = true;
     try {
       sessionStorage.setItem('splash_shown', 'true');
     } catch {}
     document.documentElement.classList.add('no-splash');
     splashEl.style.display = 'none';
+    splashEl.style.pointerEvents = 'none';
+    if (header) {
+      header.style.opacity = '1';
+      header.style.pointerEvents = 'auto';
+    }
+    document.dispatchEvent(new Event('splash:finished'));
     cleanup();
     mainContent?.focus({ preventScroll: true });
   };
 
+  const finishImmediately = () => {
+    if (signal.aborted || hasFinished) return;
+    hasExited = true;
+    animations.forEach((animation) => animation.kill());
+    timers.forEach((timer) => window.clearTimeout(timer));
+    timers.clear();
+    splashEl.querySelectorAll<HTMLElement>('.splash-char').forEach((char) => {
+      char.style.transform = 'translateY(0%)';
+    });
+    if (counterEl) counterEl.textContent = '100';
+    if (progressBarEl) progressBarEl.style.transform = 'scaleX(1)';
+    revealHero();
+    finish();
+  };
+
+  reducedMotionQuery.addEventListener('change', (event) => {
+    if (event.matches) finishImmediately();
+  }, { signal });
+  window.addEventListener('splash:force-finish', finishImmediately, { signal });
+
   // Reduced motion keeps the existing quick fade and announces the hero on completion.
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (reducedMotionQuery.matches) {
     chars.forEach((char) => { char.style.transform = 'translateY(0%)'; });
     if (counterEl) counterEl.textContent = '100';
     if (progressBarEl) progressBarEl.style.transform = 'scaleX(1)';
@@ -134,7 +169,6 @@ export function initSplashScreen() {
     y: '0%', duration: 0.85, stagger: 0.045, ease: 'expo.out', delay: 0.15,
   }));
 
-  let hasExited = false;
   const updateProgressUI = (val: number) => {
     if (signal.aborted || hasExited) return;
     const clamped = Math.min(100, Math.max(0, Math.floor(val)));

@@ -1,5 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
+import { PROFILE } from "../data/profile";
+import { SOCIALS } from "../data/socials";
 
 interface Props {
   currentPath?: string;
@@ -7,218 +9,250 @@ interface Props {
 
 const { currentPath = "/" } = Astro.props;
 const isHome = currentPath === "/";
+const isProjectDetail = currentPath.startsWith("/projects");
+
+const NAV_ITEMS = [
+  { id: "about", index: "01", label: "About", mobileLabel: "About" },
+  { id: "projects", index: "02", label: "Projects", mobileLabel: "Projects" },
+  { id: "tech-stack", index: "03", label: "Stack", mobileLabel: "Tech Stack" },
+  { id: "contact", index: "04", label: "Contact", mobileLabel: "Contact" },
+] as const;
 ---
 
 <header
   id="main-header"
-  class="fixed top-0 left-0 w-full z-50 transition-[border-color,background-color] duration-300 border-b border-b-transparent"
+  data-scrolled="false"
+  data-menu-open="false"
+  class="nav-header fixed top-0 left-0 w-full z-50"
 >
-  <!-- Thin reading progress bar -->
-  <div
-    id="scroll-progress-bar"
-    class="absolute top-0 left-0 w-full h-[2px] bg-[var(--accent-primary)] origin-left"
-    style="transform: scaleX(0);"
-    aria-hidden="true"
-  >
+  <!-- Reading progress rail (revealed once scrolled past the top fold) -->
+  <div class="nav-progress-track" aria-hidden="true">
+    <div
+      id="scroll-progress-bar"
+      class="w-full h-full bg-[var(--accent-primary)] origin-left"
+      style="transform: scaleX(0);"
+    >
+    </div>
   </div>
 
-  <nav
-    class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between"
-    aria-label="Main Navigation"
-  >
-    <!-- Logo / Monogram -->
-    <a
-      href={isHome ? "#hero" : "/"}
-      class="nav-scroll-trigger group flex items-center text-lg font-bold tracking-tight text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)] rounded-sm"
-      aria-label="Achmad Nabil Afgareza - Home"
+  <div class="nav-frame w-full">
+    <nav
+      id="nav-shell"
+      class="nav-shell max-w-7xl mx-auto px-5 sm:px-6 md:px-12 lg:px-16 h-16 md:h-20 flex items-center justify-between gap-2 md:gap-4"
+      aria-label="Main Navigation"
     >
-      <span
-        class="font-display tracking-normal text-xl md:text-2xl xl:pl-8 -rotate-3"
+      <!-- Logo / Monogram -->
+      <a
+        href={isHome ? "#hero" : "/"}
+        class="nav-scroll-trigger group flex items-center shrink-0 text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)] rounded-sm"
+        aria-label="Achmad Nabil Afgareza - Home"
       >
-        <span class="relative inline-block pb-0.5">
-          <span>𝓃𝒶𝒷𝒾𝓁</span><span class="text-[var(--accent-primary)]">.</span>
-          <!-- Hand-drawn Red Doodle Line (Coretan Merah) -->
-          <svg
-            class="absolute left-0 -bottom-1.5 w-full h-[7px] md:h-[8px] text-red-500 overflow-visible pointer-events-none transition-transform duration-300 group-hover:scale-x-105"
-            viewBox="0 0 100 10"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M 2 6.5 C 22 2.5, 52 8.5, 82 3.8 C 91 2.5, 96 5.5, 99 4.5"
-              stroke="currentColor"
-              stroke-width="2.4"
-              stroke-linecap="round"
-              stroke-linejoin="round"></path>
-          </svg>
+        <span class="font-display font-bold text-xl md:text-[22px] tracking-[-0.035em] leading-none">
+          <span>nabil</span><span class="text-[var(--accent-primary)]">.</span>
         </span>
-      </span>
-    </a>
+      </a>
 
-    <!-- Desktop Navigation Links with Sliding Active Indicator Pill -->
-    <div
-      id="nav-links-track"
-      class="relative hidden md:flex items-center p-1 rounded-full border border-hairline bg-[var(--bg-surface-soft)]/50 text-xs uppercase tracking-wider font-mono text-[var(--text-muted)]"
-    >
-      <!-- Sliding active indicator pill -->
+      <!-- Desktop Navigation Links with Sliding Active Indicator Pill -->
       <div
-        id="nav-active-indicator"
-        class="absolute top-1 bottom-1 rounded-full bg-[var(--bg-surface)] border border-hairline shadow-xs pointer-events-none opacity-0 will-change-transform"
-        aria-hidden="true"
+        id="nav-links-track"
+        class="relative hidden md:flex items-center gap-0.5 p-1 rounded-full border border-hairline bg-[var(--bg-surface-soft)]/50 text-[var(--text-muted)] transition-[border-color,background-color] duration-300"
       >
+        <!-- Sliding active indicator pill -->
+        <div
+          id="nav-active-indicator"
+          class="absolute left-0 top-1 bottom-1 rounded-full border border-hairline shadow-xs pointer-events-none opacity-0 will-change-transform"
+          aria-hidden="true"
+        >
+        </div>
+
+        {
+          NAV_ITEMS.map((item) => {
+            const activeOnRoute = isProjectDetail && item.id === "projects";
+            return (
+              <a
+                href={isHome ? `#${item.id}` : `/#${item.id}`}
+                data-section={item.id}
+                data-route-active={activeOnRoute ? "true" : undefined}
+                aria-current={activeOnRoute ? "page" : undefined}
+                class="nav-link relative z-10 h-7 px-3.5 rounded-full inline-flex items-center text-[13px] font-medium tracking-[-0.01em] hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+              >
+                <span class="nav-index font-mono text-[11px] tabular-nums text-[var(--accent-text)] mr-1.5" aria-hidden="true">
+                  {item.index}
+                </span>
+                <span>{item.label}</span>
+              </a>
+            );
+          })
+        }
       </div>
 
-      <a
-        href={isHome ? "#about" : "/#about"}
-        data-section="about"
-        class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
-      >
-        <span class="text-[var(--accent-text)] mr-1">01</span> About
-      </a>
-      <a
-        href={isHome ? "#projects" : "/#projects"}
-        data-section="projects"
-        class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
-      >
-        <span class="text-[var(--accent-text)] mr-1">02</span> Projects
-      </a>
-      <a
-        href={isHome ? "#tech-stack" : "/#tech-stack"}
-        data-section="tech-stack"
-        class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
-      >
-        <span class="text-[var(--accent-text)] mr-1">03</span> Stack
-      </a>
-      <a
-        href={isHome ? "#contact" : "/#contact"}
-        data-section="contact"
-        class="nav-link relative z-10 px-4 py-1.5 rounded-full hover:text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
-      >
-        <span class="text-[var(--accent-text)] mr-1">04</span> Contact
-      </a>
-    </div>
+      <!-- Controls: Palette Switcher + Theme Toggle + Mobile Menu Button -->
+      <div class="flex items-center gap-1.5 md:gap-2 shrink-0">
+        <!-- Dual Palette Segmented Pill Switcher (Mono / Color) -->
+        <div
+          id="palette-controls"
+          hidden
+          class="flex items-center rounded-full p-0.5 border border-hairline bg-[var(--bg-surface-soft)]/60"
+          role="group"
+          aria-label="Visual Palette Theme Switcher"
+        >
+          <button
+            type="button"
+            id="btn-palette-mono"
+            class="palette-btn h-7 md:h-8 px-2.5 md:px-3 rounded-full text-xs font-medium tracking-[-0.01em] flex items-center justify-center gap-1.5 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+            aria-pressed="true"
+            aria-label="Switch to Monochrome Minimalist Theme"
+          >
+            <span
+              class="w-2 h-2 rounded-full border border-hairline bg-[var(--text-primary)] shrink-0"
+              aria-hidden="true"></span>
+            <span>Mono</span>
+          </button>
 
-    <!-- Controls: Palette Switcher + Theme Toggle + Mobile Menu Button -->
-    <div class="flex items-center gap-3">
-      <!-- Dual Palette Segmented Pill Switcher (Mono / Color) -->
-      <div
-        class="flex items-center rounded-full p-1 border border-hairline bg-[var(--bg-surface-soft)]/50"
-        role="group"
-        aria-label="Visual Palette Theme Switcher"
-      >
+          <button
+            type="button"
+            id="btn-palette-color"
+            class="palette-btn h-7 md:h-8 px-2.5 md:px-3 rounded-full text-xs font-medium tracking-[-0.01em] flex items-center justify-center gap-1.5 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+            aria-pressed="false"
+            aria-label="Switch to Poster Color Palette (Marine Blue + Red + Cream)"
+          >
+            <span
+              class="w-2 h-2 rounded-full bg-[var(--swatch-color)] shrink-0"
+              aria-hidden="true"></span>
+            <span>Color</span>
+          </button>
+        </div>
+
+        <!-- Light / Dark Toggle (Active in Monochrome Mode) -->
         <button
           type="button"
-          id="btn-palette-mono"
-          class="palette-btn px-3 py-1 rounded-full text-xs font-mono tracking-wider flex items-center gap-1.5 transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
-          aria-pressed="true"
-          aria-label="Switch to Monochrome Minimalist Theme"
+          id="btn-tone-toggle"
+          hidden
+          class="w-8 h-8 md:w-9 md:h-9 shrink-0 rounded-full border border-hairline bg-[var(--bg-surface-soft)]/40 hover:bg-[var(--bg-surface-soft)] flex items-center justify-center text-[var(--text-primary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+          aria-label="Toggle Light / Dark Tone"
         >
           <span
-            class="w-2.5 h-2.5 rounded-full border border-hairline bg-[var(--text-primary)]"
-            aria-hidden="true"></span>
-          <span class="hidden sm:inline">Mono</span>
+            class="tone-icon-moon flex items-center justify-center pointer-events-none"
+            aria-hidden="true"
+          >
+            <Icon name="lucide:moon" class="w-4 h-4 pointer-events-none" />
+          </span>
+          <span
+            class="tone-icon-sun hidden items-center justify-center pointer-events-none"
+            aria-hidden="true"
+          >
+            <Icon name="lucide:sun" class="w-4 h-4 pointer-events-none" />
+          </span>
         </button>
 
+        <!-- Mobile Menu Toggle Button -->
         <button
           type="button"
-          id="btn-palette-color"
-          class="palette-btn px-3 py-1 rounded-full text-xs font-mono tracking-wider flex items-center gap-1.5 transition-all duration-300 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
-          aria-pressed="false"
-          aria-label="Switch to Poster Color Palette (Marine Blue + Red + Cream)"
+          id="btn-mobile-menu"
+          hidden
+          class="md:hidden w-9 h-9 shrink-0 rounded-full border border-hairline flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-surface-soft)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
+          aria-expanded="false"
+          aria-controls="mobile-menu-overlay"
+          aria-label="Open Navigation Menu"
         >
-          <span class="w-2.5 h-2.5 rounded-full bg-[var(--swatch-color)]" aria-hidden="true"
-          ></span>
-          <span class="hidden sm:inline">Color</span>
+          <Icon
+            name="lucide:menu"
+            class="w-4 h-4 menu-icon-open"
+            aria-hidden="true"
+          />
+          <Icon
+            name="lucide:x"
+            class="w-4 h-4 menu-icon-close hidden"
+            aria-hidden="true"
+          />
         </button>
+
+        <!-- Native navigation remains usable before enhancement or without JavaScript. -->
+        <details id="mobile-nav-fallback" class="md:hidden">
+          <summary
+            aria-label="Navigation menu"
+            class="w-9 h-9 rounded-full border border-hairline flex items-center justify-center text-[var(--text-primary)] cursor-pointer list-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--border-focus)] [&::-webkit-details-marker]:hidden"
+          >
+            <Icon name="lucide:menu" class="w-4 h-4" aria-hidden="true" />
+          </summary>
+          <nav
+            aria-label="Section Navigation"
+            class="absolute top-16 left-4 right-4 flex flex-col gap-1 rounded-2xl border border-hairline bg-[var(--bg-primary)] p-3 shadow-lg"
+          >
+            {
+              NAV_ITEMS.map((item) => (
+                <a
+                  href={`${isHome ? "" : "/"}#${item.id}`}
+                  class="px-4 py-3 rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-surface-soft)] focus-visible:outline-2 focus-visible:outline-[var(--border-focus)]"
+                >
+                  {item.mobileLabel}
+                </a>
+              ))
+            }
+          </nav>
+        </details>
       </div>
-
-      <!-- Light / Dark Toggle (Active in Monochrome Mode) -->
-      <button
-        type="button"
-        id="btn-tone-toggle"
-        class="w-9 h-9 rounded-full border border-hairline flex items-center justify-center text-[var(--text-primary)] hover:bg-[var(--bg-surface-soft)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
-        aria-label="Toggle Light / Dark Tone"
-      >
-        <span
-          class="tone-icon-moon flex items-center justify-center pointer-events-none"
-          aria-hidden="true"
-        >
-          <Icon name="lucide:moon" class="w-4 h-4 pointer-events-none" />
-        </span>
-        <span
-          class="tone-icon-sun hidden items-center justify-center pointer-events-none"
-          aria-hidden="true"
-        >
-          <Icon name="lucide:sun" class="w-4 h-4 pointer-events-none" />
-        </span>
-      </button>
-
-      <!-- Mobile Menu Toggle Button -->
-      <button
-        type="button"
-        id="btn-mobile-menu"
-        class="md:hidden w-9 h-9 rounded-full border border-hairline flex items-center justify-center text-[var(--text-primary)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
-        aria-expanded="false"
-        aria-controls="mobile-menu-overlay"
-        aria-label="Open Navigation Menu"
-      >
-        <Icon name="lucide:menu" class="w-4 h-4 menu-icon-open" />
-        <Icon name="lucide:x" class="w-4 h-4 menu-icon-close hidden" />
-      </button>
-    </div>
-  </nav>
+    </nav>
+  </div>
 </header>
 
 <!-- Fullscreen Mobile Menu Overlay with Solid Opaque Background (Sibling of Header) -->
 <div
   id="mobile-menu-overlay"
-  class="fixed inset-0 top-20 z-40 hidden flex-col justify-between p-8 border-t-hairline shadow-2xl overflow-y-auto"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Mobile navigation menu"
+  class="fixed inset-0 top-16 z-40 hidden flex-col justify-between px-6 pt-8 pb-8 border-t-hairline overflow-y-auto"
   style="background-color: var(--bg-primary);"
   aria-hidden="true"
   data-lenis-prevent
 >
-  <div class="flex flex-col gap-6 pt-8">
-    <a
-      href={isHome ? "#about" : "/#about"}
-      data-section="about"
-      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-text)] transition-colors flex items-center justify-between border-b-hairline pb-4"
-    >
-      <span>About</span>
-      <span class="text-xs font-mono text-[var(--text-muted)]">01</span>
-    </a>
-    <a
-      href={isHome ? "#projects" : "/#projects"}
-      data-section="projects"
-      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-text)] transition-colors flex items-center justify-between border-b-hairline pb-4"
-    >
-      <span>Projects</span>
-      <span class="text-xs font-mono text-[var(--text-muted)]">02</span>
-    </a>
-    <a
-      href={isHome ? "#tech-stack" : "/#tech-stack"}
-      data-section="tech-stack"
-      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-text)] transition-colors flex items-center justify-between border-b-hairline pb-4"
-    >
-      <span>Tech Stack</span>
-      <span class="text-xs font-mono text-[var(--text-muted)]">03</span>
-    </a>
-    <a
-      href={isHome ? "#contact" : "/#contact"}
-      data-section="contact"
-      class="mobile-nav-link text-3xl font-display font-medium text-[var(--text-primary)] hover:text-[var(--accent-text)] transition-colors flex items-center justify-between border-b-hairline pb-4"
-    >
-      <span>Contact</span>
-      <span class="text-xs font-mono text-[var(--text-muted)]">04</span>
-    </a>
+  <div class="flex flex-col">
+    {
+      NAV_ITEMS.map((item) => {
+        const activeOnRoute = isProjectDetail && item.id === "projects";
+        return (
+          <a
+            href={isHome ? `#${item.id}` : `/#${item.id}`}
+            data-section={item.id}
+            data-route-active={activeOnRoute ? "true" : undefined}
+            aria-current={activeOnRoute ? "page" : undefined}
+            class="mobile-nav-link py-5 border-b-hairline flex items-baseline justify-between gap-4 text-[var(--text-primary)] hover:text-[var(--accent-text)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)] rounded-sm"
+          >
+            <span class="text-2xl sm:text-3xl font-display font-semibold tracking-[-0.025em]">
+              {item.mobileLabel}
+            </span>
+            <span class="mobile-nav-index font-mono text-xs tabular-nums text-[var(--text-muted)]">
+              {item.index}
+            </span>
+          </a>
+        );
+      })
+    }
   </div>
 
-  <div
-    class="pt-8 text-xs font-mono text-[var(--text-muted)] flex flex-col gap-2"
-  >
-    <p>Achmad Nabil Afgareza · Frontend Developer</p>
-    <p>Malang, East Java, Indonesia</p>
+  <div class="pt-6 text-xs text-[var(--text-muted)] flex flex-col gap-2">
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+      {
+        SOCIALS.map((soc, idx) => (
+          <>
+            {idx > 0 && <span aria-hidden="true">·</span>}
+            <a
+              href={soc.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${soc.name}: ${soc.label}`}
+              class="text-[var(--text-primary)] hover:text-[var(--accent-text)] hover:underline underline-offset-4 transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)] rounded-sm"
+            >
+              {soc.name}
+            </a>
+          </>
+        ))
+      }
+    </div>
+    <p class="text-[11px]">
+      {PROFILE.name} · {PROFILE.location.replace(", East Java", "")}
+    </p>
   </div>
 </div>
 
@@ -227,6 +261,9 @@ const isHome = currentPath === "/";
   import { ScrollTrigger } from "gsap/ScrollTrigger";
   import { scrollToTarget } from "../lib/scroll/lenis";
   import { scrollLock } from "../lib/scroll/scroll-lock";
+  import { getSamePageHash } from "../lib/scroll/navbar-link";
+  import { onPaletteChange } from "../lib/palette-events";
+  import { setupThemeTransition } from "../lib/theme-transition";
   import {
     focusNavigationTarget,
     setupMobileMenu,
@@ -239,7 +276,7 @@ const isHome = currentPath === "/";
 
   const releaseBodyScrollLock = () => {
     document.body.style.overflow = "";
-    scrollLock.release('mobile-menu');
+    scrollLock.release("mobile-menu");
   };
 
   function setupNavbar() {
@@ -259,42 +296,122 @@ const isHome = currentPath === "/";
     const btnColor = document.getElementById("btn-palette-color");
     const btnTone = document.getElementById("btn-tone-toggle");
     const btnMobile = document.getElementById("btn-mobile-menu");
+    const mobileNavFallback = document.getElementById("mobile-nav-fallback");
+    const paletteControls = document.getElementById("palette-controls");
+    const main = document.getElementById("main-content");
     const mobileMenu = document.getElementById("mobile-menu-overlay");
     const desktopLinks =
       document.querySelectorAll<HTMLAnchorElement>(".nav-link");
     const mobileLinks =
       document.querySelectorAll<HTMLAnchorElement>(".mobile-nav-link");
     const header = document.getElementById("main-header");
+    const navShell = document.getElementById("nav-shell");
     const activeIndicator = document.getElementById("nav-active-indicator");
-    const isReduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const isReduced = () => reducedMotion.matches;
+    let requestedPalette: "mono" | "color" =
+      html.dataset.palette === "color" ? "color" : "mono";
+    let requestedDark = html.classList.contains("dark");
+    let toneRequested = false;
+    const fallbackHasFocus =
+      mobileNavFallback?.contains(document.activeElement) ?? false;
+    let navbarOwnsMainInert = false;
 
-    // 0.1 Dynamic Navbar Border on Scroll (Remove border when on top)
-    let hasBorder = false;
-    const updateHeaderScrollBorder = () => {
-      const isScrolled = window.scrollY > 15;
-      const isMenuOpen = mobileMenu
+    paletteControls?.removeAttribute("hidden");
+    btnTone?.removeAttribute("hidden");
+    btnMobile?.removeAttribute("hidden");
+    mobileNavFallback?.setAttribute("hidden", "");
+    if (fallbackHasFocus) btnMobile?.focus({ preventScroll: true });
+
+    // 0.1 Adaptive Header State (mobile & desktop floating pill + bottom-of-page contact highlight)
+    let isScrolledState = false;
+    let isMenuOpenState = false;
+    let scrollTargetLock: string | null = null;
+    let lockTimer: number | null = null;
+
+    const clearScrollTargetLock = () => {
+      scrollTargetLock = null;
+      if (lockTimer !== null) {
+        window.clearTimeout(lockTimer);
+        lockTimer = null;
+      }
+    };
+
+    const lockScrollTarget = (sectionId: string) => {
+      clearScrollTargetLock();
+      scrollTargetLock = sectionId;
+      lockTimer = window.setTimeout(clearScrollTargetLock, 1800);
+    };
+
+    const SCROLL_KEYS = new Set([
+      "ArrowUp",
+      "ArrowDown",
+      "PageUp",
+      "PageDown",
+      "Home",
+      "End",
+      " ",
+      "Spacebar",
+    ]);
+    window.addEventListener("wheel", clearScrollTargetLock, {
+      passive: true,
+      signal,
+    });
+    window.addEventListener("touchstart", clearScrollTargetLock, {
+      passive: true,
+      signal,
+    });
+    window.addEventListener(
+      "keydown",
+      (e) => {
+        if (SCROLL_KEYS.has(e.key)) clearScrollTargetLock();
+      },
+      { signal },
+    );
+    signal.addEventListener("abort", clearScrollTargetLock, { once: true });
+
+    const contactLink = Array.from(desktopLinks).find(
+      (item) => item.dataset.section === "contact",
+    );
+    const canTrackContact =
+      Boolean(document.getElementById("contact")) &&
+      Boolean(
+        contactLink && getSamePageHash(contactLink.href, window.location.href),
+      );
+
+    const updateHeaderState = () => {
+      const nextScrolled = window.scrollY > 20;
+      const nextMenuOpen = mobileMenu
         ? !mobileMenu.classList.contains("hidden")
         : false;
-      const shouldShowBorder = isScrolled || isMenuOpen;
-      if (header && shouldShowBorder !== hasBorder) {
-        hasBorder = shouldShowBorder;
-        if (shouldShowBorder) {
-          header.classList.add("border-b-hairline");
-          header.classList.remove("border-b-transparent");
-        } else {
-          header.classList.remove("border-b-hairline");
-          header.classList.add("border-b-transparent");
+      if (header) {
+        if (nextScrolled !== isScrolledState) {
+          isScrolledState = nextScrolled;
+          header.dataset.scrolled = String(nextScrolled);
+        }
+        if (nextMenuOpen !== isMenuOpenState) {
+          isMenuOpenState = nextMenuOpen;
+          header.dataset.menuOpen = String(nextMenuOpen);
+        }
+      }
+      if (
+        scrollTargetLock === null &&
+        canTrackContact &&
+        contactLink &&
+        window.scrollY > 20 &&
+        window.innerHeight + window.scrollY >=
+          document.documentElement.scrollHeight - 8
+      ) {
+        if (contactLink.getAttribute("aria-current") !== "location") {
+          moveIndicatorTo(contactLink, true);
         }
       }
     };
 
-    window.addEventListener("scroll", updateHeaderScrollBorder, {
+    window.addEventListener("scroll", updateHeaderState, {
       passive: true,
       signal,
     });
-    updateHeaderScrollBorder();
 
     const menuController =
       mobileMenu && btnMobile
@@ -302,45 +419,107 @@ const isHome = currentPath === "/";
             menu: mobileMenu,
             button: btnMobile,
             signal,
-            onStateChange: updateHeaderScrollBorder,
+            onStateChange: () => {
+              updateHeaderState();
+              const menuOpen = mobileMenu
+                ? !mobileMenu.classList.contains("hidden")
+                : false;
+              if (menuOpen && main && !main.inert) {
+                main.inert = true;
+                navbarOwnsMainInert = true;
+              } else if (!menuOpen && main && navbarOwnsMainInert) {
+                main.inert = false;
+                navbarOwnsMainInert = false;
+              }
+            },
           })
         : null;
 
-    // 1. Sliding Indicator Positioning
+    // 1. Sliding Indicator Positioning (GPU-composited x + width)
+    let indicatorVisible = false;
     const moveIndicatorTo = (
       targetLink: HTMLElement | null,
       animate = true,
     ) => {
+      desktopLinks.forEach((link) => {
+        link.classList.remove("text-[var(--text-primary)]");
+        if (link.dataset.routeActive === "true") {
+          link.setAttribute("aria-current", "page");
+        } else {
+          link.removeAttribute("aria-current");
+        }
+      });
+      mobileLinks.forEach((link) => {
+        if (link.dataset.routeActive === "true") {
+          link.setAttribute("aria-current", "page");
+        } else {
+          link.removeAttribute("aria-current");
+        }
+      });
+
       if (!activeIndicator) return;
+
       if (!targetLink) {
-        gsap.to(activeIndicator, { opacity: 0, duration: 0.2 });
+        indicatorVisible = false;
+        if (isReduced()) gsap.set(activeIndicator, { opacity: 0 });
+        else
+          gsap.to(activeIndicator, {
+            opacity: 0,
+            duration: 0.2,
+            overwrite: true,
+          });
         return;
       }
 
-      desktopLinks.forEach((link) => {
-        link.classList.remove("text-[var(--text-primary)]", "font-medium");
+      targetLink.classList.add("text-[var(--text-primary)]");
+      targetLink.setAttribute(
+        "aria-current",
+        targetLink.dataset.routeActive === "true" ? "page" : "location",
+      );
+      const section = targetLink.dataset.section;
+      mobileLinks.forEach((link) => {
+        if (section && link.dataset.section === section) {
+          link.setAttribute(
+            "aria-current",
+            link.dataset.routeActive === "true" ? "page" : "location",
+          );
+        }
       });
-      targetLink.classList.add("text-[var(--text-primary)]", "font-medium");
 
-      const track = document.getElementById("nav-links-track");
-      if (!track) return;
-      const trackRect = track.getBoundingClientRect();
-      const linkRect = targetLink.getBoundingClientRect();
-      const left = linkRect.left - trackRect.left;
-      const width = linkRect.width;
+      const width = targetLink.offsetWidth;
+      if (width === 0) return;
+      const left = targetLink.offsetLeft;
 
-      if (!animate || isReduced) {
-        gsap.set(activeIndicator, { left, width, opacity: 1 });
+      if (!animate || isReduced()) {
+        indicatorVisible = true;
+        gsap.set(activeIndicator, { x: left, width, opacity: 1 });
+      } else if (!indicatorVisible) {
+        indicatorVisible = true;
+        gsap.set(activeIndicator, { x: left, width });
+        gsap.to(activeIndicator, {
+          opacity: 1,
+          duration: 0.22,
+          ease: "power2.out",
+          overwrite: true,
+        });
       } else {
         gsap.to(activeIndicator, {
-          left,
+          x: left,
           width,
           opacity: 1,
-          duration: 0.35,
-          ease: "power2.out",
+          duration: 0.36,
+          ease: "power3.out",
+          overwrite: true,
         });
       }
     };
+
+    const routeActiveLink = Array.from(desktopLinks).find(
+      (link) => link.dataset.routeActive === "true",
+    );
+    if (routeActiveLink) {
+      moveIndicatorTo(routeActiveLink, false);
+    }
 
     // 2. Click Navigation & Smooth Scroll with Feedback
     const handleNavClick = (
@@ -350,21 +529,32 @@ const isHome = currentPath === "/";
     ) => {
       const href = targetLink.getAttribute("href");
       if (!href) return;
-
-      const hashIndex = href.indexOf("#");
-      if (hashIndex === -1) return;
-
-      const hash = href.slice(hashIndex);
+      // Preserve modified/new-tab clicks and cross-page routes. A project page
+      // has its own #contact section, so /#contact must remain a home-page link.
+      if (
+        e.defaultPrevented ||
+        e.button !== 0 ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.shiftKey ||
+        e.altKey
+      )
+        return;
+      const hash = getSamePageHash(href, window.location.href);
+      if (!hash) return;
       const targetElement = document.querySelector<HTMLElement>(hash);
 
       if (targetElement) {
         e.preventDefault();
 
-        if (!isReduced) {
+        const sectionId = targetLink.dataset.section;
+        if (sectionId) lockScrollTarget(sectionId);
+
+        if (!isReduced()) {
           gsap.fromTo(
             targetLink,
-            { scale: 0.92 },
-            { scale: 1, duration: 0.25, ease: "back.out(2)" },
+            { scale: 0.96 },
+            { scale: 1, duration: 0.2, ease: "power2.out" },
           );
         }
 
@@ -372,13 +562,22 @@ const isHome = currentPath === "/";
           menuController?.close({
             restoreFocus: false,
             onComplete: () => {
-              focusNavigationTarget(targetElement, signal);
-              scrollToTarget(hash);
+              scrollToTarget(hash, {
+                onComplete: () => {
+                  clearScrollTargetLock();
+                  focusNavigationTarget(targetElement, signal);
+                },
+              });
             },
           });
         } else {
           moveIndicatorTo(targetLink, true);
-          scrollToTarget(hash);
+          scrollToTarget(hash, {
+            onComplete: () => {
+              clearScrollTargetLock();
+              focusNavigationTarget(targetElement, signal);
+            },
+          });
         }
       }
     };
@@ -402,10 +601,29 @@ const isHome = currentPath === "/";
       trigger.addEventListener(
         "click",
         (e) => {
+          if (
+            e.defaultPrevented ||
+            e.button !== 0 ||
+            e.metaKey ||
+            e.ctrlKey ||
+            e.shiftKey ||
+            e.altKey
+          )
+            return;
           const href = trigger.getAttribute("href");
           if (href && href.startsWith("#")) {
             e.preventDefault();
-            scrollToTarget(href);
+            const target = document.querySelector<HTMLElement>(href);
+            if (href === "#hero") {
+              lockScrollTarget("hero");
+              moveIndicatorTo(null, true);
+            }
+            scrollToTarget(href, {
+              onComplete: () => {
+                if (href === "#hero") clearScrollTargetLock();
+                if (target) focusNavigationTarget(target, signal);
+              },
+            });
           }
         },
         { signal },
@@ -416,18 +634,27 @@ const isHome = currentPath === "/";
     const sections = ["about", "projects", "tech-stack", "contact"];
     sections.forEach((id) => {
       const sectionEl = document.getElementById(id);
-      if (sectionEl) {
+      const link = Array.from(desktopLinks).find(
+        (item) => item.dataset.section === id,
+      );
+      if (
+        sectionEl &&
+        link &&
+        getSamePageHash(link.href, window.location.href)
+      ) {
         const st = ScrollTrigger.create({
           trigger: sectionEl,
           start: "top 45%",
           end: "bottom 45%",
           onEnter: () => {
+            if (scrollTargetLock !== null) return;
             const activeLink = document.querySelector<HTMLAnchorElement>(
               `.nav-link[data-section="${id}"]`,
             );
             moveIndicatorTo(activeLink, true);
           },
           onEnterBack: () => {
+            if (scrollTargetLock !== null) return;
             const activeLink = document.querySelector<HTMLAnchorElement>(
               `.nav-link[data-section="${id}"]`,
             );
@@ -444,8 +671,14 @@ const isHome = currentPath === "/";
         trigger: heroEl,
         start: "top top",
         end: "bottom 50%",
-        onEnter: () => moveIndicatorTo(null, true),
-        onEnterBack: () => moveIndicatorTo(null, true),
+        onEnter: () => {
+          if (scrollTargetLock !== null) return;
+          moveIndicatorTo(null, true);
+        },
+        onEnterBack: () => {
+          if (scrollTargetLock !== null) return;
+          moveIndicatorTo(null, true);
+        },
       });
       navScrollTriggers.push(st);
     }
@@ -460,9 +693,7 @@ const isHome = currentPath === "/";
         btnColor.setAttribute("aria-pressed", !isMono ? "true" : "false");
       }
 
-      if (btnTone) {
-        btnTone.style.display = isMono ? "inline-flex" : "none";
-      }
+      if (btnTone) btnTone.hidden = !isMono;
     };
 
     const updateToneUI = () => {
@@ -491,77 +722,91 @@ const isHome = currentPath === "/";
 
     updateButtonsUI();
     updateToneUI();
+    updateHeaderState();
 
-    const runThemeViewTransition = (apply: () => void, event?: MouseEvent) => {
-      const doc = document as Document & {
-        startViewTransition?: (update: () => void) => {
-          ready: Promise<void>;
-          finished?: Promise<void>;
-        };
-      };
-
-      if (!doc.startViewTransition || isReduced) {
-        apply();
-        return;
-      }
-
-      const x = event?.clientX ?? window.innerWidth / 2;
-      const y = event?.clientY ?? 40;
-      const endRadius = Math.hypot(
-        Math.max(x, window.innerWidth - x),
-        Math.max(y, window.innerHeight - y),
+    const alignIndicator = () => {
+      const current = Array.from(desktopLinks).find((link) =>
+        link.hasAttribute("aria-current"),
       );
+      if (current) moveIndicatorTo(current, false);
+    };
+    const offPalette = onPaletteChange(() => {
+      updateButtonsUI();
+      updateToneUI();
+      alignIndicator();
+    });
+    window.addEventListener(
+      "palette-change",
+      (event) => {
+        const detail = (event as CustomEvent<{ source?: string }>).detail;
+        if (detail?.source === "system")
+          requestedDark = html.classList.contains("dark");
+      },
+      { signal },
+    );
+    window.addEventListener("resize", alignIndicator, {
+      passive: true,
+      signal,
+    });
+    navShell?.addEventListener(
+      "transitionend",
+      (e) => {
+        if (e.target === navShell) alignIndicator();
+      },
+      { signal },
+    );
+    document.fonts?.ready
+      .then(() => {
+        if (!signal.aborted) alignIndicator();
+      })
+      .catch(() => {});
 
-      document.documentElement.classList.add("theme-transitioning");
-      const cleanupTransition = () => {
-        document.documentElement.classList.remove("theme-transitioning");
-      };
+    signal.addEventListener(
+      "abort",
+      () => {
+        offPalette();
+        if (activeIndicator) gsap.killTweensOf(activeIndicator);
+        desktopLinks.forEach((link) => gsap.killTweensOf(link));
+        mobileLinks.forEach((link) => gsap.killTweensOf(link));
+      },
+      { once: true },
+    );
 
+    const runThemeViewTransition = setupThemeTransition(signal, reducedMotion);
+
+    const persistPreference = (key: string, value: string) => {
       try {
-        const transition = doc.startViewTransition(apply);
-        if (transition.finished) {
-          transition.finished.finally(cleanupTransition);
-        } else {
-          window.setTimeout(cleanupTransition, 600);
-        }
-
-        transition.ready
-          .then(() => {
-            try {
-              document.documentElement.animate(
-                {
-                  clipPath: [
-                    `circle(0px at ${x}px ${y}px)`,
-                    `circle(${endRadius}px at ${x}px ${y}px)`,
-                  ],
-                },
-                {
-                  duration: 500,
-                  easing: "cubic-bezier(0.16, 1, 0.3, 1)",
-                  pseudoElement: "::view-transition-new(root)",
-                },
-              );
-            } catch {}
-          })
-          .catch(() => {
-            cleanupTransition();
-          });
+        localStorage.setItem(key, value);
       } catch {
-        cleanupTransition();
-        apply();
+        // Keep this page's visual preference when browser storage is unavailable.
       }
     };
+
+    reducedMotion.addEventListener(
+      "change",
+      () => {
+        if (!reducedMotion.matches) return;
+        if (activeIndicator) gsap.killTweensOf(activeIndicator);
+        desktopLinks.forEach((link) => gsap.killTweensOf(link));
+        document.documentElement.classList.remove("theme-transitioning");
+      },
+      { signal },
+    );
 
     const switchPalette = (
       newPalette: "mono" | "color",
       event?: MouseEvent,
     ) => {
-      const current = html.getAttribute("data-palette") || "mono";
-      if (current === newPalette) return;
+      if (requestedPalette === newPalette) return;
+      requestedPalette = newPalette;
+      const dark = requestedDark;
 
       const apply = () => {
         html.setAttribute("data-palette", newPalette);
-        localStorage.setItem("theme-palette", newPalette);
+        html.classList.toggle("dark", dark);
+        persistPreference("theme-palette", newPalette);
+        if (toneRequested)
+          persistPreference("theme-tone", dark ? "dark" : "light");
         updateButtonsUI();
         updateToneUI();
         window.dispatchEvent(
@@ -587,17 +832,21 @@ const isHome = currentPath === "/";
       (e) => {
         e.preventDefault();
         e.stopPropagation();
+        requestedDark = !requestedDark;
+        requestedPalette = "mono";
+        toneRequested = true;
+        const dark = requestedDark;
 
         const apply = () => {
           const currentPalette = html.getAttribute("data-palette") || "mono";
           if (currentPalette !== "mono") {
             html.setAttribute("data-palette", "mono");
-            localStorage.setItem("theme-palette", "mono");
+            persistPreference("theme-palette", "mono");
             updateButtonsUI();
           }
 
-          const isDark = html.classList.toggle("dark");
-          localStorage.setItem("theme-tone", isDark ? "dark" : "light");
+          const isDark = html.classList.toggle("dark", dark);
+          persistPreference("theme-tone", isDark ? "dark" : "light");
           updateToneUI();
           window.dispatchEvent(
             new CustomEvent("palette-change", {
@@ -627,14 +876,114 @@ const isHome = currentPath === "/";
 </script>
 
 <style>
-  #main-header {
-    background-color: var(--bg-primary);
+  .nav-progress-track {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    z-index: 60;
   }
+
+  #main-header[data-scrolled="true"][data-menu-open="false"]
+    .nav-progress-track {
+    opacity: 1;
+  }
+
+  .nav-frame {
+    padding: 0;
+    transition: padding 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .nav-shell {
+    background-color: transparent;
+    border-radius: 0px;
+    border: 1px solid transparent;
+    transition:
+      max-width 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+      height 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+      padding 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+      border-radius 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.3s ease,
+      background-color 0.3s ease,
+      box-shadow 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* Scrolled floating pill on both mobile and desktop */
+  #main-header[data-scrolled="true"][data-menu-open="false"] .nav-frame {
+    padding: 0.625rem 0.75rem 0;
+  }
+
+  #main-header[data-scrolled="true"][data-menu-open="false"] .nav-shell {
+    height: 3.25rem;
+    padding-inline: 1rem 0.5rem;
+    border-radius: 9999px;
+    border-color: var(--border-subtle);
+    background-color: var(--bg-surface);
+    box-shadow: var(--nav-shadow);
+  }
+
+  @media (min-width: 768px) {
+    #main-header[data-scrolled="true"][data-menu-open="false"] .nav-frame {
+      padding: 0.875rem 1.5rem 0;
+    }
+
+    #main-header[data-scrolled="true"][data-menu-open="false"] .nav-shell {
+      max-width: 52rem;
+      height: 3.375rem;
+      padding-inline: 1.25rem 0.625rem;
+    }
+
+    #main-header[data-scrolled="true"][data-menu-open="false"] #nav-links-track {
+      border-color: transparent;
+      background-color: transparent;
+    }
+  }
+
   @media (min-width: 1024px) and (pointer: fine) {
-    #main-header {
-      background-color: color-mix(in srgb, var(--bg-primary) 92%, transparent);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+    #main-header[data-scrolled="true"][data-menu-open="false"] .nav-shell {
+      background-color: color-mix(in srgb, var(--bg-surface) 80%, transparent);
+      backdrop-filter: blur(16px) saturate(1.25);
+      -webkit-backdrop-filter: blur(16px) saturate(1.25);
+    }
+  }
+
+  #main-header[data-menu-open="true"] .nav-frame {
+    padding: 0;
+  }
+
+  #main-header[data-menu-open="true"] .nav-shell {
+    height: 4rem;
+    border-radius: 0px;
+    border-color: transparent;
+    background-color: var(--bg-primary);
+    box-shadow: none;
+  }
+
+  #nav-active-indicator {
+    background-color: var(--bg-surface);
+  }
+
+  #main-header[data-scrolled="true"] #nav-active-indicator {
+    background-color: var(--bg-surface-soft);
+  }
+
+  .mobile-nav-link[aria-current] {
+    color: var(--accent-text);
+  }
+
+  .mobile-nav-link[aria-current] .mobile-nav-index {
+    color: var(--accent-text);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-progress-track,
+    .nav-frame,
+    .nav-shell {
+      transition: none;
     }
   }
 </style>

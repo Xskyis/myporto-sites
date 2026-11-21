@@ -141,13 +141,22 @@ function createBallPit(canvas: HTMLCanvasElement, wrapper: HTMLElement, fallback
   };
   document.addEventListener('visibilitychange', onVisibilityChange);
 
-  return () => {
+  const onContextLost = () => {
+    dispose();
+    showFallback();
+  };
+  canvas.addEventListener('webglcontextlost', onContextLost);
+
+  function dispose() {
+    if (disposed) return;
     disposed = true;
     observer.disconnect();
+    canvas.removeEventListener('webglcontextlost', onContextLost);
     document.removeEventListener('visibilitychange', onVisibilityChange);
     releaseWake();
     teardown?.();
     teardown = null;
     pit = null;
-  };
+  }
+  return dispose;
 }

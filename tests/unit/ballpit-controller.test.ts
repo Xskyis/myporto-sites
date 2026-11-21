@@ -59,6 +59,36 @@ async function mount() {
 const flushImports = () => vi.dynamicImportSettled();
 
 describe('ball pit page lifecycle', () => {
+  it('disposes the live pit and restores fallback on WebGL context loss', async () => {
+    const { pit, dispose, download, scrollDownload, lenis, off } = await mount();
+    notify([{ isIntersecting: true }]);
+    download.resolve(pit);
+    scrollDownload.resolve({ getLenis: () => lenis });
+    await flushImports();
+    document.getElementById('ball-pit-canvas')?.dispatchEvent(new Event('webglcontextlost'));
+    expect(dispose).toHaveBeenCalledTimes(1);
+    expect(off).toHaveBeenCalledTimes(1);
+    expect(disconnect).toHaveBeenCalledTimes(1);
+    expect(document.getElementById('ball-pit-canvas')?.style.display).toBe('none');
+    expect(document.getElementById('ball-pit-fallback')?.classList.contains('hidden')).toBe(false);
+    notify([{ isIntersecting: true }]);
+    cleanup?.();
+    expect(pit.initBallPit).toHaveBeenCalledTimes(1);
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not resurrect a pending pit after its canvas loses the context', async () => {
+    const { pit, download, scrollDownload, lenis } = await mount();
+    notify([{ isIntersecting: true }]);
+    document.getElementById('ball-pit-canvas')?.dispatchEvent(new Event('webglcontextlost'));
+    download.resolve(pit);
+    scrollDownload.resolve({ getLenis: () => lenis });
+    await flushImports();
+    expect(pit.initBallPit).not.toHaveBeenCalled();
+    expect(lenis.on).not.toHaveBeenCalled();
+    expect(document.getElementById('ball-pit-fallback')?.classList.contains('hidden')).toBe(false);
+  });
+
   it('cancels a pending renderer when reduced motion is enabled, then resumes on a fresh canvas', async () => {
     const { pit, download, scrollDownload, lenis } = await mount();
     const originalCanvas = document.getElementById('ball-pit-canvas');

@@ -1,6 +1,5 @@
-@import '@fontsource-variable/geist';
-@import '@fontsource/instrument-serif';
-@import '@fontsource/instrument-serif/400-italic.css';
+@import '@fontsource-variable/host-grotesk';
+@import '@fontsource-variable/chivo-mono';
 @import 'tailwindcss';
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -13,11 +12,15 @@
   ::file-selector-button {
     border-color: var(--border-subtle, currentColor);
   }
+
+  [hidden] {
+    display: none !important;
+  }
 }
 
 @theme inline {
   --font-display: var(--font-display);
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-mono: var(--font-mono);
 
   --spacing-18: 4.5rem;
 }
@@ -28,7 +31,7 @@
   /* Default Monochrome Light */
   --bg-primary: #FAFAF9;
   --bg-surface: #FFFFFF;
-  --bg-surface-soft: #F5F5F4;
+  --bg-surface-soft: #EFEFED;
   --text-primary: #0A0A0A;
   --text-muted: #525252;
   --border-subtle: rgba(10, 10, 10, 0.12);
@@ -37,22 +40,24 @@
   /* Text accents stay readable independently of decorative fills and canvas colors. */
   --accent-text: var(--text-primary);
   --accent-contrast: #FAFAF9;
-  --font-display: 'Geist Variable', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Geist Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Host Grotesk Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Host Grotesk Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Chivo Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --cursor-color: #0A0A0A;
   --status-dot: #22C55E;
   /* Preview swatch for the poster-color palette button in the Navbar — must stay red in
      every mono state because it advertises what the *other* palette looks like. */
   --swatch-color: #D82B2F;
   --grain-opacity: 0.03;
+  --nav-shadow: 0 12px 32px -12px rgba(10, 10, 10, 0.12), 0 2px 6px -1px rgba(10, 10, 10, 0.05);
 }
 
 html.dark:not([data-palette="color"]),
 html[data-palette="mono"].dark,
 :root.dark:not([data-palette="color"]) {
   --bg-primary: #0A0A0A;
-  --bg-surface: #141414;
-  --bg-surface-soft: #1F1F1F;
+  --bg-surface: #121212;
+  --bg-surface-soft: #1B1B1B;
   --text-primary: #FAFAF9;
   --text-muted: #A3A3A3;
   --border-subtle: rgba(250, 250, 249, 0.12);
@@ -60,19 +65,21 @@ html[data-palette="mono"].dark,
   --accent-primary: #FAFAF9;
   --accent-text: var(--text-primary);
   --accent-contrast: #0A0A0A;
-  --font-display: 'Geist Variable', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Geist Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Host Grotesk Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Host Grotesk Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Chivo Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --cursor-color: #FAFAF9;
   --status-dot: #22C55E;
   --grain-opacity: 0.04;
+  --nav-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.72), 0 2px 10px -2px rgba(0, 0, 0, 0.45);
 }
 
 html[data-palette="color"],
 html[data-palette="color"].dark {
   /* Poster Style: Pantone Lemons / Marine Blue + Red + Cream */
   --bg-primary: #14288A;
-  --bg-surface: #1C34A8;
-  --bg-surface-soft: #2A3F77;
+  --bg-surface: #1A319F;
+  --bg-surface-soft: #213AB2;
   --text-primary: #FDEEA9;
   --text-muted: #E2D99E;
   --border-subtle: rgba(253, 238, 169, 0.22);
@@ -80,16 +87,20 @@ html[data-palette="color"].dark {
   --accent-primary: #D82B2F;
   --accent-text: var(--text-primary);
   --accent-contrast: #FFFFFF;
-  --font-display: 'Instrument Serif', Georgia, serif;
-  --font-body: 'Geist Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Host Grotesk Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Host Grotesk Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Chivo Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --cursor-color: #D82B2F;
   --status-dot: #FDEEA9;
   --grain-opacity: 0.05;
+  --nav-shadow: 0 18px 40px -12px rgba(8, 16, 60, 0.58), 0 2px 10px -2px rgba(8, 16, 60, 0.35);
 }
 
 /* Base Body Styles */
 html {
   scroll-behavior: auto;
+  /* Native anchors and keyboard focus must clear the fixed navigation too. */
+  scroll-padding-block-start: calc(var(--header-height) + 1rem);
   /* Handled by Lenis */
   font-family: var(--font-body);
   background-color: var(--bg-primary);
@@ -156,22 +167,16 @@ html[data-palette="color"] #btn-tone-toggle {
 /* Fluid Typography Helpers */
 .fluid-heading {
   font-family: var(--font-display);
-  font-size: clamp(2.5rem, 7vw + 1rem, 7.5rem);
-  line-height: 0.95;
-  letter-spacing: -0.04em;
+  font-size: clamp(2.25rem, 5vw + 0.75rem, 4.75rem);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
 }
 
 .fluid-subheading {
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 4vw + 0.5rem, 3.75rem);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-}
-
-html[data-palette="color"] .fluid-heading,
-html[data-palette="color"] .fluid-subheading {
-  letter-spacing: -0.01em;
-  font-style: italic;
+  font-size: clamp(1.625rem, 3vw + 0.5rem, 2.75rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
 }
 
 /* Hairline borders (defined via Tailwind v4 @utility for full responsive & state variant support) */
@@ -266,7 +271,7 @@ html.js-anim [data-reveal] {
 
 .case-study-prose {
   color: var(--text-muted);
-  font-weight: 300;
+  font-weight: 400;
   font-size: 1rem;
   line-height: 1.75;
   max-width: 68ch;
@@ -284,10 +289,10 @@ html.js-anim [data-reveal] {
 
 .case-study-prose h2 {
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 600;
   font-size: clamp(1.625rem, 1.2rem + 1.4vw, 2.25rem);
   line-height: 1.15;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--text-primary);
   margin-top: 2.75em;
   padding-bottom: 0.5em;
@@ -295,7 +300,7 @@ html.js-anim [data-reveal] {
 }
 
 .case-study-prose h3 {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-weight: 500;
   font-size: 0.75rem;
   letter-spacing: 0.12em;
@@ -382,7 +387,7 @@ html.js-anim [data-reveal] {
   position: absolute;
   left: 0;
   top: 0.35em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.7em;
   letter-spacing: 0.05em;
   color: var(--text-primary);
@@ -407,7 +412,7 @@ html.js-anim [data-reveal] {
 }
 
 .case-study-prose code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.85em;
   font-weight: 400;
   color: var(--text-primary);
@@ -464,7 +469,7 @@ html.js-anim [data-reveal] {
 }
 
 .case-study-prose th {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.7em;
   letter-spacing: 0.1em;
   text-transform: uppercase;

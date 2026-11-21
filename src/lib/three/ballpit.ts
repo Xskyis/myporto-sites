@@ -368,11 +368,13 @@ export function stepBalls(
         const dy = b.y - a.y;
         const minDist = a.r + b.r;
         const distSq = dx * dx + dy * dy;
-        if (distSq >= minDist * minDist || distSq === 0) continue;
+        if (distSq >= minDist * minDist) continue;
 
         const dist = Math.sqrt(distSq);
-        const nx = dx / dist;
-        const ny = dy / dist;
+        // Choose a stable axis for exact coincidences; skipping them leaves an
+        // impossible overlap that no later relaxation pass can resolve.
+        const nx = dist === 0 ? 1 : dx / dist;
+        const ny = dist === 0 ? 0 : dy / dist;
         const overlap = minDist - dist;
 
         // Mass ∝ r², split the positional correction the same way.
@@ -399,6 +401,18 @@ export function stepBalls(
     }
 
     resolveWalls();
+  }
+
+  // Unequal-mass impulses can accelerate the smaller ball beyond the integration
+  // cap. Enforce the same limit on the final velocities used by the next step.
+  for (const b of list) {
+    if ((b.popTimer ?? 0) > 0) continue;
+    const speed = Math.hypot(b.vx, b.vy);
+    if (speed > MAX_SPEED) {
+      const k = MAX_SPEED / speed;
+      b.vx *= k;
+      b.vy *= k;
+    }
   }
 }
 
@@ -797,16 +811,23 @@ export function initBallPit(canvas: HTMLCanvasElement): () => void {
   const onResize = () => {
     if (!threeRenderer || !threeCamera) return;
     const r = container.getBoundingClientRect();
-    cachedRect = canvas.getBoundingClientRect();
-    rectDirty = false;
     const w = r.width || window.innerWidth;
     const h = r.height || Math.max(350, window.innerHeight * 0.55);
-    if (Math.abs(w - lastWidth) < 2 && Math.abs(h - lastHeight) < 2) return;
+    if (Math.abs(w - lastWidth) < 2 && Math.abs(h - lastHeight) < 2) {
+      // Even a sub-pixel container resize can move the canvas in the page.
+      cachedRect = canvas.getBoundingClientRect();
+      rectDirty = false;
+      return;
+    }
     lastWidth = w;
     lastHeight = h;
 
     threeRenderer.setSize(w, h);
     threeRenderer.setPixelRatio(isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 1.5));
+    // setSize updates the canvas's inline CSS dimensions; cache its rect afterward
+    // so pointer hit testing uses the same size as the new camera frustum.
+    cachedRect = canvas.getBoundingClientRect();
+    rectDirty = false;
 
     const asp = w / h;
     frustumH = 10;
@@ -1068,6 +1089,8 @@ export function initBallPit(canvas: HTMLCanvasElement): () => void {
     document.removeEventListener('visibilitychange', onVisibilityChange);
     disposePaletteListener();
 
+    instancedMesh?.dispose();
+    burstMesh?.dispose();
     sphereGeometry?.dispose();
     sphereMaterial?.dispose();
     burstGeometry?.dispose();

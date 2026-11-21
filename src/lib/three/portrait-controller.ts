@@ -71,6 +71,14 @@ function createPortrait(
   const abort = new AbortController();
   const { signal } = abort;
   const state: Controller = { handle: null, teardown: () => abort.abort() };
+  canvas.addEventListener('webglcontextlost', () => {
+    // An evicted GPU context cannot keep the live layer visible. Abort pending
+    // imports/downloads as well, so no late callback can hide the static fallback.
+    abort.abort();
+    state.handle?.dispose();
+    state.handle = null;
+    root.dataset.state = 'fallback';
+  }, { signal });
 
   const isTouch = window.matchMedia('(pointer: coarse)').matches;
   const isNarrow = window.matchMedia('(max-width: 1023.98px)').matches;

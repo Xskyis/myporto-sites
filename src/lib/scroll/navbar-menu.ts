@@ -128,7 +128,32 @@ export function setupMobileMenu({ menu, button, signal, onStateChange }: MobileM
   }, { signal });
 
   desktop.addEventListener('change', () => {
-    if (desktop.matches) close({ immediate: true, restoreFocus: false });
+    if (!desktop.matches) return;
+    const focusedLink = document.activeElement instanceof HTMLElement && menu.contains(document.activeElement)
+      ? document.activeElement.closest<HTMLElement>('.mobile-nav-link')
+      : null;
+    const section = focusedLink?.dataset.section;
+    const desktopLink = section
+      ? Array.from(document.querySelectorAll<HTMLElement>('.nav-link')).find((link) => link.dataset.section === section) ?? null
+      : null;
+    close({
+      immediate: true,
+      restoreFocus: false,
+      onComplete: () => desktopLink?.focus({ preventScroll: true }),
+    });
+  }, { signal });
+
+  reduced.addEventListener('change', () => {
+    if (!reduced.matches || signal.aborted || menu.classList.contains('hidden')) return;
+    if (closing) {
+      close();
+      return;
+    }
+    // A newly requested reduced-motion preference must stop the in-flight open tween
+    // and leave the visible menu in its final state while preserving its scroll lock.
+    ++revision;
+    gsap.killTweensOf(menu);
+    gsap.set(menu, { opacity: 1, y: 0 });
   }, { signal });
 
   signal.addEventListener('abort', () => {

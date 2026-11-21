@@ -5,6 +5,7 @@ export function createRenderLoop(render: (dt: number) => void, options: { fps: n
   let disposed = false;
   let frameId: number | null = null;
   let previous: number | null = null;
+  let renderedAt: number | null = null;
   let dirty = true;
   let settleUntil = 0;
 
@@ -17,8 +18,12 @@ export function createRenderLoop(render: (dt: number) => void, options: { fps: n
     const elapsed = previous === null ? interval : now - previous;
     if (elapsed >= interval - 0.5) {
       previous = now - (elapsed >= interval ? elapsed % interval : 0);
+      // FPS alignment carries a fractional remainder forward. Animation time must
+      // use actual render timestamps so that remainder is not counted twice.
+      const renderElapsed = renderedAt === null ? interval : now - renderedAt;
+      renderedAt = now;
       dirty = false;
-      render(Math.min(elapsed / 1000, 0.05));
+      render(Math.min(renderElapsed / 1000, 0.05));
     } else {
       schedule();
       return;
@@ -35,6 +40,7 @@ export function createRenderLoop(render: (dt: number) => void, options: { fps: n
       if (disposed || active === next) return;
       active = next;
       previous = null;
+      renderedAt = null;
       if (active) { dirty = true; schedule(); }
       else if (frameId !== null) { cancelAnimationFrame(frameId); frameId = null; }
     },

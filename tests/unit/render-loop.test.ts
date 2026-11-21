@@ -69,3 +69,16 @@ it('cancels frames while hidden and never wakes after disposal', () => {
   loop.setActive(true);
   expect(pending.size).toBe(0);
 });
+
+it('measures elapsed animation time independently of FPS rounding', () => {
+  const render = vi.fn();
+  const loop = createRenderLoop(render, { fps: 30, continuous: true });
+  loop.setActive(true);
+  for (let i = 0; i <= 60; i++) tick(i * 18);
+
+  // All rendered intervals are below the long-frame cap, so their sum must equal
+  // the actual time since the first frame, regardless of the display cadence.
+  const deltas = render.mock.calls.slice(1).map(([dt]) => dt as number);
+  expect(deltas.reduce((sum, dt) => sum + dt, 0)).toBeCloseTo(now / 1000, 8);
+  loop.dispose();
+});

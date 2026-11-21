@@ -72,6 +72,40 @@ const flushImports = () => vi.dynamicImportSettled();
 const portraitState = () => document.getElementById('portrait-particles')?.dataset.state;
 
 describe('portrait motion preference lifecycle', () => {
+  it('restores fallback and disposes the live portrait when its WebGL context is lost', async () => {
+    const { handle, initialized, initPortrait, download } = await mount();
+    download.resolve({ initPortrait });
+    initialized.resolve(handle);
+    await flushImports();
+    const options = initPortrait.mock.calls[0][1];
+    options.onReady?.();
+    document.querySelector('.portrait__canvas')?.dispatchEvent(new Event('webglcontextlost'));
+    expect(portraitState()).toBe('fallback');
+    expect(options.signal?.aborted).toBe(true);
+    expect(handle.dispose).toHaveBeenCalledTimes(1);
+    expect(disconnect).toHaveBeenCalledTimes(1);
+    expect(killTrigger).toHaveBeenCalledTimes(1);
+    options.onReady?.();
+    cleanup?.();
+    expect(handle.dispose).toHaveBeenCalledTimes(1);
+    expect(portraitState()).toBe('fallback');
+  });
+
+  it('cancels pending initialization on context loss and rejects a late ready callback', async () => {
+    const { handle, initialized, initPortrait, download } = await mount();
+    download.resolve({ initPortrait });
+    await vi.waitFor(() => expect(initPortrait).toHaveBeenCalledTimes(1));
+    const options = initPortrait.mock.calls[0][1];
+    document.querySelector('.portrait__canvas')?.dispatchEvent(new Event('webglcontextlost'));
+    expect(options.signal?.aborted).toBe(true);
+    initialized.resolve(handle);
+    await flushImports();
+    options.onReady?.();
+    expect(handle.dispose).toHaveBeenCalledTimes(1);
+    expect(handle.setActive).not.toHaveBeenCalled();
+    expect(portraitState()).toBe('fallback');
+  });
+
   it('cancels a pending import and reenables an assembled portrait on a fresh canvas', async () => {
     const { handle, initialized, initPortrait, download } = await mount();
     const originalCanvas = document.querySelector('.portrait__canvas');

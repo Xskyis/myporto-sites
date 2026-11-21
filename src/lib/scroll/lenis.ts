@@ -5,6 +5,7 @@ import {
   LENIS_EASE,
   LENIS_LERP,
   WHEEL_MULTIPLIER,
+  compensateLenisOffset,
   durationForDistance,
   headerOffsetFromVar,
   shouldUseLenis,
@@ -40,6 +41,21 @@ function navigationSignal(): AbortSignal {
 function headerOffset(): number {
   const raw = getComputedStyle(document.documentElement).getPropertyValue('--header-height');
   return headerOffsetFromVar(raw);
+}
+
+function offsetForTarget(target: HTMLElement, explicitOffset?: number): number {
+  if (explicitOffset !== undefined) return explicitOffset;
+  // Full-bleed page sections already carry header-clearance top padding.
+  if (target.hasAttribute('data-nav-section')) return 0;
+  return headerOffset();
+}
+
+function lenisOffsetForTarget(target: HTMLElement, desiredOffset: number): number {
+  const rootPadding = Number.parseFloat(
+    getComputedStyle(document.documentElement).scrollPaddingTop,
+  );
+  const targetMargin = Number.parseFloat(getComputedStyle(target).scrollMarginTop);
+  return compensateLenisOffset(desiredOffset, rootPadding, targetMargin);
 }
 
 export function initLenis(): Lenis | null {
@@ -261,15 +277,15 @@ function applyHeaderOffset(target: HTMLElement, signal: AbortSignal) {
   const frame = requestAnimationFrame(() => {
     signal.removeEventListener('abort', cancelFrame);
     if (signal.aborted || !target.isConnected) return;
-    const offset = headerOffset();
+    const desiredOffset = offsetForTarget(target);
     if (lenisInstance && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       lenisInstance.scrollTo(target, {
-        offset,
+        offset: lenisOffsetForTarget(target, desiredOffset),
         immediate: true,
         force: true,
       });
     } else {
-      const top = target.getBoundingClientRect().top + window.scrollY + offset;
+      const top = Math.max(0, target.getBoundingClientRect().top + window.scrollY + desiredOffset);
       window.scrollTo({
         top,
         left: 0,
@@ -297,9 +313,9 @@ export function scrollToTarget(
   const signal = navigationSignal();
 
   const targetSelector = typeof target === 'string' ? target : `#${targetEl.id}`;
-  const offset = options?.offset ?? headerOffset();
+  const desiredOffset = offsetForTarget(targetEl, options?.offset);
   const currentY = window.scrollY;
-  const targetY = targetEl.getBoundingClientRect().top + currentY + offset;
+  const targetY = Math.max(0, targetEl.getBoundingClientRect().top + currentY + desiredOffset);
   const distance = Math.abs(targetY - currentY);
   const duration = prefersReduced
     ? 0.01
@@ -313,7 +329,7 @@ export function scrollToTarget(
 
   if (lenisInstance && !prefersReduced) {
     lenisInstance.scrollTo(targetEl, {
-      offset,
+      offset: lenisOffsetForTarget(targetEl, desiredOffset),
       duration,
       easing: LENIS_EASE,
       onComplete: () => {

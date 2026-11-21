@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseCertDateKey, CERTIFICATIONS } from '../../src/data/certifications';
+import { resolveCredentialLink } from '../../src/lib/credential-link';
 
 describe('parseCertDateKey', () => {
   it('orders months within a year', () => {
@@ -21,6 +22,14 @@ describe('parseCertDateKey', () => {
 });
 
 describe('CERTIFICATIONS data invariants', () => {
+  it('falls back for missing, placeholder, or unsafe credential links', () => {
+    const fallback = 'https://www.linkedin.com/in/nabilfgrza/details/certifications/';
+    expect(resolveCredentialLink()).toBe(fallback);
+    expect(resolveCredentialLink(' TODO add badge URL ')).toBe(fallback);
+    expect(resolveCredentialLink('javascript:alert(1)')).toBe(fallback);
+    expect(resolveCredentialLink('https://www.credly.com/badges/example')).toBe('https://www.credly.com/badges/example');
+  });
+
   it('has unique ids', () => {
     const ids = CERTIFICATIONS.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
