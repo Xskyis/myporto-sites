@@ -528,21 +528,18 @@ html.no-splash #splash-screen {
 /* ---------------------------------------------------------------------- */
 
 .honor-row {
-  opacity: 0.4;
-  transition: opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.honor-row:hover {
-  opacity: 0.72;
+#honors-block[data-honors-enhanced] .honor-row:hover,
+#honors-block[data-honors-enhanced] .honor-row:focus-within,
+#honors-block[data-honors-enhanced] .honor-row[data-active="true"] {
+  background-color: var(--bg-surface-soft);
 }
 
-.honor-row:focus-within {
-  opacity: 1;
-}
-
+/* Keep every label at full contrast; emphasis comes from the surface and index. */
 .honor-row[data-active="true"] {
-  opacity: 1;
+  box-shadow: inset 2px 0 var(--border-subtle);
 }
 
 .honor-row-shift {
@@ -577,33 +574,32 @@ html.no-splash #splash-screen {
 
 .honor-details-grid {
   display: grid;
-  grid-template-rows: 0fr;
+  grid-template-rows: 1fr;
   transition: grid-template-rows 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.honor-row[data-active="true"] .honor-details-grid {
-  grid-template-rows: 1fr;
+#honors-block[data-honors-enhanced] .honor-row:not([data-active="true"]) .honor-details-grid {
+  grid-template-rows: 0fr;
 }
 
 .honor-details-inner {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.06s,
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.06s;
+}
+
+#honors-block[data-honors-enhanced] .honor-row:not([data-active="true"]) .honor-details-inner {
   opacity: 0;
   transform: translateY(10px);
   transition: opacity 0.35s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.honor-row[data-active="true"] .honor-details-inner {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.06s,
-    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.06s;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .honor-row,
   .honor-row:hover,
   .honor-row:focus-within {
-    opacity: 1 !important;
     cursor: default;
   }
 
@@ -634,16 +630,12 @@ html.no-splash #splash-screen {
 /* ---------------------------------------------------------------------- */
 
 .cert-curated-row {
-  transition: opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.certs-curated-list:hover .cert-curated-row {
-  opacity: 0.5;
+  transition: background-color 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .certs-curated-list .cert-curated-row:hover,
 .certs-curated-list .cert-curated-row:focus-within {
-  opacity: 1;
+  background-color: var(--bg-surface-soft);
 }
 
 .cert-curated-title {
@@ -740,10 +732,6 @@ html.certs-modal-open body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .certs-curated-list:hover .cert-curated-row {
-    opacity: 1;
-  }
-
   .cert-curated-row:hover .cert-curated-title,
   .cert-curated-row:focus-within .cert-curated-title {
     transform: none;

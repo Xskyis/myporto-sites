@@ -205,6 +205,7 @@ const FRAG = /* glsl */ `
     float soft = smoothstep(0.5, 0.22, d);
     vec3 color = mix(uColor, uAccentColor, vAccent * uAccentMix);
     gl_FragColor = vec4(color, soft * vAlpha * uOpacity);
+    #include <colorspace_fragment>
   }
 `;
 

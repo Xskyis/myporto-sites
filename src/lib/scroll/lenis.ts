@@ -18,7 +18,20 @@ ScrollTrigger.config({
 });
 
 let lenisInstance: Lenis | null = null;
+let cleanupLenis: (() => void) | null = null;
+let reducedMotionQuery: MediaQueryList | null = null;
 let splashWatchdog: number | null = null;
+let navigationScope: AbortController | null = null;
+
+function cancelNavigationScroll() {
+  navigationScope?.abort();
+  navigationScope = null;
+}
+
+function navigationSignal(): AbortSignal {
+  navigationScope ??= new AbortController();
+  return navigationScope.signal;
+}
 
 /**
  * Scroll offset so anchored sections land just below the fixed header.
@@ -32,7 +45,16 @@ function headerOffset(): number {
 export function initLenis(): Lenis | null {
   if (typeof window === 'undefined') return null;
 
-  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reducedMotionQuery) {
+    reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    // This observer belongs to the persistent scroll service, not an individual page.
+    // Re-enable smooth scrolling on the next page setup, when consumers can subscribe
+    // to the new instance. The current page keeps working with native scrolling.
+    reducedMotionQuery.addEventListener('change', () => {
+      if (reducedMotionQuery?.matches) cleanupLenis?.();
+    });
+  }
+  const prefersReduced = reducedMotionQuery.matches;
   const fine = window.matchMedia('(pointer: fine)').matches;
   const coarse = window.matchMedia('(pointer: coarse)').matches;
 
@@ -40,6 +62,7 @@ export function initLenis(): Lenis | null {
   // and keep native momentum on coarse-only devices (phones/tablets).
   // Hybrid devices (fine + coarse) still get Lenis.
   if (!shouldUseLenis({ fine, coarse, reducedMotion: prefersReduced })) {
+    cleanupLenis?.();
     return null;
   }
 
@@ -63,37 +86,51 @@ export function initLenis(): Lenis | null {
   });
 
   lenisInstance = lenis;
+  const scope = new AbortController();
+  const { signal } = scope;
   wireScrollLock(
-    () => lenis.stop(),
-    () => lenis.start(),
+    () => lenisInstance?.stop(),
+    () => lenisInstance?.start(),
   );
 
   // Synchronize Lenis scroll position with GSAP ScrollTrigger
-  lenis.on('scroll', ScrollTrigger.update);
+  const offScroll = lenis.on('scroll', ScrollTrigger.update);
 
   // Hook Lenis into GSAP requestAnimationFrame ticker
   const tickerCallback = (time: number) => {
-    lenis.raf(time * 1000);
+    if (!signal.aborted) lenis.raf(time * 1000);
   };
 
   gsap.ticker.add(tickerCallback);
   gsap.ticker.lagSmoothing(0);
 
+  cleanupLenis = () => {
+    scope.abort();
+    gsap.ticker.remove(tickerCallback);
+    offScroll();
+    if (splashWatchdog !== null) window.clearTimeout(splashWatchdog);
+    splashWatchdog = null;
+    lenis.destroy();
+    lenisInstance = null;
+    cleanupLenis = null;
+  };
+
   // Refresh ScrollTrigger after fonts and layout settle
   const onWindowLoad = () => ScrollTrigger.refresh();
-  window.addEventListener('load', onWindowLoad);
+  window.addEventListener('load', onWindowLoad, { once: true, signal });
 
   const isSplashActive = () =>
     !document.documentElement.classList.contains('no-splash') &&
     !!document.getElementById('splash-screen');
 
+  if (scrollLock.isLocked() || isSplashActive()) lenis.stop();
+
   if (isSplashActive()) {
-    lenis.stop();
     // Watchdog: if the splash script never exits (failed/blocked), never
     // leave the user permanently stuck with a stopped Lenis.
     if (splashWatchdog !== null) window.clearTimeout(splashWatchdog);
     splashWatchdog = window.setTimeout(() => {
-      if (isSplashActive()) lenis.start();
+      if (isSplashActive() && !scrollLock.isLocked()) lenis.start();
       splashWatchdog = null;
     }, 6000);
     // Release the watchdog once the splash announces itself.
@@ -103,7 +140,7 @@ export function initLenis(): Lenis | null {
         if (splashWatchdog !== null) window.clearTimeout(splashWatchdog);
         splashWatchdog = null;
       },
-      { once: true },
+      { once: true, signal },
     );
   }
 
@@ -135,11 +172,16 @@ export function installNavigationScroll() {
   navigationScrollInstalled = true;
 
   let kind: NavigationKind = 'initial';
+  const scope = new AbortController();
+  const { signal } = scope;
 
   document.addEventListener('astro:before-preparation', (e) => {
+    cancelNavigationScroll();
     const type = (e as { navigationType?: string }).navigationType;
     kind = type === 'traverse' || type === 'replace' ? type : 'push';
-  });
+  }, { signal });
+
+  document.addEventListener('astro:before-swap', cancelNavigationScroll, { signal });
 
   // Fires before the new page paints. Astro has already placed the window (top, restored
   // position, or a pending fragment jump); the only job here is to kill any in-flight Lenis
@@ -160,11 +202,13 @@ export function installNavigationScroll() {
     lenis.stop();
     lenis.start();
     lenis.resize();
-  });
+  }, { signal });
 
   // Fires after scripts ran (so `no-splash` etc. are accurate again). Handles the one thing the
   // browser can't: landing the anchored section below the fixed header.
   document.addEventListener('astro:page-load', () => {
+    cancelNavigationScroll();
+    const pageSignal = navigationSignal();
     const currentKind = kind;
     kind = 'push'; // anything after the first page-load that isn't announced is a push
 
@@ -184,13 +228,20 @@ export function installNavigationScroll() {
       const loaded =
         document.readyState === 'complete'
           ? Promise.resolve()
-          : new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }));
+          : new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true, signal: pageSignal }));
       const fonts = document.fonts?.ready ?? Promise.resolve();
-      Promise.all([loaded, fonts]).then(() => applyHeaderOffset(target));
+      Promise.all([loaded, fonts]).then(() => applyHeaderOffset(target, pageSignal));
     } else {
-      applyHeaderOffset(target);
+      applyHeaderOffset(target, pageSignal);
     }
-  });
+  }, { signal });
+
+  return () => {
+    if (signal.aborted) return;
+    scope.abort();
+    cancelNavigationScroll();
+    navigationScrollInstalled = false;
+  };
 }
 
 function getHashTarget(): HTMLElement | null {
@@ -204,8 +255,12 @@ function getHashTarget(): HTMLElement | null {
 }
 
 /** Re-land the anchored element just below the fixed header after layout settles. */
-function applyHeaderOffset(target: HTMLElement) {
-  requestAnimationFrame(() => {
+function applyHeaderOffset(target: HTMLElement, signal: AbortSignal) {
+  if (signal.aborted || !target.isConnected) return;
+  const cancelFrame = () => cancelAnimationFrame(frame);
+  const frame = requestAnimationFrame(() => {
+    signal.removeEventListener('abort', cancelFrame);
+    if (signal.aborted || !target.isConnected) return;
     const offset = headerOffset();
     if (lenisInstance && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       lenisInstance.scrollTo(target, {
@@ -222,6 +277,7 @@ function applyHeaderOffset(target: HTMLElement) {
       });
     }
   });
+  signal.addEventListener('abort', cancelFrame, { once: true });
 }
 
 export function scrollToTarget(
@@ -237,7 +293,8 @@ export function scrollToTarget(
 
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const targetEl = typeof target === 'string' ? document.querySelector<HTMLElement>(target) : target;
-  if (!targetEl) return;
+  if (!targetEl?.isConnected) return;
+  const signal = navigationSignal();
 
   const targetSelector = typeof target === 'string' ? target : `#${targetEl.id}`;
   const offset = options?.offset ?? headerOffset();
@@ -260,7 +317,7 @@ export function scrollToTarget(
       duration,
       easing: LENIS_EASE,
       onComplete: () => {
-        options?.onComplete?.();
+        if (!signal.aborted && targetEl.isConnected) options?.onComplete?.();
       },
     });
   } else {
@@ -268,8 +325,11 @@ export function scrollToTarget(
     // header offset with the same rect+scrollY math as applyHeaderOffset.
     // (offsetTop is relative to offsetParent — wrong when the parent is positioned.)
     window.scrollTo({ top: targetY, left: 0, behavior: prefersReduced ? 'auto' : 'smooth' });
-    window.setTimeout(() => {
-      options?.onComplete?.();
+    const cancelCompletion = () => window.clearTimeout(timer);
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener('abort', cancelCompletion);
+      if (!signal.aborted && targetEl.isConnected) options?.onComplete?.();
     }, prefersReduced ? 50 : 600);
+    signal.addEventListener('abort', cancelCompletion, { once: true });
   }
 }

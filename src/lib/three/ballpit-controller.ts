@@ -1,22 +1,63 @@
 import { detectWebGL } from './webgl-tier';
 
-/** Owns one page's lazy renderer, visibility and scroll subscription. */
+/** Owns one page's preference listener and cancellable renderer sessions. */
 export function setupBallPit(): () => void {
-  const canvas = document.getElementById('ball-pit-canvas') as HTMLCanvasElement | null;
+  const initialCanvas = document.getElementById('ball-pit-canvas') as HTMLCanvasElement | null;
   const wrapper = document.getElementById('ball-pit-wrapper');
   const fallback = document.getElementById('ball-pit-fallback');
-  if (!canvas || !wrapper) return () => {};
+  if (!initialCanvas || !wrapper) return () => {};
 
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
+  let canvas = initialCanvas;
+  let cleanup: (() => void) | null = null;
+  let disposed = false;
+  let replaceCanvas = false;
+  const stop = () => {
+    if (cleanup) {
+      cleanup();
+      cleanup = null;
+      replaceCanvas = true;
+    }
+  };
+  const syncMotion = () => {
+    if (disposed) return;
+    stop();
+    if (motion.matches || saveData || detectWebGL() !== 'hardware') {
+      canvas.style.display = 'none';
+      fallback?.classList.remove('hidden');
+      return;
+    }
+    if (replaceCanvas) {
+      // A disposed renderer loses its context; acquire the next one on a fresh canvas.
+      const nextCanvas = canvas.cloneNode(false) as HTMLCanvasElement;
+      canvas.replaceWith(nextCanvas);
+      canvas = nextCanvas;
+      replaceCanvas = false;
+    }
+    canvas.style.removeProperty('display');
+    canvas.classList.remove('opacity-100');
+    canvas.classList.add('opacity-0');
+    fallback?.classList.add('hidden');
+    cleanup = createBallPit(canvas, wrapper, fallback);
+  };
+  motion.addEventListener('change', syncMotion);
+  syncMotion();
+
+  return () => {
+    if (disposed) return;
+    disposed = true;
+    motion.removeEventListener('change', syncMotion);
+    stop();
+  };
+}
+
+/** One session owns its lazy renderer, visibility and optional scroll subscription. */
+function createBallPit(canvas: HTMLCanvasElement, wrapper: HTMLElement, fallback: HTMLElement | null): () => void {
   const showFallback = () => {
     canvas.style.display = 'none';
     fallback?.classList.remove('hidden');
   };
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
-  if (reduced || saveData || detectWebGL() !== 'hardware') {
-    showFallback();
-    return () => {};
-  }
 
   let disposed = false;
   let inView = false;

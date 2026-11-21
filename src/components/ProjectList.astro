@@ -73,7 +73,7 @@ const projects = allProjects
               data-project-stack={p.stack}
               data-project-year={p.year}
               data-active={idx === 0 ? 'true' : 'false'}
-              aria-label={`${p.title}, ${p.tagline}, ${p.year}`}
+              aria-label={`${p.title}, ${p.tagline}, ${p.year}, ${p.stack}`}
             >
               <!-- Thumbnail (below 1024px only; desktop uses the preview panel) -->
               <div
@@ -267,11 +267,7 @@ const projects = allProjects
     transform: rotate(-45deg);
   }
 
-  /* Dim the rest and elevate the active row while the list is being explored (pointer or keyboard). */
-  .project-list[data-engaged='true'] .project-row:not([data-active='true']) {
-    opacity: 0.45;
-  }
-
+  /* Emphasize the active surface while keeping every project label readable. */
   .project-list[data-engaged='true'] .project-row[data-active='true'] {
     background-color: color-mix(in srgb, var(--bg-surface-soft) 60%, transparent);
   }

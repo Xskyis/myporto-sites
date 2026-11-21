@@ -11,13 +11,20 @@ let notify: (entries: Array<{ isIntersecting: boolean }>) => void;
 let disconnect = vi.fn();
 let cleanup: (() => void) | undefined;
 let hidden = false;
+let motion: MediaQueryList;
+
+function setReducedMotion(matches: boolean) {
+  Object.defineProperty(motion, 'matches', { value: matches, configurable: true });
+  motion.dispatchEvent(new Event('change'));
+}
 
 beforeEach(() => {
   vi.resetModules();
   hidden = false;
   document.body.innerHTML = '<div id="ball-pit-wrapper"><canvas id="ball-pit-canvas" class="opacity-0"></canvas><div id="ball-pit-fallback" class="hidden"></div></div>';
   vi.spyOn(document, 'hidden', 'get').mockImplementation(() => hidden);
-  vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })));
+  motion = Object.assign(new EventTarget(), { matches: false }) as MediaQueryList;
+  vi.stubGlobal('matchMedia', vi.fn(() => motion));
   disconnect = vi.fn();
   vi.stubGlobal('IntersectionObserver', class {
     constructor(callback: typeof notify) { notify = callback; }
@@ -52,6 +59,64 @@ async function mount() {
 const flushImports = () => vi.dynamicImportSettled();
 
 describe('ball pit page lifecycle', () => {
+  it('cancels a pending renderer when reduced motion is enabled, then resumes on a fresh canvas', async () => {
+    const { pit, download, scrollDownload, lenis } = await mount();
+    const originalCanvas = document.getElementById('ball-pit-canvas');
+    const oldNotify = notify;
+    notify([{ isIntersecting: true }]);
+    setReducedMotion(true);
+    download.resolve(pit);
+    scrollDownload.resolve({ getLenis: () => lenis });
+    await flushImports();
+    expect(pit.initBallPit).not.toHaveBeenCalled();
+    expect(lenis.on).not.toHaveBeenCalled();
+    expect(document.getElementById('ball-pit-fallback')?.classList.contains('hidden')).toBe(false);
+
+    setReducedMotion(false);
+    expect(document.getElementById('ball-pit-canvas')).not.toBe(originalCanvas);
+    oldNotify([{ isIntersecting: true }]);
+    await flushImports();
+    expect(pit.initBallPit).not.toHaveBeenCalled();
+    notify([{ isIntersecting: true }]);
+    await flushImports();
+    expect(pit.initBallPit).toHaveBeenCalledTimes(1);
+    expect(document.getElementById('ball-pit-canvas')?.style.display).toBe('');
+    expect(document.getElementById('ball-pit-fallback')?.classList.contains('hidden')).toBe(true);
+  });
+
+  it('disposes an active renderer immediately and removes its motion listener on page cleanup', async () => {
+    const { pit, dispose, download, scrollDownload, lenis, off } = await mount();
+    notify([{ isIntersecting: true }]);
+    download.resolve(pit);
+    scrollDownload.resolve({ getLenis: () => lenis });
+    await flushImports();
+    setReducedMotion(true);
+    expect(dispose).toHaveBeenCalledTimes(1);
+    expect(off).toHaveBeenCalledTimes(1);
+    expect(document.getElementById('ball-pit-canvas')?.style.display).toBe('none');
+
+    const removeListener = vi.spyOn(motion, 'removeEventListener');
+    cleanup?.();
+    expect(removeListener).toHaveBeenCalledWith('change', expect.any(Function));
+    setReducedMotion(false);
+    notify([{ isIntersecting: true }]);
+    await flushImports();
+    expect(pit.initBallPit).toHaveBeenCalledTimes(1);
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts in fallback with reduced motion and can lazily enable later', async () => {
+    setReducedMotion(true);
+    const { pit, download, scrollDownload, lenis } = await mount();
+    expect(document.getElementById('ball-pit-fallback')?.classList.contains('hidden')).toBe(false);
+    setReducedMotion(false);
+    notify([{ isIntersecting: true }]);
+    download.resolve(pit);
+    scrollDownload.resolve({ getLenis: () => lenis });
+    await flushImports();
+    expect(pit.initBallPit).toHaveBeenCalledTimes(1);
+  });
+
   it('shows fallback without probing WebGL or loading the renderer on save-data', async () => {
     vi.stubGlobal('navigator', { connection: { saveData: true } });
     const detect = vi.fn(() => 'hardware');

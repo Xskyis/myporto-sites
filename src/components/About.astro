@@ -121,7 +121,7 @@ function resolveCertUrl(url?: string): string {
                   <button
                     type="button"
                     data-honor-toggle={idx}
-                    aria-expanded={isActive ? 'true' : 'false'}
+                    aria-expanded="true"
                     aria-controls={`honor-details-${idx}`}
                     class="w-full text-left cursor-pointer focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
                   >
@@ -148,8 +148,7 @@ function resolveCertUrl(url?: string): string {
                 <div
                   id={`honor-details-${idx}`}
                   class="honor-details-grid"
-                  aria-hidden={isActive ? 'false' : 'true'}
-                  inert={!isActive || undefined}
+                  aria-hidden="false"
                 >
                   <div class="overflow-hidden">
                     <div class="honor-details-inner pl-0 sm:pl-11 md:pl-12 pt-3 md:pt-4">
@@ -300,6 +299,7 @@ function resolveCertUrl(url?: string): string {
         <button
           type="button"
           id="open-certs-modal-btn"
+          hidden
           aria-haspopup="dialog"
           aria-controls="certs-dialog"
           class="magnetic-btn group inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-hairline bg-[var(--bg-surface)] text-xs sm:text-[13px] font-mono font-medium text-[var(--text-primary)] hover:border-[var(--text-primary)] hover:bg-[var(--bg-surface-soft)] shadow-xs hover:shadow-md transition-colors duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)]"
@@ -312,6 +312,49 @@ function resolveCertUrl(url?: string): string {
             aria-hidden="true"
           />
         </button>
+
+        <!-- Native disclosure remains usable until the dialog controller is ready. -->
+        <details id="certs-fallback">
+          <summary class="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-hairline bg-[var(--bg-surface)] text-xs sm:text-[13px] font-mono font-medium text-[var(--text-primary)] hover:border-[var(--text-primary)] hover:bg-[var(--bg-surface-soft)] cursor-pointer list-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-focus)] [&::-webkit-details-marker]:hidden">
+            <Icon name="lucide:award" class="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span>View all {totalCertsCount} certificates</span>
+            <span aria-hidden="true">↗</span>
+          </summary>
+          <div class="pt-6">
+            <!-- The controller moves this one grid into the dialog, then restores it on cleanup. -->
+            <div id="certs-dialog-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+              {allCertsSorted.map((cert) => (
+                <div
+                  data-cert-item
+                  data-cert-category={cert.category ?? 'other'}
+                  class="p-3 sm:p-3.5 rounded-xl hover:bg-[var(--bg-surface-soft)]/50 transition-colors duration-200 flex items-start justify-between gap-4"
+                >
+                  <div class="min-w-0">
+                    <h4 class="text-sm sm:text-[15px] font-medium text-[var(--text-primary)] leading-snug">
+                      {cert.title}
+                    </h4>
+                    <p class="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
+                      <span>{cert.issuer}</span>
+                      <span class="mx-1.5" aria-hidden="true">·</span>
+                      <span>{cert.issueDate}</span>
+                    </p>
+                  </div>
+
+                  <a
+                    href={resolveCertUrl(cert.credentialUrl)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="shrink-0 inline-flex items-center gap-1 text-xs font-mono text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200 pt-0.5 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
+                    aria-label={`Credential for ${cert.title}`}
+                  >
+                    <span class="hover-underline-anim">Credential</span>
+                    <span aria-hidden="true">↗</span>
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -393,41 +436,10 @@ function resolveCertUrl(url?: string): string {
 
         <!-- Scrollable 2-Column Certificate List -->
         <div
+          id="certs-dialog-scroll"
           class="certs-dialog-scroll px-5 sm:px-8 py-4 sm:py-6 overflow-y-auto overscroll-contain flex-1"
           data-lenis-prevent
-        >
-          <div id="certs-dialog-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-            {allCertsSorted.map((cert) => (
-              <div
-                data-cert-item
-                data-cert-category={cert.category ?? 'other'}
-                class="p-3 sm:p-3.5 rounded-xl hover:bg-[var(--bg-surface-soft)]/50 transition-colors duration-200 flex items-start justify-between gap-4"
-              >
-                <div class="min-w-0">
-                  <h4 class="text-sm sm:text-[15px] font-medium text-[var(--text-primary)] leading-snug">
-                    {cert.title}
-                  </h4>
-                  <p class="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
-                    <span>{cert.issuer}</span>
-                    <span class="mx-1.5" aria-hidden="true">·</span>
-                    <span>{cert.issueDate}</span>
-                  </p>
-                </div>
-
-                <a
-                  href={resolveCertUrl(cert.credentialUrl)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="shrink-0 inline-flex items-center gap-1 text-xs font-mono text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200 pt-0.5 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--border-focus)]"
-                  aria-label={`Credential for ${cert.title}`}
-                >
-                  <span class="hover-underline-anim">Credential</span>
-                  <span aria-hidden="true">↗</span>
-                </a>
-              </div>
-            ))}
-          </div>
-        </div>
+        ></div>
       </div>
     </div>
   </dialog>
@@ -443,7 +455,10 @@ function resolveCertUrl(url?: string): string {
     const dialog = document.getElementById('certs-dialog') as HTMLDialogElement | null;
     const openBtn = document.getElementById('open-certs-modal-btn') as HTMLButtonElement | null;
     const closeBtn = document.getElementById('close-certs-modal-btn') as HTMLButtonElement | null;
-    if (!dialog || !openBtn || !closeBtn) return null;
+    const fallback = document.getElementById('certs-fallback');
+    const certGrid = document.getElementById('certs-dialog-grid');
+    const dialogScroll = document.getElementById('certs-dialog-scroll');
+    if (!dialog || !openBtn || !closeBtn || !fallback || !certGrid || !dialogScroll || typeof dialog.show !== 'function') return null;
 
     const abort = new AbortController();
     const { signal } = abort;
@@ -457,7 +472,8 @@ function resolveCertUrl(url?: string): string {
 
     const backdrop = document.getElementById('certs-dialog-backdrop');
     const filterBtns = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-cert-filter]'));
-    const certItems = Array.from(dialog.querySelectorAll<HTMLElement>('[data-cert-item]'));
+    const certItems = Array.from(certGrid.querySelectorAll<HTMLElement>('[data-cert-item]'));
+    const originalGridParent = certGrid.parentElement;
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     let closeTimer: number | null = null;
@@ -652,6 +668,10 @@ function resolveCertUrl(url?: string): string {
       );
     });
 
+    dialogScroll.appendChild(certGrid);
+    fallback.hidden = true;
+    openBtn.hidden = false;
+
     return () => {
       if (closeTimer !== null) {
         window.clearTimeout(closeTimer);
@@ -662,6 +682,10 @@ function resolveCertUrl(url?: string): string {
       }
       dialog.removeAttribute('data-closing');
       inertSiblings(false);
+      applyFilter('all');
+      originalGridParent?.appendChild(certGrid);
+      fallback.hidden = false;
+      openBtn.hidden = true;
       if (originalParent && dialog.parentElement === document.body) {
         originalParent.appendChild(dialog);
       }
@@ -871,6 +895,7 @@ function resolveCertUrl(url?: string): string {
     );
     io.observe(block);
 
+    block.setAttribute('data-honors-enhanced', '');
     updateActiveState();
     syncTimerLoop();
 
@@ -878,6 +903,13 @@ function resolveCertUrl(url?: string): string {
       stopTimerLoop();
       io.disconnect();
       abort.abort();
+      block.removeAttribute('data-honors-enhanced');
+      rows.forEach((row) => {
+        row.querySelector('[data-honor-toggle]')?.setAttribute('aria-expanded', 'true');
+        const details = row.querySelector('.honor-details-grid');
+        details?.setAttribute('aria-hidden', 'false');
+        details?.removeAttribute('inert');
+      });
     };
   }
 

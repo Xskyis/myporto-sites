@@ -40,6 +40,33 @@ function contrast(foreground: string, background: string): number {
   return (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05);
 }
 
+function composite(foreground: string, background: string, opacity: number): string {
+  const channels = (hex: string) => hex.slice(1).match(/../g)!.map((part) => parseInt(part, 16));
+  const back = channels(background);
+  return `#${channels(foreground).map((value, index) =>
+    Math.round(value * opacity + back[index] * (1 - opacity)).toString(16).padStart(2, '0')
+  ).join('')}`;
+}
+
+// Token contrast alone misses fading a whole readable row. Inspect normal/hover states
+// as well as the active state so a later full-opacity rule cannot hide a failing state.
+function lowestRowOpacity(source: string, selectors: string[]): number {
+  const rules = source.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g);
+  const opacities = [1];
+  for (const [, selectorList, declarations] of rules) {
+    if (!selectorList.split(',').some((selector) => selectors.includes(selector.trim()))) continue;
+    const opacity = declarations.match(/(?:^|;)\s*opacity:\s*([\d.]+)/)?.[1];
+    if (opacity !== undefined) opacities.push(Number(opacity));
+  }
+  return Math.min(...opacities);
+}
+
+const readableRows = [
+  ['honors', css, ['.honor-row', '.honor-row:hover', '.honor-row:focus-within', '.honor-row[data-active="true"]']],
+  ['certificates', css, ['.cert-curated-row', '.certs-curated-list:hover .cert-curated-row']],
+  ['projects', readSource('src/components/ProjectList.astro'), ['.project-row', ".project-list[data-engaged='true'] .project-row:not([data-active='true'])"]],
+] as const;
+
 const palettes = [
   ['mono light', tokensFor(/:root\s*\{([^}]+)\}/)],
   ['mono dark', tokensFor(/:root\.dark:not\(\[data-palette="color"\]\)\s*\{([^}]+)\}/)],
@@ -62,5 +89,18 @@ describe('accessible text palette tokens', () => {
     expect(
       contrast(resolveColor(tokens, '--accent-contrast'), resolveColor(tokens, '--accent-primary'))
     ).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(palettes)('%s keeps readable row text above 4.5:1 after opacity is applied', (_, tokens) => {
+    for (const [name, source, selectors] of readableRows) {
+      const opacity = lowestRowOpacity(source, [...selectors]);
+      for (const foreground of ['--text-primary', '--text-muted']) {
+        for (const surface of ['--bg-primary', '--bg-surface', '--bg-surface-soft']) {
+          const background = resolveColor(tokens, surface);
+          const color = composite(resolveColor(tokens, foreground), background, opacity);
+          expect(contrast(color, background), `${name}: ${foreground} on ${surface}`).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    }
   });
 });
