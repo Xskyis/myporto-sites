@@ -104,3 +104,37 @@ describe('accessible text palette tokens', () => {
     }
   });
 });
+
+describe('layout and navbar invariants', () => {
+  it('keeps main focusable without drawing a full-page inset ring border', () => {
+    const layout = readSource('src/layouts/BaseLayout.astro');
+    const mainTag = layout.match(/<main\b[\s\S]*?>/)?.[0] ?? '';
+    expect(mainTag).toContain('id="main-content"');
+    expect(mainTag).toContain('tabindex="-1"');
+    expect(mainTag).toContain('focus:outline-none');
+    expect(mainTag).not.toContain('focus-visible:ring-');
+    expect(mainTag).not.toContain('ring-inset');
+  });
+
+  it('places unprefixed backdrop-filter after -webkit-backdrop-filter so CSS minifiers keep standard blur', () => {
+    for (const file of ['src/components/Navbar.astro', 'src/components/BallPit.astro']) {
+      const source = readSource(file);
+      const webkitIndex = source.indexOf('-webkit-backdrop-filter:');
+      const standardIndex = source.search(/(^|[^-])backdrop-filter:/m);
+      expect(webkitIndex, `${file} should declare -webkit-backdrop-filter`).toBeGreaterThan(-1);
+      expect(standardIndex, `${file} should declare standard backdrop-filter`).toBeGreaterThan(webkitIndex);
+    }
+  });
+
+  it('marks all primary home sections with data-nav-section', () => {
+    for (const section of [
+      'src/components/Hero.astro',
+      'src/components/About.astro',
+      'src/components/ProjectList.astro',
+      'src/components/TechStack.astro',
+      'src/components/Footer.astro',
+    ]) {
+      expect(readSource(section), `${section} should have data-nav-section`).toContain('data-nav-section');
+    }
+  });
+});

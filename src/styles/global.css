@@ -121,6 +121,13 @@ body {
   max-width: 100%;
 }
 
+/* Programmatic landmark focus targets move reading/Tab position without framing the whole page/section. */
+main[tabindex="-1"]:focus,
+[data-nav-section][tabindex="-1"]:focus,
+#splash-screen[tabindex="-1"]:focus {
+  outline: none;
+}
+
 /* Navbar Palette Switcher Pills - driven directly by html[data-palette] so the active
    theme is always highlighted immediately (even before JS hydration) and never leaves
    stale classes when switching between Mono (light/dark) and Color. */

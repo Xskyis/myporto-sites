@@ -145,7 +145,8 @@ function setupProgressBar(cleanups: Array<() => void>) {
   const lenis = getLenis();
   if (lenis) {
     const setProgress = () => {
-      const p = Math.min(1, Math.max(0, lenis.progress ?? 0));
+      const raw = lenis.progress;
+      const p = Number.isFinite(raw) ? Math.min(1, Math.max(0, raw)) : 0;
       gsap.set(progressBar, { scaleX: p });
     };
     setProgress();

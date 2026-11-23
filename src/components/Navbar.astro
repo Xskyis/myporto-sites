@@ -324,8 +324,8 @@ const NAV_ITEMS = [
     if (fallbackHasFocus) btnMobile?.focus({ preventScroll: true });
 
     // 0.1 Adaptive Header State (mobile & desktop floating pill + bottom-of-page contact highlight)
-    let isScrolledState = false;
-    let isMenuOpenState = false;
+    let isScrolledState = header?.dataset.scrolled === "true";
+    let isMenuOpenState = header?.dataset.menuOpen === "true";
     let scrollTargetLock: string | null = null;
     let lockTimer: number | null = null;
 
@@ -945,9 +945,9 @@ const NAV_ITEMS = [
 
   @media (min-width: 1024px) and (pointer: fine) {
     #main-header[data-scrolled="true"][data-menu-open="false"] .nav-shell {
-      background-color: color-mix(in srgb, var(--bg-surface) 80%, transparent);
-      backdrop-filter: blur(16px) saturate(1.25);
+      background-color: color-mix(in srgb, var(--bg-surface) 88%, transparent);
       -webkit-backdrop-filter: blur(16px) saturate(1.25);
+      backdrop-filter: blur(16px) saturate(1.25);
     }
   }
 
